@@ -1,0 +1,91 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>org.zenframework.easy-services</groupId>
+    <artifactId>easy-services</artifactId>
+    <version>1.0.0</version>
+    <name>Zenframework Easy Services</name>
+    <packaging>pom</packaging>
+
+    <properties>
+        <bundle.import.package>*</bundle.import.package>
+        <junit.version>4.12</junit.version>
+        <servlet.api.version>3.1.0</servlet.api.version>
+        <gson.version>2.7</gson.version>
+        <slf4j.version>1.7.21</slf4j.version>
+        <zfw.commons.version>1.0.0</zfw.commons.version>
+        <tomcat.version>[7.0,)</tomcat.version>
+    </properties>
+
+    <modules>
+        <module>easy-services-core</module>
+        <module>easy-services-http</module>
+        <module>easy-services-json</module>
+        <module>easy-services-websocket</module>
+    </modules>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zenframework.commons</groupId>
+            <artifactId>zfw-commons-lang</artifactId>
+            <version>${zfw.commons.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.1</version>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>2.3.7</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <instructions>
+                        <!-- Имя бандла. По умолчанию = имя артифакта -->
+                        <!-- <Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName> -->
+                        <!-- Версия бандла. По умолчанию = версия артифакта -->
+                        <!-- <Bundle-Version>${pom.version}</Bundle-Version> -->
+                        <!-- Экспортируемые пакеты. '!' означает 'не' -->
+                        <Export-Package>!${bundle.namespace}.internal.*,${bundle.namespace}.*;version="${project.version}"</Export-Package>
+                        <!-- Это нужно, чтобы не импортировать собственные внутренние пакеты -->
+                        <Private-Package>${bundle.namespace}.internal.*</Private-Package>
+                        <!-- Класс, методы которого вызываются при запуске/остановке бандла -->
+                        <!-- <Bundle-Activator>${bundle.namespace}.internal.Activator</Bundle-Activator> -->
+                        <!-- Включать зависимости бандла внутрь бандла -->
+                        <!-- <Embed-Dependency>*;scope=compile|runtime;type=!bundle;inline=false</Embed-Dependency> -->
+                        <!-- Поместить включенные зависимости в указанный каталог внутри бандла -->
+                        <!-- <Embed-Directory>lib</Embed-Directory> -->
+                        <!-- Сгруппировать включенные зависимости по подкаталогам согласно их группам -->
+                        <!-- <Embed-StripGroup>true</Embed-StripGroup> -->
+                        <!-- Включать транзитивные зависимости -->
+                        <!-- <Embed-Transitive>true</Embed-Transitive> -->
+                        <!-- <Bundle-RequiredExecutionEnvironment>${bundle.required.execution.environment}</Bundle-RequiredExecutionEnvironment> -->
+                        <Import-Package>${bundle.import.package}</Import-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
