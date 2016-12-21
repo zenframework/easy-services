@@ -50,7 +50,8 @@ public class RequestMapperImpl implements RequestMapper {
 
     private static Map<String, List<String>> splitQuery(URI uri) throws IncorrectRequestException {
         final Map<String, List<String>> query_pairs = new LinkedHashMap<String, List<String>>();
-        final String[] pairs = uri.getQuery().split("&");
+        final String query = uri.getQuery();
+        final String[] pairs = query == null ? new String[0] : uri.getQuery().split("&");
         try {
             for (String pair : pairs) {
                 final int idx = pair.indexOf("=");

@@ -147,7 +147,10 @@ public class ServiceHttpRequestHandler {
     }
 
     private static URI getRequestURI(HttpServletRequest request) throws URISyntaxException, UnsupportedEncodingException {
-        return new URI(request.getRequestURL().append('?').append(URLEncoder.encode(request.getQueryString(), "UTF-8")).toString());
+        StringBuffer str = request.getRequestURL();
+        if (request.getQueryString() != null)
+            str.append('?').append(URLEncoder.encode(request.getQueryString(), "UTF-8"));
+        return new URI(str.toString());
     }
 
 }
