@@ -3,14 +3,17 @@ package org.zenframework.easyservices.impl;
 import java.lang.reflect.Proxy;
 
 import org.zenframework.easyservices.RequestMapper;
+import org.zenframework.easyservices.descriptor.AnnotationServiceDescriptorFactory;
+import org.zenframework.easyservices.descriptor.ServiceDescriptorFactory;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.ClientFactory;
 
 public class ClientFactoryImpl implements ClientFactory {
 
+    private String baseUrl;
+    private ServiceDescriptorFactory serviceDescriptorFactory = new AnnotationServiceDescriptorFactory();
     private SerializerFactory<?> serializerFactory;
     private RequestMapper requestMapper;
-    private String baseUrl;
 
     public ClientFactoryImpl() {}
 
@@ -23,8 +26,16 @@ public class ClientFactoryImpl implements ClientFactory {
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getClient(Class<T> serviceClass, String serviceName) {
-        return (T) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { serviceClass },
-                new ServiceInvocationHandler(baseUrl + serviceName, serializerFactory, requestMapper));
+        return (T) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { serviceClass }, new ServiceInvocationHandler(
+                baseUrl + serviceName, serviceDescriptorFactory.getServiceDescriptor(serviceClass), serializerFactory, requestMapper));
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    public void setServiceDescriptorFactory(ServiceDescriptorFactory serviceDescriptorFactory) {
+        this.serviceDescriptorFactory = serviceDescriptorFactory;
     }
 
     public void setSerializerFactory(SerializerFactory<?> serializerFactory) {
@@ -33,10 +44,6 @@ public class ClientFactoryImpl implements ClientFactory {
 
     public void setRequestMapper(RequestMapper requestMapper) {
         this.requestMapper = requestMapper;
-    }
-
-    public void setBaseUrl(String baseUrl) {
-        this.baseUrl = baseUrl;
     }
 
 }

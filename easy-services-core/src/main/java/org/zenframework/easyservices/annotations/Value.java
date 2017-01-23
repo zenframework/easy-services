@@ -7,8 +7,13 @@ import java.lang.annotation.Target;
 
 @Target(value = { ElementType.METHOD, ElementType.PARAMETER })
 @Retention(value = RetentionPolicy.RUNTIME)
-public @interface SerializerAdapter {
+public @interface Value {
 
-    Class<? extends org.zenframework.easyservices.serialize.SerializerAdapter<?>> value();
+    @SuppressWarnings("rawtypes")
+    Class<? extends org.zenframework.easyservices.serialize.SerializerAdapter> serializerAdapter() default org.zenframework.easyservices.serialize.SerializerAdapter.class;
+
+    Class<?>[] typeParameters() default {};
+
+    boolean dynamicService() default false;
 
 }

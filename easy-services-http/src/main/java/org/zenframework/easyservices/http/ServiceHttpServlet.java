@@ -11,9 +11,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.zenframework.easyservices.ServiceInfo;
-import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.RequestMapper;
+import org.zenframework.easyservices.ServiceInvoker;
+import org.zenframework.easyservices.serialize.SerializerFactory;
 
 public class ServiceHttpServlet extends HttpServlet {
 
@@ -23,7 +23,7 @@ public class ServiceHttpServlet extends HttpServlet {
     private static final String PARAM_SERIALIZER_FACTORY = "serializerFactory";
     private static final String PARAM_REQUEST_MAPPER = "requestMapper";
     private static final String PARAM_ERROR_MAPPER = "errorMapper";
-    private static final String PARAM_SERVICE_INFO = "serviceInfo";
+    private static final String PARAM_SERVICE_INVOKER = "serviceInvoker";
     private static final String PARAM_SERVICE_INFO_ALIAS = "serviceInfoAlias";
 
     private static final String DEFAULT_INITIAL_CONTEXT_FACTORY = "org.zenframework.easyservices.jndo.InitialContextFactoryImpl";
@@ -36,7 +36,7 @@ public class ServiceHttpServlet extends HttpServlet {
         requestHandler.setSerializerFactory(getInstance(SerializerFactory.class, PARAM_SERIALIZER_FACTORY));
         requestHandler.setRequestMapper(getInstance(RequestMapper.class, PARAM_REQUEST_MAPPER));
         requestHandler.setErrorMapper(getInstance(ErrorMapper.class, PARAM_ERROR_MAPPER));
-        requestHandler.setServiceInfo(getInstance(ServiceInfo.class, PARAM_SERVICE_INFO));
+        requestHandler.setServiceInvoker(getInstance(ServiceInvoker.class, PARAM_SERVICE_INVOKER));
         String serviceInfoAlias = getServletConfig().getInitParameter(PARAM_SERVICE_INFO_ALIAS);
         if (serviceInfoAlias != null)
             requestHandler.setServiceInfoAlias(serviceInfoAlias);

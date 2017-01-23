@@ -20,12 +20,12 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>easy-services-api</artifactId>
+            <artifactId>easy-services-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.zenframework.commons</groupId>
-            <artifactId>zfw-commons-debug</artifactId>
+            <artifactId>zfw-commons-lang</artifactId>
             <version>${zfw.commons.version}</version>
         </dependency>
         <dependency>
@@ -45,5 +45,18 @@
             <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

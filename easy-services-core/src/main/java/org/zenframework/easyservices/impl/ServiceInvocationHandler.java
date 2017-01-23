@@ -9,6 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.commons.debug.TimeChecker;
 import org.zenframework.easyservices.RequestMapper;
+import org.zenframework.easyservices.descriptor.MethodDescriptor;
+import org.zenframework.easyservices.descriptor.ServiceDescriptor;
+import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerAdapter;
@@ -19,13 +22,16 @@ public class ServiceInvocationHandler implements InvocationHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ServiceInvocationHandler.class);
 
     private final String serviceUrl;
+    private final ServiceDescriptor serviceDescriptor;
     private final SerializerFactory<?> serializerFactory;
-    private final RequestMapper serviceMapper;
+    private final RequestMapper requestMapper;
 
-    public ServiceInvocationHandler(String serviceUrl, SerializerFactory<?> serializerFactory, RequestMapper serviceMapper) {
+    public ServiceInvocationHandler(String serviceUrl, ServiceDescriptor serviceDescriptor, SerializerFactory<?> serializerFactory,
+            RequestMapper requestMapper) {
         this.serviceUrl = serviceUrl;
+        this.serviceDescriptor = serviceDescriptor;
         this.serializerFactory = serializerFactory;
-        this.serviceMapper = serviceMapper;
+        this.requestMapper = requestMapper;
     }
 
     @Override
@@ -36,7 +42,7 @@ public class ServiceInvocationHandler implements InvocationHandler {
         if (LOG.isDebugEnabled())
             time = new TimeChecker("CALL " + serviceUrl + ' ' + method.getName() + serializedArgs, LOG);
         try {
-            URL url = serviceMapper.getRequestURI(serviceUrl, method.getName(), serializedArgs).toURL();
+            URL url = requestMapper.getRequestURI(serviceUrl, method.getName(), serializedArgs).toURL();
             StringBuilder str = new StringBuilder(8192);
             char buf[] = new char[8192];
             InputStreamReader reader = new InputStreamReader(url.openStream());
@@ -48,7 +54,7 @@ public class ServiceInvocationHandler implements InvocationHandler {
             }
             if (time != null)
                 time.printDifference(str);
-            return deserialize(serializer, method, str.toString());
+            return deserialize(serializer, method, serviceDescriptor.getMethodDescriptor(method), str.toString());
         } catch (Throwable e) {
             if (time != null)
                 time.printDifference(e);
@@ -57,22 +63,16 @@ public class ServiceInvocationHandler implements InvocationHandler {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    private Object deserialize(Serializer<?> serializer, Method method, String str) throws SerializationException {
-        org.zenframework.easyservices.annotations.SerializerAdapter serializerAdapterAnnotation = method
-                .getAnnotation(org.zenframework.easyservices.annotations.SerializerAdapter.class);
-        org.zenframework.easyservices.annotations.TypeParameters typeParametersAnnotation = method
-                .getAnnotation(org.zenframework.easyservices.annotations.TypeParameters.class);
+    private Object deserialize(Serializer<?> serializer, Method method, MethodDescriptor methodDescriptor, String str) throws SerializationException {
         SerializerAdapter adapter = null;
-        try {
-            if (serializerAdapterAnnotation != null)
-                adapter = serializerAdapterAnnotation.value().newInstance();
-        } catch (Exception e) {
-            throw new SerializationException("Can't instantiate adapter " + serializerAdapterAnnotation.value());
+        Class<?>[] typeParameters = null;
+        if (methodDescriptor != null) {
+            ValueDescriptor returnDescriptor = methodDescriptor.getReturnDescriptor();
+            adapter = returnDescriptor != null ? returnDescriptor.getSerializerAdapter() : serializerFactory.getAdapter(method.getReturnType());
+            typeParameters = returnDescriptor != null ? returnDescriptor.getTypeParameters() : new Class<?>[0];
         }
-        if (adapter == null)
-            adapter = serializerFactory.getAdapter(method.getReturnType());
         if (adapter != null)
-            return serializer.deserialize(str, adapter, typeParametersAnnotation != null ? typeParametersAnnotation.value() : new Class<?>[0]);
+            return serializer.deserialize(str, adapter, typeParameters);
         return serializer.deserialize(str, method.getReturnType());
     }
 

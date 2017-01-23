@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+    <bean class="org.springframework.beans.factory.config.CustomEditorConfigurer">
+        <property name="customEditors">
+            <map>
+                <entry key="java.lang.reflect.Type" value="org.zenframework.commons.bean.propertyEditors.TypePropertyEditor" />
+            </map>
+        </property>
+    </bean>
+
+    <bean id="serializerFactory" class="org.zenframework.easyservices.serialize.json.JsonSerializerFactory" scope="singleton" />
+    
+    <bean id="addService" class="org.zenframework.easyservices.test.simple.Addition" scope="singleton" />
+
+    <bean id="subService" class="org.zenframework.easyservices.test.simple.Substraction" scope="singleton" />
+
+    <bean id="serviceRegistry" class="org.zenframework.easyservices.jndi.JNDIHelper" scope="singleton" factory-method="getInitialContext">
+        <constructor-arg>
+            <map>
+                <entry key="java.naming.factory.initial" value="org.zenframework.easyservices.jndi.impl.InitialContextFactoryImpl" />
+            </map>
+        </constructor-arg>
+        <constructor-arg>
+            <map>
+                <entry key="/add" value-ref="addService" />
+                <entry key="/sub" value-ref="subService" />
+            </map>
+        </constructor-arg>
+    </bean>
+
+    <bean id="servicesHttpRequestHandler" class="org.zenframework.easyservices.http.ServiceHttpRequestHandler" scope="singleton">
+        <property name="serviceRegistry" ref="serviceRegistry" />
+        <property name="serializerFactory" ref="serializerFactory" />
+        <property name="requestMapper">
+            <bean class="org.zenframework.easyservices.impl.RequestMapperImpl" />
+        </property>
+        <property name="errorMapper">
+            <bean class="org.zenframework.easyservices.http.ErrorMapper" />
+        </property>
+        <property name="serviceInvoker">
+            <bean class="org.zenframework.easyservices.impl.ServiceInvokerImpl" />
+        </property>
+        <property name="servicesPath" value="/services" />
+    </bean>
+
+    <bean id="jettyPort" class="java.lang.Integer">
+        <constructor-arg value="10000" />
+    </bean>
+
+    <bean id="clientFactory" class="org.zenframework.easyservices.impl.ClientFactoryImpl" scope="singleton">
+        <property name="serializerFactory" ref="serializerFactory" />
+        <property name="requestMapper">
+            <bean class="org.zenframework.easyservices.impl.RequestMapperImpl" />
+        </property>
+        <property name="baseUrl" value="http://localhost:#{jettyPort}/services" />
+    </bean>
+
+</beans>
