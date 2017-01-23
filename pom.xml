@@ -20,7 +20,6 @@
 
     <modules>
         <module>easy-services-core</module>
-        <!-- <module>easy-services-data</module> -->
         <module>easy-services-http</module>
         <module>easy-services-json</module>
         <module>easy-services-test</module>
