@@ -35,7 +35,7 @@ public class ServiceInvocationHandler implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Serializer serializer = serializerFactory.getSerializer();
-        String serializedArgs = args == null || args.length == 0 ? null : new String(serializer.serialize(args));
+        String serializedArgs = serializer.compile(serializer.serialize(args));
         TimeChecker time = null;
         if (LOG.isDebugEnabled())
             time = new TimeChecker("CALL " + serviceUrl + ' ' + method.getName() + serializedArgs, LOG);

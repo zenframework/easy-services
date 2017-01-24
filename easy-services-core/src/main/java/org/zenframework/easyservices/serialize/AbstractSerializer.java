@@ -4,71 +4,77 @@ import org.zenframework.easyservices.descriptor.ValueDescriptor;
 
 public abstract class AbstractSerializer<S> implements Serializer<S> {
 
-    private final SerializerFactory<S> factory;
+    protected final SerializerFactory<S> factory;
 
     protected AbstractSerializer(SerializerFactory<S> factory) {
         this.factory = factory;
     }
 
     @Override
-    public SerializerFactory<S> getFactory() {
-        return factory;
-    }
-
-    @Override
-    public Object deserialize(S objStruct, SerializerAdapter<S> adapter, Class<?>... typeParameters) throws SerializationException {
-        if (objStruct == null)
+    public Object deserialize(S structure, SerializerAdapter<S> adapter, Class<?>... typeParameters) throws SerializationException {
+        if (structure == null)
             return null;
-        return adapter.deserialize(this, objStruct, typeParameters);
+        return adapter.deserialize(this, structure, typeParameters);
     }
 
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public Object deserialize(S objStruct, Class<?> objClass, ValueDescriptor valueDescriptor) throws SerializationException {
+    public Object deserialize(S structure, Class<?> objType, ValueDescriptor valueDescriptor) throws SerializationException {
         SerializerAdapter adapter = null;
-        if (valueDescriptor != null)
+        if (valueDescriptor != null) {
             adapter = valueDescriptor.getSerializerAdapter();
-        if (adapter == null)
-            adapter = getFactory().getAdapter(objClass);
+            if (adapter == null)
+                adapter = factory.getAdapter(objType);
+        }
         if (adapter != null)
-            return deserialize(objStruct, adapter, valueDescriptor != null ? valueDescriptor.getTypeParameters() : new Class<?>[0]);
-        return deserialize(objStruct, objClass);
+            return deserialize(structure, adapter, valueDescriptor != null ? valueDescriptor.getTypeParameters() : new Class<?>[0]);
+        return deserialize(structure, objType);
     }
 
     @Override
-    public Object[] deserialize(S[] arrStruct, Class<?> objTypes[]) throws SerializationException {
-        if (arrStruct == null)
+    public Object[] deserialize(S structure, Class<?> objTypes[]) throws SerializationException {
+        if (structure == null)
             return new Object[0];
+        S[] array = toArray(structure);
         Object[] result = new Object[objTypes.length];
-        if (arrStruct.length != result.length)
-            throw new SerializationException("Incorrect number of arguments: " + arrStruct.length + ", expected: " + result.length);
+        if (array.length != result.length)
+            throw new SerializationException("Incorrect number of arguments: " + array.length + ", expected: " + result.length);
         for (int i = 0; i < result.length; i++)
-            result[i] = deserialize(arrStruct[i], objTypes[i]);
+            result[i] = deserialize(array[i], objTypes[i]);
         return result;
     }
 
     @Override
-    public Object[] deserialize(S[] arrStruct, SerializerAdapter<S>[] adapters, Class<?> typeParameters[][]) throws SerializationException {
-        if (arrStruct == null)
+    public Object[] deserialize(S structure, SerializerAdapter<S>[] adapters, Class<?> typeParameters[][]) throws SerializationException {
+        if (structure == null)
             return new Object[0];
+        S[] array = toArray(structure);
         Object[] result = new Object[adapters.length];
-        if (arrStruct.length != result.length)
-            throw new SerializationException("Incorrect number of arguments: " + arrStruct.length + ", expected: " + result.length);
+        if (array.length != result.length)
+            throw new SerializationException("Incorrect number of arguments: " + array.length + ", expected: " + result.length);
         for (int i = 0; i < result.length; i++)
-            result[i] = deserialize(arrStruct[i], adapters[i], typeParameters[i]);
+            result[i] = deserialize(array[i], adapters[i], typeParameters[i]);
         return result;
     }
 
     @Override
-    public Object[] deserialize(S[] arrStruct, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws SerializationException {
-        if (arrStruct == null)
+    public Object[] deserialize(S structure, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws SerializationException {
+        if (structure == null)
             return new Object[0];
+        S[] array = toArray(structure);
         Object[] result = new Object[objTypes.length];
-        if (arrStruct.length != result.length)
-            throw new SerializationException("Incorrect number of arguments: " + arrStruct.length + ", expected: " + result.length);
+        if (array.length != result.length)
+            throw new SerializationException("Incorrect number of arguments: " + array.length + ", expected: " + result.length);
         for (int i = 0; i < result.length; i++)
-            result[i] = deserialize(arrStruct[i], objTypes[i], valueDescriptors[i]);
+            result[i] = deserialize(array[i], objTypes[i], valueDescriptors[i]);
         return result;
     }
+
+    @Override
+    public S serialize(Object object, SerializerAdapter<S> adapter) {
+        return adapter.serialize(this, object);
+    }
+
+    abstract protected S[] toArray(S object);
 
 }

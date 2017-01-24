@@ -19,7 +19,7 @@ public class JsonSerializerTest extends TestCase {
 
     public void testStrToArgs() throws Exception {
         Serializer<JsonElement> serializer = new JsonSerializer(null, new Gson());
-        Object args[] = serializer.deserialize(serializer.parseArray(TEST_JSON_ARR), new Class<?>[] { SimpleBean.class, SimpleBean.class });
+        Object args[] = serializer.deserialize(serializer.parse(TEST_JSON_ARR), new Class<?>[] { SimpleBean.class, SimpleBean.class });
         assertTrue(args.length == 2);
         assertTrue(args[0] instanceof SimpleBean);
         assertTrue(args[1] instanceof SimpleBean);
@@ -27,7 +27,7 @@ public class JsonSerializerTest extends TestCase {
 
     public void testNullSerialization() throws Exception {
         Serializer<JsonElement> serializer = new JsonSerializer(null, new Gson());
-        assertEquals("null", serializer.serialize(null));
+        assertEquals("null", serializer.compile(serializer.serialize((Object) null)));
         assertNull(serializer.deserialize(serializer.parse("null"), SimpleBean.class));
     }
 

@@ -17,7 +17,7 @@ import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
 
 import junit.framework.TestCase;
 
-public class AbstractServiceTest extends TestCase {
+public abstract class AbstractServiceTest extends TestCase {
 
     protected static final ApplicationContext CONTEXT = new ClassPathXmlApplicationContext("classpath:default-context.xml");
 

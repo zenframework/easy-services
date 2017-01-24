@@ -20,6 +20,7 @@ import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.ServiceInvoker;
 import org.zenframework.easyservices.descriptor.AnnotationServiceDescriptorFactory;
 import org.zenframework.easyservices.descriptor.ServiceDescriptorFactory;
+import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
@@ -38,8 +39,9 @@ public class ServiceHttpRequestHandler {
     private String servicesPath = "/services";
     private String serviceInfoAlias = DEFAULT_SERVICE_INFO_ALIAS;
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        Serializer<?> serializer = serializerFactory.getSerializer();
+        Serializer serializer = serializerFactory.getSerializer();
         int status = HttpServletResponse.SC_OK;
         Object result;
         try {
@@ -60,7 +62,11 @@ public class ServiceHttpRequestHandler {
         }
         response.setCharacterEncoding("UTF-8");
         response.setStatus(status);
-        response.getWriter().write(serializer.serialize(result));
+        try {
+            response.getWriter().write(serializer.compile(serializer.serialize(result)));
+        } catch (SerializationException e) {
+            throw new IOException("Serialization error", e);
+        }
     }
 
     public void setServiceRegistry(InitialContext serviceRegistry) {

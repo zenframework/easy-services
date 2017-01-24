@@ -4,28 +4,28 @@ import org.zenframework.easyservices.descriptor.ValueDescriptor;
 
 public interface Serializer<S> {
 
-    SerializerFactory<S> getFactory();
-
     S parse(String data) throws SerializationException;
 
-    S[] parseArray(String data) throws SerializationException;
+    String compile(S structure) throws SerializationException;
 
-    String compile(S objStruct) throws SerializationException;
+    Object deserialize(S structure, Class<?> objType) throws SerializationException;
 
-    Object deserialize(S objStruct, Class<?> objType) throws SerializationException;
+    Object deserialize(S structure, Class<?> objType, ValueDescriptor valueDescriptor) throws SerializationException;
 
-    Object deserialize(S objStruct, Class<?> objType, ValueDescriptor valueDescriptor) throws SerializationException;
+    Object deserialize(S structure, SerializerAdapter<S> adapter, Class<?>... typeParameters) throws SerializationException;
 
-    Object deserialize(S objStruct, SerializerAdapter<S> adapter, Class<?>... typeParameters) throws SerializationException;
+    Object[] deserialize(S structure, Class<?> objTypes[]) throws SerializationException;
 
-    Object[] deserialize(S[] arrStruct, Class<?> objTypes[]) throws SerializationException;
+    Object[] deserialize(S structure, Class<?> objTypes[], ValueDescriptor[] valueDescriptors) throws SerializationException;
 
-    Object[] deserialize(S[] arrStruct, Class<?> objTypes[], ValueDescriptor[] valueDescriptors) throws SerializationException;
+    Object[] deserialize(S structure, SerializerAdapter<S> adapters[], Class<?> typeParameters[][]) throws SerializationException;
 
-    Object[] deserialize(S[] arrStruct, SerializerAdapter<S> adapters[], Class<?> typeParameters[][]) throws SerializationException;
+    S serialize(Object object) throws SerializationException;
 
-    String serialize(Object object);
+    S serialize(Object object, SerializerAdapter<S> adapter) throws SerializationException;
 
-    String serialize(Object object, SerializerAdapter<S> adapter);
+    S serialize(Object[] array) throws SerializationException;
+
+    S serialize(Object[] array, SerializerAdapter<S>[] adapters) throws SerializationException;
 
 }

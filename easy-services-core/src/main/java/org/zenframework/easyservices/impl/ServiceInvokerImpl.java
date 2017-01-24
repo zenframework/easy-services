@@ -60,7 +60,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
                     MethodDescriptor methodDescriptor = descriptor != null ? descriptor.getMethodDescriptor(m) : null;
                     ValueDescriptor[] argDescriptors = methodDescriptor != null ? methodDescriptor.getArgumentDescriptors()
                             : new ValueDescriptor[m.getParameterTypes().length];
-                    args = serializer.deserialize(serializer.parseArray(context.getArguments()), m.getParameterTypes(), argDescriptors);
+                    args = serializer.deserialize(serializer.parse(context.getArguments()), m.getParameterTypes(), argDescriptors);
                     method = m;
                     break;
                 } catch (SerializationException e) {
