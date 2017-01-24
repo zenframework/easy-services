@@ -19,8 +19,8 @@ import org.zenframework.easyservices.RequestMapper;
 import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.ServiceInvoker;
 import org.zenframework.easyservices.descriptor.AnnotationServiceDescriptorFactory;
+import org.zenframework.easyservices.descriptor.ServiceDescriptor;
 import org.zenframework.easyservices.descriptor.ServiceDescriptorFactory;
-import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
@@ -43,13 +43,13 @@ public class ServiceHttpRequestHandler {
     public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Serializer serializer = serializerFactory.getSerializer();
         int status = HttpServletResponse.SC_OK;
-        Object result;
+        String result;
         try {
             RequestContext context = requestMapper.getRequestContext(getRequestURI(request), getContextPath(request));
             Object service = serviceRegistry.lookup(context.getServiceName());
-            result = context.getMethodName().equals(serviceInfoAlias) ? serviceInvoker.getServiceInfo(service)
-                    : serviceInvoker.invoke(context, service, serializer,
-                            serviceDescriptorFactory.getServiceDescriptor(service.getClass(), context.getServiceName()));
+            ServiceDescriptor serviceDescriptor = serviceDescriptorFactory.getServiceDescriptor(service.getClass(), context.getServiceName());
+            result = context.getMethodName().equals(serviceInfoAlias) ? serviceInvoker.getServiceInfo(service, serializer, serviceDescriptor)
+                    : serviceInvoker.invoke(context, service, serializer, serviceDescriptor);
         } catch (Throwable e) {
             if (e instanceof ServiceException)
                 LOG.warn(e.getMessage(), e);
@@ -58,15 +58,11 @@ public class ServiceHttpRequestHandler {
             if (e instanceof InvocationException)
                 e = e.getCause();
             status = errorMapper == null ? HttpServletResponse.SC_INTERNAL_SERVER_ERROR : errorMapper.getStatus(e);
-            result = new ErrorDescription(e);
+            result = serializer.compile(serializer.serialize(new ErrorDescription(e)));
         }
         response.setCharacterEncoding("UTF-8");
         response.setStatus(status);
-        try {
-            response.getWriter().write(serializer.compile(serializer.serialize(result)));
-        } catch (SerializationException e) {
-            throw new IOException("Serialization error", e);
-        }
+        response.getWriter().write(result);
     }
 
     public void setServiceRegistry(InitialContext serviceRegistry) {

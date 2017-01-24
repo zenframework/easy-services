@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.commons.debug.TimeChecker;
 import org.zenframework.easyservices.RequestMapper;
-import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.ServiceDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
@@ -35,7 +34,7 @@ public class ServiceInvocationHandler implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Serializer serializer = serializerFactory.getSerializer();
-        String serializedArgs = serializer.compile(serializer.serialize(args));
+        String serializedArgs = serializer.compile(serializer.serialize(args, ServiceDescriptor.getArgumentDescriptors(serviceDescriptor, method)));
         TimeChecker time = null;
         if (LOG.isDebugEnabled())
             time = new TimeChecker("CALL " + serviceUrl + ' ' + method.getName() + serializedArgs, LOG);
@@ -52,9 +51,8 @@ public class ServiceInvocationHandler implements InvocationHandler {
             }
             if (time != null)
                 time.printDifference(str);
-            MethodDescriptor methodDescriptor = serviceDescriptor.getMethodDescriptor(method);
             return serializer.deserialize(serializer.parse(str.toString()), method.getReturnType(),
-                    methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null);
+                    ServiceDescriptor.getReturnDescriptor(serviceDescriptor, method));
         } catch (Throwable e) {
             if (time != null)
                 time.printDifference(e);

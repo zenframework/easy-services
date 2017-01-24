@@ -53,14 +53,14 @@ public class JsonSerializer extends AbstractSerializer<JsonElement> {
     }
 
     @Override
-    public JsonElement serialize(Object[] array) throws SerializationException {
+    public JsonElement serialize(Object[] array) {
         if (array == null)
             return new JsonArray();
         return gson.toJsonTree(array);
     }
 
     @Override
-    public JsonElement serialize(Object[] array, SerializerAdapter<JsonElement>[] adapters) throws SerializationException {
+    public JsonElement serialize(Object[] array, SerializerAdapter<JsonElement>[] adapters) {
         if (array == null)
             return serialize(array);
         JsonArray json = new JsonArray();

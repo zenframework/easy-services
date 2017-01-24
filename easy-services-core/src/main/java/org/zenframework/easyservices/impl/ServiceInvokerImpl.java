@@ -18,9 +18,7 @@ import org.zenframework.easyservices.InvocationException;
 import org.zenframework.easyservices.RequestContext;
 import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.ServiceInvoker;
-import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.ServiceDescriptor;
-import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 
@@ -28,8 +26,9 @@ public class ServiceInvokerImpl implements ServiceInvoker {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceInvokerImpl.class);
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public Map<String, Object> getServiceInfo(Object service) {
+    public String getServiceInfo(Object service, Serializer serializer, ServiceDescriptor descriptor) {
         if (service == null)
             return null;
         Map<String, Object> serviceInfo = new HashMap<String, Object>();
@@ -45,22 +44,21 @@ public class ServiceInvokerImpl implements ServiceInvoker {
                 argsInfo.add(getClassInfo(argType, structured, 0));
             methodInfo.put(ClassInfo.RETURNS, getClassInfo(method.getReturnType(), structured, 0));
         }
-        return serviceInfo;
+        return serializer.compile(serializer.serialize(serviceInfo));
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
-    public Object invoke(RequestContext context, Object service, Serializer serializer, ServiceDescriptor descriptor) throws ServiceException {
+    public String invoke(RequestContext context, Object service, Serializer serializer, ServiceDescriptor serviceDescriptor) throws ServiceException {
         Method method = null;
         Object args[] = null;
+        Object result;
 
         for (Method m : service.getClass().getMethods()) {
             if (m.getName().equals(context.getMethodName())) {
                 try {
-                    MethodDescriptor methodDescriptor = descriptor != null ? descriptor.getMethodDescriptor(m) : null;
-                    ValueDescriptor[] argDescriptors = methodDescriptor != null ? methodDescriptor.getArgumentDescriptors()
-                            : new ValueDescriptor[m.getParameterTypes().length];
-                    args = serializer.deserialize(serializer.parse(context.getArguments()), m.getParameterTypes(), argDescriptors);
+                    args = serializer.deserialize(serializer.parse(context.getArguments()), m.getParameterTypes(),
+                            ServiceDescriptor.getArgumentDescriptors(serviceDescriptor, m));
                     method = m;
                     break;
                 } catch (SerializationException e) {
@@ -78,10 +76,9 @@ public class ServiceInvokerImpl implements ServiceInvoker {
             time = new TimeChecker(new StringBuilder(1024).append(context.getServiceName()).append('.').append(context.getMethodName())
                     .append(new PrettyStringBuilder().toString(args)).toString(), LOG);
         try {
-            Object result = method.invoke(service, args);
+            result = method.invoke(service, args);
             if (time != null)
                 time.printDifference(result);
-            return result;
         } catch (Throwable e) {
             if (e instanceof InvocationTargetException)
                 e = ((InvocationTargetException) e).getTargetException();
@@ -89,6 +86,8 @@ public class ServiceInvokerImpl implements ServiceInvoker {
                 time.printDifference(e);
             throw new InvocationException(context, args, e);
         }
+
+        return serializer.compile(serializer.serialize(result, ServiceDescriptor.getReturnDescriptor(serviceDescriptor, method)));
     }
 
     private static Object getClassInfo(Class<?> clazz, Collection<Class<?>> structured, int arrayDeep) {

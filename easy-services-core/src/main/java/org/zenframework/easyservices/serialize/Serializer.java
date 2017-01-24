@@ -6,7 +6,7 @@ public interface Serializer<S> {
 
     S parse(String data) throws SerializationException;
 
-    String compile(S structure) throws SerializationException;
+    String compile(S structure);
 
     Object deserialize(S structure, Class<?> objType) throws SerializationException;
 
@@ -20,12 +20,16 @@ public interface Serializer<S> {
 
     Object[] deserialize(S structure, SerializerAdapter<S> adapters[], Class<?> typeParameters[][]) throws SerializationException;
 
-    S serialize(Object object) throws SerializationException;
+    S serialize(Object object);
 
-    S serialize(Object object, SerializerAdapter<S> adapter) throws SerializationException;
+    S serialize(Object object, ValueDescriptor valueDescriptor);
 
-    S serialize(Object[] array) throws SerializationException;
+    S serialize(Object object, SerializerAdapter<S> adapter);
 
-    S serialize(Object[] array, SerializerAdapter<S>[] adapters) throws SerializationException;
+    S serialize(Object[] array);
+
+    S serialize(Object[] array, ValueDescriptor[] valueDescriptors);
+
+    S serialize(Object[] array, SerializerAdapter<S>[] adapters);
 
 }

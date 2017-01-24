@@ -20,12 +20,9 @@ public abstract class AbstractSerializer<S> implements Serializer<S> {
     @Override
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public Object deserialize(S structure, Class<?> objType, ValueDescriptor valueDescriptor) throws SerializationException {
-        SerializerAdapter adapter = null;
-        if (valueDescriptor != null) {
-            adapter = valueDescriptor.getSerializerAdapter();
-            if (adapter == null)
-                adapter = factory.getAdapter(objType);
-        }
+        if (structure == null)
+            return null;
+        SerializerAdapter adapter = getSerializerAdapter(objType, valueDescriptor);
         if (adapter != null)
             return deserialize(structure, adapter, valueDescriptor != null ? valueDescriptor.getTypeParameters() : new Class<?>[0]);
         return deserialize(structure, objType);
@@ -72,9 +69,43 @@ public abstract class AbstractSerializer<S> implements Serializer<S> {
 
     @Override
     public S serialize(Object object, SerializerAdapter<S> adapter) {
-        return adapter.serialize(this, object);
+        if (object == null)
+            return null;
+        if (adapter != null)
+            return adapter.serialize(this, object);
+        return serialize(object);
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    @Override
+    public S serialize(Object object, ValueDescriptor valueDescriptor) {
+        if (object == null)
+            return null;
+        return serialize(object, getSerializerAdapter(object.getClass(), valueDescriptor));
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @Override
+    public S serialize(Object[] array, ValueDescriptor[] valueDescriptors) {
+        if (array == null)
+            return null;
+        SerializerAdapter[] adapters = new SerializerAdapter[array.length];
+        for (int i = 0; i < adapters.length; i++)
+            adapters[i] = getSerializerAdapter(array[i].getClass(), valueDescriptors[i]);
+        return serialize(array, adapters);
     }
 
     abstract protected S[] toArray(S object);
+
+    @SuppressWarnings({ "rawtypes" })
+    private SerializerAdapter getSerializerAdapter(Class<?> objType, ValueDescriptor valueDescriptor) {
+        SerializerAdapter adapter = null;
+        if (valueDescriptor != null) {
+            adapter = valueDescriptor.getSerializerAdapter();
+            if (adapter == null)
+                adapter = factory.getAdapter(objType);
+        }
+        return adapter;
+    }
 
 }

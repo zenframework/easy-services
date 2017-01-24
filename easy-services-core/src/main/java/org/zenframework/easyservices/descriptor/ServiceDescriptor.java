@@ -25,4 +25,18 @@ public class ServiceDescriptor {
         this.methodDescriptors.put(new MethodIdentifier(method), methodDescriptor);
     }
 
+    public static MethodDescriptor getMethodDescriptor(ServiceDescriptor serviceDescriptor, Method method) {
+        return serviceDescriptor != null ? serviceDescriptor.getMethodDescriptor(method) : null;
+    }
+
+    public static ValueDescriptor getReturnDescriptor(ServiceDescriptor serviceDescriptor, Method method) {
+        MethodDescriptor methodDescriptor = getMethodDescriptor(serviceDescriptor, method);
+        return methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
+    }
+
+    public static ValueDescriptor[] getArgumentDescriptors(ServiceDescriptor serviceDescriptor, Method method) {
+        MethodDescriptor methodDescriptor = getMethodDescriptor(serviceDescriptor, method);
+        return methodDescriptor != null ? methodDescriptor.getArgumentDescriptors() : new ValueDescriptor[method.getParameterTypes().length];
+    }
+
 }
