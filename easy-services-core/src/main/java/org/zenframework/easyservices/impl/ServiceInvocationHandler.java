@@ -11,10 +11,7 @@ import org.zenframework.commons.debug.TimeChecker;
 import org.zenframework.easyservices.RequestMapper;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.ServiceDescriptor;
-import org.zenframework.easyservices.descriptor.ValueDescriptor;
-import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
-import org.zenframework.easyservices.serialize.SerializerAdapter;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
 public class ServiceInvocationHandler implements InvocationHandler {
@@ -34,9 +31,10 @@ public class ServiceInvocationHandler implements InvocationHandler {
         this.requestMapper = requestMapper;
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        Serializer<?> serializer = serializerFactory.getSerializer();
+        Serializer serializer = serializerFactory.getSerializer();
         String serializedArgs = args == null || args.length == 0 ? null : new String(serializer.serialize(args));
         TimeChecker time = null;
         if (LOG.isDebugEnabled())
@@ -54,26 +52,14 @@ public class ServiceInvocationHandler implements InvocationHandler {
             }
             if (time != null)
                 time.printDifference(str);
-            return deserialize(serializer, method, serviceDescriptor.getMethodDescriptor(method), str.toString());
+            MethodDescriptor methodDescriptor = serviceDescriptor.getMethodDescriptor(method);
+            return serializer.deserialize(serializer.parse(str.toString()), method.getReturnType(),
+                    methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null);
         } catch (Throwable e) {
             if (time != null)
                 time.printDifference(e);
             throw e;
         }
-    }
-
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private Object deserialize(Serializer<?> serializer, Method method, MethodDescriptor methodDescriptor, String str) throws SerializationException {
-        SerializerAdapter adapter = null;
-        Class<?>[] typeParameters = null;
-        if (methodDescriptor != null) {
-            ValueDescriptor returnDescriptor = methodDescriptor.getReturnDescriptor();
-            adapter = returnDescriptor != null ? returnDescriptor.getSerializerAdapter() : serializerFactory.getAdapter(method.getReturnType());
-            typeParameters = returnDescriptor != null ? returnDescriptor.getTypeParameters() : new Class<?>[0];
-        }
-        if (adapter != null)
-            return serializer.deserialize(str, adapter, typeParameters);
-        return serializer.deserialize(str, method.getReturnType());
     }
 
 }

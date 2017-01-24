@@ -26,7 +26,6 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
     public static final String ELEM_SERIALIZER_ADAPTER = "serializer-adapter";
     public static final String ELEM_TYPE_PARAMETERS = "type-parameters";
     public static final String ELEM_DYNAMIC_SERVICE = "dynamic-service";
-    public static final String ATTR_CLASS = "class";
     public static final String ATTR_NAME = "name";
     public static final String ATTR_ARG_TYPES = "arg-types";
     public static final String ATTR_NUMBER = "number";
@@ -45,14 +44,14 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
         Enumeration<Element> serviceElements = getElements(root, ELEM_SERVICE);
         while (serviceElements.hasMoreElements()) {
             Element serviceElement = serviceElements.nextElement();
-            String serviceClass = getAttribute(serviceElement, ATTR_CLASS, true);
-            descriptors.put(serviceClass, getServiceDescriptor(serviceElement));
+            String serviceName = getAttribute(serviceElement, ATTR_NAME, true);
+            descriptors.put(serviceName, getServiceDescriptor(serviceElement));
         }
     }
 
     @Override
-    public ServiceDescriptor getServiceDescriptor(Class<?> serviceClass) {
-        return descriptors.get(serviceClass.getCanonicalName());
+    public ServiceDescriptor getServiceDescriptor(Class<?> serviceClass, String serviceName) {
+        return descriptors.get(serviceName);
     }
 
     private static Element getElement(Element element, String name) {
@@ -108,16 +107,16 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
         Enumeration<Element> methodElements = getElements(serviceElement, ELEM_METHOD);
         while (methodElements.hasMoreElements()) {
             Element methodElement = methodElements.nextElement();
-            MethodIdentifier methodIdentifier = new MethodIdentifier(getAttribute(methodElement, ATTR_NAME, true),
-                    getClasses(getAttribute(methodElement, ATTR_ARG_TYPES, false)));
-            MethodDescriptor methodDescriptor = getMethodDescriptor(methodElement);
+            Class<?>[] argTypes = getClasses(getAttribute(methodElement, ATTR_ARG_TYPES, false));
+            MethodIdentifier methodIdentifier = new MethodIdentifier(getAttribute(methodElement, ATTR_NAME, true), argTypes);
+            MethodDescriptor methodDescriptor = getMethodDescriptor(methodElement, argTypes.length);
             serviceDescriptor.getMethodDescriptors().put(methodIdentifier, methodDescriptor);
         }
         return serviceDescriptor;
     }
 
-    private static MethodDescriptor getMethodDescriptor(Element methodElement) throws SAXException {
-        MethodDescriptor methodDescriptor = new MethodDescriptor();
+    private static MethodDescriptor getMethodDescriptor(Element methodElement, int argsCount) throws SAXException {
+        MethodDescriptor methodDescriptor = new MethodDescriptor(argsCount);
         Element aliasElement = getElement(methodElement, ELEM_ALIAS);
         if (aliasElement != null)
             methodDescriptor.setAlias(aliasElement.getTextContent());
@@ -130,7 +129,7 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
         while (argElements.hasMoreElements()) {
             Element argElement = argElements.nextElement();
             ValueDescriptor argDescriptor = getValueDescriptor(argElement);
-            methodDescriptor.getArgumentDescriptors().put(Integer.parseInt(getAttribute(argElement, ATTR_NUMBER, true)), argDescriptor);
+            methodDescriptor.setArgumentDescriptor(Integer.parseInt(getAttribute(argElement, ATTR_NUMBER, true)), argDescriptor);
         }
         return methodDescriptor;
     }

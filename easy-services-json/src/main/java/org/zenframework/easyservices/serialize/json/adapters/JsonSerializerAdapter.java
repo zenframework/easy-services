@@ -24,7 +24,7 @@ public abstract class JsonSerializerAdapter implements SerializerAdapter<JsonEle
         return jsonSerializer.getGson().toJsonTree(object);
     }
 
-    protected abstract Object deserialize(JsonSerializer jsonSerializer, JsonElement parsedElement,
-            Class<?>... typeParameters) throws SerializationException;
+    protected abstract Object deserialize(JsonSerializer jsonSerializer, JsonElement parsedElement, Class<?>... typeParameters)
+            throws SerializationException;
 
 }

@@ -17,6 +17,7 @@
         <jetty.version>9.2.20.v20161216</jetty.version>
         <servlet.api.version>3.0.1</servlet.api.version>
         <spring.version>4.2.4.RELEASE</spring.version>
+        <commons.collections.version>4.1</commons.collections.version>
         <log4j.version>1.2.17</log4j.version>
         <slf4j.version>1.7.21</slf4j.version>
     </properties>
@@ -33,8 +34,14 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
             <version>${spring.version}</version>
-        </dependency> 
+        </dependency>
 
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>${commons.collections.version}</version>
+        </dependency>
+        
         <!-- Easy-Services modules -->
         <dependency>
             <groupId>${project.groupId}</groupId>

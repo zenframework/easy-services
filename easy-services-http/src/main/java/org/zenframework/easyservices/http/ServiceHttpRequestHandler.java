@@ -18,6 +18,8 @@ import org.zenframework.easyservices.RequestContext;
 import org.zenframework.easyservices.RequestMapper;
 import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.ServiceInvoker;
+import org.zenframework.easyservices.descriptor.AnnotationServiceDescriptorFactory;
+import org.zenframework.easyservices.descriptor.ServiceDescriptorFactory;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
@@ -32,6 +34,7 @@ public class ServiceHttpRequestHandler {
     private RequestMapper requestMapper;
     private ErrorMapper errorMapper;
     private ServiceInvoker serviceInvoker;
+    private ServiceDescriptorFactory serviceDescriptorFactory = new AnnotationServiceDescriptorFactory();
     private String servicesPath = "/services";
     private String serviceInfoAlias = DEFAULT_SERVICE_INFO_ALIAS;
 
@@ -43,7 +46,8 @@ public class ServiceHttpRequestHandler {
             RequestContext context = requestMapper.getRequestContext(getRequestURI(request), getContextPath(request));
             Object service = serviceRegistry.lookup(context.getServiceName());
             result = context.getMethodName().equals(serviceInfoAlias) ? serviceInvoker.getServiceInfo(service)
-                    : serviceInvoker.invoke(context, service, serializer);
+                    : serviceInvoker.invoke(context, service, serializer,
+                            serviceDescriptorFactory.getServiceDescriptor(service.getClass(), context.getServiceName()));
         } catch (Throwable e) {
             if (e instanceof ServiceException)
                 LOG.warn(e.getMessage(), e);
@@ -77,6 +81,10 @@ public class ServiceHttpRequestHandler {
 
     public void setServiceInvoker(ServiceInvoker serviceInvoker) {
         this.serviceInvoker = serviceInvoker;
+    }
+
+    public void setServiceDescriptorFactory(ServiceDescriptorFactory serviceDescriptorFactory) {
+        this.serviceDescriptorFactory = serviceDescriptorFactory;
     }
 
     public void setServicesPath(String servicesPath) {

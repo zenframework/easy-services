@@ -1,9 +1,9 @@
 package org.zenframework.easyservices.serialize;
 
-public interface SerializerFactory<T> {
+public interface SerializerFactory<S> {
 
-    Serializer<T> getSerializer();
+    Serializer<S> getSerializer();
 
-    SerializerAdapter<?> getAdapter(Class<?> type);
+    SerializerAdapter<S> getAdapter(Class<?> type);
 
 }

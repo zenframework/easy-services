@@ -2,6 +2,7 @@ package org.zenframework.easyservices.test;
 
 import java.io.IOException;
 
+import javax.naming.InitialContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -18,18 +19,12 @@ import junit.framework.TestCase;
 
 public class AbstractServiceTest extends TestCase {
 
-    protected final ApplicationContext context;
+    protected static final ApplicationContext CONTEXT = new ClassPathXmlApplicationContext("classpath:default-context.xml");
 
-    private final int jettyPort;
-    private final ServiceHttpRequestHandler httpRequestHandler;
+    private final int jettyPort = CONTEXT.getBean("jettyPort", Integer.class);
+    private final ServiceHttpRequestHandler httpRequestHandler = CONTEXT.getBean(ServiceHttpRequestHandler.class);
 
     private Server server;
-
-    protected AbstractServiceTest(String contextUrl) {
-        this.context = new ClassPathXmlApplicationContext(contextUrl);
-        this.jettyPort = context.getBean("jettyPort", Integer.class);
-        this.httpRequestHandler = context.getBean(ServiceHttpRequestHandler.class);
-    }
 
     @Override
     public void setUp() throws Exception {
@@ -54,8 +49,12 @@ public class AbstractServiceTest extends TestCase {
         super.tearDown();
     }
 
-    protected <T> T getClient(Class<T> serviceClass, String serviceName) {
-        return context.getBean(ClientFactory.class).getClient(serviceClass, serviceName);
+    protected static <T> T getClient(Class<T> serviceClass, String serviceName) {
+        return CONTEXT.getBean(ClientFactory.class).getClient(serviceClass, serviceName);
+    }
+
+    protected static InitialContext getServiceRegistry() {
+        return CONTEXT.getBean(InitialContext.class);
     }
 
 }

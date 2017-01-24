@@ -1,13 +1,16 @@
 package org.zenframework.easyservices.descriptor;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class MethodDescriptor {
 
-    private String alias;
-    private ValueDescriptor returnDescriptor;
-    private final Map<Integer, ValueDescriptor> argumentDescriptors = new HashMap<Integer, ValueDescriptor>();
+    private String alias = null;
+    private ValueDescriptor returnDescriptor = null;
+    private final ValueDescriptor[] argumentDescriptors;
+
+    public MethodDescriptor(int argsCount) {
+        this.argumentDescriptors = new ValueDescriptor[argsCount];
+    }
 
     public String getAlias() {
         return alias;
@@ -25,17 +28,21 @@ public class MethodDescriptor {
         this.returnDescriptor = returnDescriptor;
     }
 
-    public Map<Integer, ValueDescriptor> getArgumentDescriptors() {
+    public ValueDescriptor[] getArgumentDescriptors() {
         return argumentDescriptors;
     }
 
-    public void setArgumentDescriptors(Map<Integer, ValueDescriptor> argumentDescriptors) {
-        this.argumentDescriptors.clear();
-        this.argumentDescriptors.putAll(argumentDescriptors);
+    public void setArgumentDescriptorsMap(Map<Integer, ValueDescriptor> argumentDescriptorsMap) {
+        for (int i = 0; i < argumentDescriptors.length; i++)
+            argumentDescriptors[i] = argumentDescriptorsMap.get(i);
     }
 
     public ValueDescriptor getArgumentDescriptor(int arg) {
-        return argumentDescriptors.get(arg);
+        return argumentDescriptors[arg];
+    }
+
+    public void setArgumentDescriptor(int arg, ValueDescriptor argDescriptor) {
+        argumentDescriptors[arg] = argDescriptor;
     }
 
 }

@@ -27,7 +27,7 @@ public class ClientFactoryImpl implements ClientFactory {
     @Override
     public <T> T getClient(Class<T> serviceClass, String serviceName) {
         return (T) Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { serviceClass }, new ServiceInvocationHandler(
-                baseUrl + serviceName, serviceDescriptorFactory.getServiceDescriptor(serviceClass), serializerFactory, requestMapper));
+                baseUrl + serviceName, serviceDescriptorFactory.getServiceDescriptor(serviceClass, serviceName), serializerFactory, requestMapper));
     }
 
     public void setBaseUrl(String baseUrl) {

@@ -1,8 +1,9 @@
 package org.zenframework.easyservices.serialize.json;
 
+import org.zenframework.easyservices.serialize.AbstractSerializer;
 import org.zenframework.easyservices.serialize.SerializationException;
-import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerAdapter;
+import org.zenframework.easyservices.serialize.SerializerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -10,86 +11,52 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
-public class JsonSerializer implements Serializer<JsonElement> {
+public class JsonSerializer extends AbstractSerializer<JsonElement> {
 
     private static final String NULL_STR = "null";
 
     private final JsonParser parser = new JsonParser();
     private final Gson gson;
 
-    public JsonSerializer(Gson gson) {
+    public JsonSerializer(SerializerFactory<JsonElement> factory, Gson gson) {
+        super(factory);
         this.gson = gson;
     }
 
     @Override
-    public <T> T deserialize(JsonElement objStruct, Class<T> objType) throws SerializationException {
+    public JsonElement parse(String data) throws SerializationException {
+        if (data == null || data.equals(NULL_STR))
+            return null;
+        try {
+            return parser.parse(data);
+        } catch (JsonSyntaxException e) {
+            throw new SerializationException("Can't parse data", e);
+        }
+    }
+
+    @Override
+    public JsonElement[] parseArray(String data) throws SerializationException {
+        if (data == null || data.equals(NULL_STR))
+            return new JsonElement[0];
+        try {
+            JsonArray jsonArray = getJsonArray(parser.parse(data));
+            JsonElement[] array = new JsonElement[jsonArray.size()];
+            for (int i = 0; i < array.length; i++)
+                array[i] = jsonArray.get(i);
+            return array;
+        } catch (JsonSyntaxException e) {
+            throw new SerializationException("Can't parse data", e);
+        }
+    }
+
+    @Override
+    public String compile(JsonElement objStruct) throws SerializationException {
+        return objStruct.toString();
+    }
+
+    @Override
+    public Object deserialize(JsonElement objStruct, Class<?> objType) throws SerializationException {
         return gson.fromJson(objStruct, objType);
-    }
-
-    @Override
-    public <T> T deserialize(String objStr, Class<T> objType) throws SerializationException {
-        if (objStr == null || objStr.equals(NULL_STR))
-            return null;
-        try {
-            return gson.fromJson(objStr, objType);
-        } catch (JsonSyntaxException e) {
-            throw new SerializationException("Can't parse given arguments", e);
-        }
-    }
-
-    @Override
-    public Object deserialize(String objStr, SerializerAdapter<JsonElement> adapter, Class<?>... typeParameters) throws SerializationException {
-        if (objStr == null || objStr.equals(NULL_STR))
-            return null;
-        try {
-            return adapter.deserialize(this, parser.parse(objStr), typeParameters);
-        } catch (JsonSyntaxException e) {
-            throw new SerializationException("Can't parse given arguments", e);
-        }
-    }
-
-    @Override
-    public Object[] deserialize(JsonElement arrStruct, Class<?>[] objTypes) throws SerializationException {
-        JsonArray array = arrStruct.getAsJsonArray();
-        Object[] result = new Object[array.size()];
-        for (int i = 0; i < array.size(); i++)
-            result[i] = gson.fromJson(array.get(i), objTypes[i]);
-        return result;
-    }
-
-    @Override
-    public Object[] deserialize(String arrStr, Class<?> objTypes[]) throws SerializationException {
-        if (arrStr == null || arrStr.equals(NULL_STR))
-            return new Object[0];
-        Object[] result = new Object[objTypes.length];
-        try {
-            JsonArray array = toJsonArray(arrStr);
-            if (array.size() != result.length)
-                throw new SerializationException("Incorrect number of arguments: " + array.size() + ", expected: " + result.length);
-            for (int i = 0; i < result.length; i++)
-                result[i] = gson.fromJson(array.get(i), objTypes[i]);
-            return result;
-        } catch (JsonSyntaxException e) {
-            throw new SerializationException("Can't parse given arguments", e);
-        }
-    }
-
-    @Override
-    public Object[] deserialize(String arrStr, SerializerAdapter<JsonElement>[] adapters, Class<?> typeParameters[][])
-            throws SerializationException {
-        if (arrStr == null || arrStr.equals(NULL_STR))
-            return new Object[0];
-        Object[] result = new Object[adapters.length];
-        try {
-            JsonArray array = toJsonArray(arrStr);
-            if (array.size() != result.length)
-                throw new SerializationException("Incorrect number of arguments: " + array.size() + ", expected: " + result.length);
-            for (int i = 0; i < result.length; i++)
-                result[i] = adapters[i].deserialize(this, array.get(i), typeParameters[i]);
-            return result;
-        } catch (JsonSyntaxException e) {
-            throw new SerializationException("Can't parse given arguments", e);
-        }
     }
 
     @Override
@@ -108,12 +75,11 @@ public class JsonSerializer implements Serializer<JsonElement> {
         return gson;
     }
 
-    private JsonArray toJsonArray(String argsStr) {
-        JsonElement elem = parser.parse(argsStr);
-        if (elem.isJsonArray())
-            return elem.getAsJsonArray();
+    private static JsonArray getJsonArray(JsonElement json) {
+        if (json.isJsonArray())
+            return json.getAsJsonArray();
         JsonArray array = new JsonArray();
-        array.add(elem);
+        array.add(json);
         return array;
     }
 

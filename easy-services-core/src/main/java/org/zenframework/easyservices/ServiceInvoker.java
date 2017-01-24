@@ -1,11 +1,12 @@
 package org.zenframework.easyservices;
 
+import org.zenframework.easyservices.descriptor.ServiceDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 
 public interface ServiceInvoker {
 
     Object getServiceInfo(Object service);
-    
-    Object invoke(RequestContext context, Object service, Serializer<?> serializer) throws ServiceException;
+
+    Object invoke(RequestContext context, Object service, Serializer<?> serializer, ServiceDescriptor descriptor) throws ServiceException;
 
 }

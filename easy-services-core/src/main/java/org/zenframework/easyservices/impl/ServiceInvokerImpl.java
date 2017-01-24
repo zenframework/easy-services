@@ -18,6 +18,9 @@ import org.zenframework.easyservices.InvocationException;
 import org.zenframework.easyservices.RequestContext;
 import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.ServiceInvoker;
+import org.zenframework.easyservices.descriptor.MethodDescriptor;
+import org.zenframework.easyservices.descriptor.ServiceDescriptor;
+import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 
@@ -45,15 +48,19 @@ public class ServiceInvokerImpl implements ServiceInvoker {
         return serviceInfo;
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
-    public Object invoke(RequestContext context, Object service, Serializer<?> serializer) throws ServiceException {
+    public Object invoke(RequestContext context, Object service, Serializer serializer, ServiceDescriptor descriptor) throws ServiceException {
         Method method = null;
         Object args[] = null;
 
         for (Method m : service.getClass().getMethods()) {
             if (m.getName().equals(context.getMethodName())) {
                 try {
-                    args = serializer.deserialize(context.getArguments(), m.getParameterTypes());
+                    MethodDescriptor methodDescriptor = descriptor != null ? descriptor.getMethodDescriptor(m) : null;
+                    ValueDescriptor[] argDescriptors = methodDescriptor != null ? methodDescriptor.getArgumentDescriptors()
+                            : new ValueDescriptor[m.getParameterTypes().length];
+                    args = serializer.deserialize(serializer.parseArray(context.getArguments()), m.getParameterTypes(), argDescriptors);
                     method = m;
                     break;
                 } catch (SerializationException e) {

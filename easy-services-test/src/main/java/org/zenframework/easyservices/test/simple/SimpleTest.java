@@ -4,10 +4,18 @@ import org.zenframework.easyservices.test.AbstractServiceTest;
 
 public class SimpleTest extends AbstractServiceTest {
 
-    private static final String CONTEXT = "classpath:simple-context.xml";
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        getServiceRegistry().bind("/add", new Addition());
+        getServiceRegistry().bind("/sub", new Substraction());
+    }
 
-    public SimpleTest() {
-        super(CONTEXT);
+    @Override
+    public void tearDown() throws Exception {
+        getServiceRegistry().unbind("/add");
+        getServiceRegistry().unbind("/sub");
+        super.tearDown();
     }
 
     public void testSimpleServices() throws Exception {

@@ -1,18 +1,28 @@
 package org.zenframework.easyservices.serialize;
 
+import org.zenframework.easyservices.descriptor.ValueDescriptor;
+
 public interface Serializer<S> {
 
-    <T> T deserialize(S objStruct, Class<T> objType) throws SerializationException;
+    SerializerFactory<S> getFactory();
 
-    <T> T deserialize(String data, Class<T> objType) throws SerializationException;
+    S parse(String data) throws SerializationException;
 
-    Object deserialize(String data, SerializerAdapter<S> adapter, Class<?>... typeParameters) throws SerializationException;
+    S[] parseArray(String data) throws SerializationException;
 
-    Object[] deserialize(S arrStruct, Class<?> objTypes[]) throws SerializationException;
+    String compile(S objStruct) throws SerializationException;
 
-    Object[] deserialize(String data, Class<?> objTypes[]) throws SerializationException;
+    Object deserialize(S objStruct, Class<?> objType) throws SerializationException;
 
-    Object[] deserialize(String data, SerializerAdapter<S> adapters[], Class<?> typeParameters[][]) throws SerializationException;
+    Object deserialize(S objStruct, Class<?> objType, ValueDescriptor valueDescriptor) throws SerializationException;
+
+    Object deserialize(S objStruct, SerializerAdapter<S> adapter, Class<?>... typeParameters) throws SerializationException;
+
+    Object[] deserialize(S[] arrStruct, Class<?> objTypes[]) throws SerializationException;
+
+    Object[] deserialize(S[] arrStruct, Class<?> objTypes[], ValueDescriptor[] valueDescriptors) throws SerializationException;
+
+    Object[] deserialize(S[] arrStruct, SerializerAdapter<S> adapters[], Class<?> typeParameters[][]) throws SerializationException;
 
     String serialize(Object object);
 
