@@ -139,7 +139,8 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
         Element serializerAdapterElement = getElement(valueElement, ELEM_SERIALIZER_ADAPTER);
         if (serializerAdapterElement != null) {
             try {
-                valueDescriptor.setSerializerAdapter((SerializerAdapter<?>) Class.forName(serializerAdapterElement.getTextContent()).newInstance());
+                valueDescriptor
+                        .setSerializerAdapter((SerializerAdapter<?, ?>) Class.forName(serializerAdapterElement.getTextContent()).newInstance());
             } catch (Exception e) {
                 throw new SAXException(e);
             }

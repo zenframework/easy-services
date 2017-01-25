@@ -27,15 +27,15 @@ public class ServiceLocator {
     }
 
     public boolean isQualified() {
-        return baseUrl != null && serviceName != null && serviceUrl != null;
+        return baseUrl != null && serviceName != null;
     }
 
     public boolean isAbsolute() {
-        return serviceUrl != null;
+        return serviceName == null && serviceUrl != null;
     }
 
     public boolean isRelative() {
-        return serviceName != null;
+        return baseUrl == null && serviceName != null;
     }
 
     public static ServiceLocator relative(String servicePath) {

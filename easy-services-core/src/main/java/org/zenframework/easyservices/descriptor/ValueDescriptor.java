@@ -5,7 +5,7 @@ import org.zenframework.easyservices.serialize.SerializerAdapter;
 public class ValueDescriptor {
 
     private Class<?>[] typeParameters;
-    private SerializerAdapter<?> serializerAdapter;
+    private SerializerAdapter<?, ?> serializerAdapter;
     private boolean dynamicService;
 
     public Class<?>[] getTypeParameters() {
@@ -16,11 +16,11 @@ public class ValueDescriptor {
         this.typeParameters = typeParameters;
     }
 
-    public SerializerAdapter<?> getSerializerAdapter() {
+    public SerializerAdapter<?, ?> getSerializerAdapter() {
         return serializerAdapter;
     }
 
-    public void setSerializerAdapter(SerializerAdapter<?> serializerAdapter) {
+    public void setSerializerAdapter(SerializerAdapter<?, ?> serializerAdapter) {
         this.serializerAdapter = serializerAdapter;
     }
 

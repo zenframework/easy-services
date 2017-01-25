@@ -61,7 +61,7 @@ public class JsonSerializer extends AbstractSerializer<JsonElement> {
     }
 
     @Override
-    public Object deserialize(JsonElement structure, Class<?> objType) throws SerializationException {
+    public <T> T deserialize(JsonElement structure, Class<T> objType) throws SerializationException {
         return gson.fromJson(structure, objType);
     }
 

@@ -11,17 +11,15 @@ public abstract class AbstractSerializer<S> implements Serializer<S> {
     }
 
     @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    public Object deserialize(S structure, Class<?> objType, ValueDescriptor valueDescriptor) throws SerializationException {
+    public <T> T deserialize(S structure, Class<T> objType, ValueDescriptor valueDescriptor) throws SerializationException {
         if (structure == null)
             return null;
-        SerializerAdapter adapter = getSerializerAdapter(objType, valueDescriptor);
+        SerializerAdapter<S, T> adapter = getSerializerAdapter(objType, valueDescriptor);
         if (adapter != null)
             return deserialize(structure, adapter, valueDescriptor != null ? valueDescriptor.getTypeParameters() : new Class<?>[0]);
         return deserialize(structure, objType);
     }
 
-    @SuppressWarnings({ "unchecked" })
     @Override
     public S serialize(Object object, ValueDescriptor valueDescriptor) {
         if (object == null)
@@ -29,24 +27,24 @@ public abstract class AbstractSerializer<S> implements Serializer<S> {
         return serialize(object, getSerializerAdapter(object.getClass(), valueDescriptor));
     }
 
-    @SuppressWarnings({ "rawtypes" })
-    private SerializerAdapter getSerializerAdapter(Class<?> objType, ValueDescriptor valueDescriptor) {
-        SerializerAdapter adapter = null;
+    @SuppressWarnings("unchecked")
+    private <T> SerializerAdapter<S, T> getSerializerAdapter(Class<T> objType, ValueDescriptor valueDescriptor) {
+        SerializerAdapter<S, T> adapter = null;
         if (valueDescriptor != null) {
-            adapter = valueDescriptor.getSerializerAdapter();
+            adapter = (SerializerAdapter<S, T>) valueDescriptor.getSerializerAdapter();
             if (adapter == null)
                 adapter = factory.getAdapter(objType);
         }
         return adapter;
     }
 
-    private Object deserialize(S structure, SerializerAdapter<S> adapter, Class<?>... typeParameters) throws SerializationException {
+    private <T> T deserialize(S structure, SerializerAdapter<S, T> adapter, Class<?>... typeParameters) throws SerializationException {
         if (structure == null)
             return null;
         return adapter.deserialize(this, structure, typeParameters);
     }
 
-    private S serialize(Object object, SerializerAdapter<S> adapter) {
+    private S serialize(Object object, SerializerAdapter<S, ?> adapter) {
         if (object == null)
             return null;
         if (adapter != null)

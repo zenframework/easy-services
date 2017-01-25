@@ -9,11 +9,10 @@ import org.zenframework.easyservices.serialize.json.JsonSerializer;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 
-public class SetJsonSerializerAdapter extends JsonSerializerAdapter {
+public class SetJsonSerializerAdapter extends JsonSerializerAdapter<Set<?>> {
 
     @Override
-    protected Object deserialize(JsonSerializer jsonSerializer, JsonElement parsedElement, Class<?>... typeParameters)
-            throws SerializationException {
+    protected Set<?> deserialize(JsonSerializer jsonSerializer, JsonElement parsedElement, Class<?>... typeParameters) throws SerializationException {
         if (typeParameters == null || typeParameters.length != 1)
             throw new SerializationException("Expected 1 type parameter, but got " + typeParameters);
         Set<Object> result = new HashSet<Object>();

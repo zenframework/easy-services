@@ -1,9 +1,9 @@
 package org.zenframework.easyservices.serialize;
 
-public interface SerializerAdapter<S> {
+public interface SerializerAdapter<S, T> {
 
     S serialize(Serializer<S> serializer, Object object);
 
-    Object deserialize(Serializer<S> serializer, S structure, Class<?>... typeParameters) throws SerializationException;
+    T deserialize(Serializer<S> serializer, S structure, Class<?>... typeParameters) throws SerializationException;
 
 }

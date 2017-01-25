@@ -7,7 +7,7 @@ import org.zenframework.easyservices.serialize.json.JsonSerializer;
 
 import com.google.gson.JsonElement;
 
-public abstract class JsonSerializerAdapter implements SerializerAdapter<JsonElement> {
+public abstract class JsonSerializerAdapter<T> implements SerializerAdapter<JsonElement, T> {
 
     @Override
     public JsonElement serialize(Serializer<JsonElement> serializer, Object object) {
@@ -15,8 +15,7 @@ public abstract class JsonSerializerAdapter implements SerializerAdapter<JsonEle
     }
 
     @Override
-    public Object deserialize(Serializer<JsonElement> serializer, JsonElement parsedElement, Class<?>... typeParameters)
-            throws SerializationException {
+    public T deserialize(Serializer<JsonElement> serializer, JsonElement parsedElement, Class<?>... typeParameters) throws SerializationException {
         return deserialize((JsonSerializer) serializer, parsedElement, typeParameters);
     }
 
@@ -24,7 +23,7 @@ public abstract class JsonSerializerAdapter implements SerializerAdapter<JsonEle
         return jsonSerializer.getGson().toJsonTree(object);
     }
 
-    protected abstract Object deserialize(JsonSerializer jsonSerializer, JsonElement parsedElement, Class<?>... typeParameters)
+    protected abstract T deserialize(JsonSerializer jsonSerializer, JsonElement parsedElement, Class<?>... typeParameters)
             throws SerializationException;
 
 }

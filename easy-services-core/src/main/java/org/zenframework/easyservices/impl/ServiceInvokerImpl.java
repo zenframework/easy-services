@@ -135,9 +135,9 @@ public class ServiceInvokerImpl implements ServiceInvoker {
         return serializer.compile(serializer.serialize(serviceInfo));
     }
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({ "rawtypes" })
     private String invokeMethod(RequestContext context, Object service, Serializer serializer, ServiceDescriptor serviceDescriptor)
-            throws ServiceException {
+            throws ServiceException, NamingException {
         Method method = null;
         Object args[] = null;
         Object result;
@@ -167,17 +167,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
             result = method.invoke(service, args);
             if (time != null)
                 time.printDifference(result);
-            ValueDescriptor returnDescriptor = ServiceDescriptor.getReturnDescriptor(serviceDescriptor, method);
-            if (returnDescriptor != null && returnDescriptor.isDynamicService()) {
-                String name = getName(result);
-                try {
-                    serviceRegistry.lookup(name);
-                } catch (NamingException e) {
-                    serviceRegistry.bind(name, result);
-                }
-                return serializer.compile(serializer.serialize(ServiceLocator.relative(name)));
-            }
-            return serializer.compile(serializer.serialize(result, returnDescriptor));
+            return serialize(result, serializer, ServiceDescriptor.getReturnDescriptor(serviceDescriptor, method));
         } catch (Throwable e) {
             if (e instanceof InvocationTargetException)
                 e = ((InvocationTargetException) e).getTargetException();
@@ -219,29 +209,40 @@ public class ServiceInvokerImpl implements ServiceInvoker {
         }
     }
 
-    /*@SuppressWarnings({ "rawtypes", "unchecked" })
-    private static Object[] deserialize(Serializer serializer, Object[] structure, Class<?> objTypes[]) throws SerializationException {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private Object[] deserialize(Serializer serializer, Object[] structure, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors)
+            throws ServiceException, NamingException {
         if (structure == null)
             return new Object[0];
         Object[] result = new Object[objTypes.length];
         if (structure.length != result.length)
             throw new SerializationException("Incorrect number of arguments: " + structure.length + ", expected: " + result.length);
-        for (int i = 0; i < result.length; i++)
-            result[i] = serializer.deserialize(structure[i], objTypes[i]);
+        for (int i = 0; i < result.length; i++) {
+            ValueDescriptor valueDescriptor = valueDescriptors[i];
+            if (valueDescriptor != null && valueDescriptor.isDynamicService()) {
+                ServiceLocator serviceLocator = (ServiceLocator) serializer.deserialize(structure[i], ServiceLocator.class, valueDescriptor);
+                if (serviceLocator.isAbsolute())
+                    throw new ServiceException("Can't get dynamic service by absolute service locator '" + serviceLocator + "'");
+                result[i] = serviceRegistry.lookup(serviceLocator.getServiceName());
+            } else {
+                result[i] = serializer.deserialize(structure[i], objTypes[i], valueDescriptor);
+            }
+        }
         return result;
-    }*/
+    }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public Object[] deserialize(Serializer serializer, Object[] structure, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors)
-            throws SerializationException {
-        if (structure == null)
-            return new Object[0];
-        Object[] result = new Object[objTypes.length];
-        if (structure.length != result.length)
-            throw new SerializationException("Incorrect number of arguments: " + structure.length + ", expected: " + result.length);
-        for (int i = 0; i < result.length; i++)
-            result[i] = serializer.deserialize(structure[i], objTypes[i], valueDescriptors[i]);
-        return result;
+    private String serialize(Object result, Serializer serializer, ValueDescriptor returnDescriptor) throws NamingException {
+        if (returnDescriptor != null && returnDescriptor.isDynamicService()) {
+            String name = getName(result);
+            try {
+                serviceRegistry.lookup(name);
+            } catch (NamingException e) {
+                serviceRegistry.bind(name, result);
+            }
+            result = ServiceLocator.relative(name);
+        }
+        return serializer.compile(serializer.serialize(result, returnDescriptor));
     }
 
     private static String getName(Object obj) {

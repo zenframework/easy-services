@@ -32,11 +32,11 @@ public class JsonSerializerFactory implements SerializerFactory<JsonElement> {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsonSerializerFactory.class);
 
-    private static final Map<Class<?>, SerializerAdapter<JsonElement>> SERIALIZER_ADAPTERS_DEFAULT = getDefaultSerializerAdapters();
+    private static final Map<Class<?>, SerializerAdapter<JsonElement, ?>> SERIALIZER_ADAPTERS_DEFAULT = getDefaultSerializerAdapters();
     private static final Collection<TypeAdapterFactory> TYPE_ADAPTER_FACTORIES_DEFAULT = getDefaultTypeAdapterFactories();
     private static final Map<Type, Object> TYPE_ADAPTERS_DEFAULT = getDefaultTypeAdapters();
 
-    private Map<Class<?>, SerializerAdapter<JsonElement>> serializerAdapters = SERIALIZER_ADAPTERS_DEFAULT;
+    private Map<Class<?>, SerializerAdapter<JsonElement, ?>> serializerAdapters = SERIALIZER_ADAPTERS_DEFAULT;
     private Collection<TypeAdapterFactory> typeAdapterFactories = TYPE_ADAPTER_FACTORIES_DEFAULT;
     private Map<Type, Object> typeAdapters = TYPE_ADAPTERS_DEFAULT;
     private boolean exposedOnly = false;
@@ -53,14 +53,15 @@ public class JsonSerializerFactory implements SerializerFactory<JsonElement> {
         return new JsonSerializer(this, builder.create());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public SerializerAdapter<JsonElement> getAdapter(Class<?> type) {
-        Map.Entry<Class<?>, SerializerAdapter<JsonElement>> candidate = null;
-        for (Map.Entry<Class<?>, SerializerAdapter<JsonElement>> entry : serializerAdapters.entrySet()) {
+    public <T> SerializerAdapter<JsonElement, T> getAdapter(Class<T> type) {
+        Map.Entry<Class<?>, SerializerAdapter<JsonElement, ?>> candidate = null;
+        for (Map.Entry<Class<?>, SerializerAdapter<JsonElement, ?>> entry : serializerAdapters.entrySet()) {
             if (entry.getKey().isAssignableFrom(type) && (candidate == null || candidate.getKey().isAssignableFrom(entry.getKey())))
                 candidate = entry;
         }
-        return candidate != null ? candidate.getValue() : null;
+        return candidate != null ? (SerializerAdapter<JsonElement, T>) candidate.getValue() : null;
     }
 
     public void setTypeAdapterFactories(Collection<TypeAdapterFactory> typeAdapterFactories) {
@@ -95,8 +96,8 @@ public class JsonSerializerFactory implements SerializerFactory<JsonElement> {
         return typeAdapters;
     }
 
-    private static Map<Class<?>, SerializerAdapter<JsonElement>> getDefaultSerializerAdapters() {
-        Map<Class<?>, SerializerAdapter<JsonElement>> adapters = new HashMap<Class<?>, SerializerAdapter<JsonElement>>();
+    private static Map<Class<?>, SerializerAdapter<JsonElement, ?>> getDefaultSerializerAdapters() {
+        Map<Class<?>, SerializerAdapter<JsonElement, ?>> adapters = new HashMap<Class<?>, SerializerAdapter<JsonElement, ?>>();
         adapters.put(Collection.class, new ListJsonSerializerAdapter());
         adapters.put(Map.class, new MapJsonSerializerAdapter());
         adapters.put(Set.class, new SetJsonSerializerAdapter());

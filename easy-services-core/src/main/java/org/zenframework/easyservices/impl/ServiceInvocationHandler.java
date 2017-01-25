@@ -17,6 +17,7 @@ import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.descriptor.ServiceDescriptor;
 import org.zenframework.easyservices.descriptor.ServiceDescriptorFactory;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
+import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
@@ -42,7 +43,7 @@ public class ServiceInvocationHandler implements InvocationHandler {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        if (!serviceLocator.isAbsolute())
+        if (serviceLocator.isRelative())
             throw new ClientException("Service locator '" + serviceLocator + "' must be absolute");
         Serializer serializer = serializerFactory.getSerializer();
         ServiceDescriptor serviceDescriptor = serviceDescriptorFactory.getServiceDescriptor(serviceClass);
@@ -55,20 +56,17 @@ public class ServiceInvocationHandler implements InvocationHandler {
             String data = readData(url.openStream());
             if (time != null)
                 time.printDifference(data);
-            Object structure = serializer.parse(data);
-            ValueDescriptor returnDescriptor = ServiceDescriptor.getReturnDescriptor(serviceDescriptor, method);
-            if (returnDescriptor != null && returnDescriptor.isDynamicService()) {
-                ServiceLocator locator = (ServiceLocator) serializer.deserialize(structure, ServiceLocator.class);
-                if (locator.isRelative())
-                    locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
-                return getProxy(locator, method.getReturnType());
-            }
-            return serializer.deserialize(structure, method.getReturnType(), returnDescriptor);
+            return deserialize(serializer, serializer.parse(data), method.getReturnType(),
+                    ServiceDescriptor.getReturnDescriptor(serviceDescriptor, method));
         } catch (Throwable e) {
             if (time != null)
                 time.printDifference(e);
             throw e;
         }
+    }
+
+    public ServiceLocator getServiceLocator() {
+        return serviceLocator;
     }
 
     private static String readData(InputStream in) throws IOException {
@@ -84,13 +82,33 @@ public class ServiceInvocationHandler implements InvocationHandler {
         }
     }
 
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private Object deserialize(Serializer serializer, Object structure, Class<?> objType, ValueDescriptor valueDescriptor)
+            throws SerializationException {
+        if (valueDescriptor != null && valueDescriptor.isDynamicService()) {
+            ServiceLocator locator = (ServiceLocator) serializer.deserialize(structure, ServiceLocator.class);
+            if (locator.isRelative())
+                locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
+            return getProxy(locator, objType);
+        }
+        return serializer.deserialize(structure, objType, valueDescriptor);
+
+    }
+
     @SuppressWarnings({ "rawtypes" })
     private static Object[] serialize(Serializer serializer, Object[] array, ValueDescriptor[] valueDescriptors) {
         if (array == null)
             return null;
         Object[] structure = serializer.newArray(array.length);
-        for (int i = 0; i < array.length; i++)
-            structure[i] = serializer.serialize(array[i], valueDescriptors[i]);
+        for (int i = 0; i < array.length; i++) {
+            ValueDescriptor valueDescriptor = valueDescriptors[i];
+            if (valueDescriptor != null && valueDescriptor.isDynamicService()) {
+                ServiceInvocationHandler handler = (ServiceInvocationHandler) Proxy.getInvocationHandler(array[i]);
+                structure[i] = serializer.serialize(handler.getServiceLocator(), valueDescriptor);
+            } else {
+                structure[i] = serializer.serialize(array[i], valueDescriptor);
+            }
+        }
         return structure;
     }
 

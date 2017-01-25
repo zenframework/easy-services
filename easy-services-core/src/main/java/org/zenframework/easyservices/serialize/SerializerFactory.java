@@ -4,6 +4,6 @@ public interface SerializerFactory<S> {
 
     Serializer<S> getSerializer();
 
-    SerializerAdapter<S> getAdapter(Class<?> type);
+    <T> SerializerAdapter<S, T> getAdapter(Class<T> type);
 
 }

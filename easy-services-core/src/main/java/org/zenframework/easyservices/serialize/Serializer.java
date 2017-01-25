@@ -12,9 +12,9 @@ public interface Serializer<S> {
 
     String compile(S[] array);
 
-    Object deserialize(S structure, Class<?> objType) throws SerializationException;
+    <T> T deserialize(S structure, Class<T> objType) throws SerializationException;
 
-    Object deserialize(S structure, Class<?> objType, ValueDescriptor valueDescriptor) throws SerializationException;
+    <T> T deserialize(S structure, Class<T> objType, ValueDescriptor valueDescriptor) throws SerializationException;
 
     S serialize(Object object);
 

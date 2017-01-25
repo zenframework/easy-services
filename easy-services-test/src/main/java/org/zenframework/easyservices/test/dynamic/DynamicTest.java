@@ -26,10 +26,8 @@ public class DynamicTest extends AbstractServiceTest {
         Calculator calc = getClient(Calculator.class, "/calc");
         Function add = calc.getFunction("add");
         Function sub = calc.getFunction("sub");
-        assertEquals(3, add.call(1, 2));
-        assertEquals(1, sub.call(3, 2));
-        //assertEquals(3, calc.call(add, 1, 2));
-        //assertEquals(1, calc.call(sub, 3, 2));
+        assertEquals(3, calc.call(add, 1, 2));
+        assertEquals(1, calc.call(sub, 3, 2));
     }
 
 }
