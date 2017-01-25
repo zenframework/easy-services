@@ -6,7 +6,7 @@ public class ValueDescriptor {
 
     private Class<?>[] typeParameters;
     private SerializerAdapter<?, ?> serializerAdapter;
-    private boolean dynamicService;
+    private boolean reference;
 
     public Class<?>[] getTypeParameters() {
         return typeParameters;
@@ -24,12 +24,12 @@ public class ValueDescriptor {
         this.serializerAdapter = serializerAdapter;
     }
 
-    public boolean isDynamicService() {
-        return dynamicService;
+    public boolean isReference() {
+        return reference;
     }
 
-    public void setDynamicService(boolean dynamicService) {
-        this.dynamicService = dynamicService;
+    public void setReference(boolean reference) {
+        this.reference = reference;
     }
 
 }

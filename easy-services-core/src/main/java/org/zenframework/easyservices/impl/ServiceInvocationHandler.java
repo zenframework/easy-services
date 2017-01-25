@@ -85,7 +85,7 @@ public class ServiceInvocationHandler implements InvocationHandler {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private Object deserialize(Serializer serializer, Object structure, Class<?> objType, ValueDescriptor valueDescriptor)
             throws SerializationException {
-        if (valueDescriptor != null && valueDescriptor.isDynamicService()) {
+        if (valueDescriptor != null && valueDescriptor.isReference()) {
             ServiceLocator locator = (ServiceLocator) serializer.deserialize(structure, ServiceLocator.class);
             if (locator.isRelative())
                 locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
@@ -102,7 +102,7 @@ public class ServiceInvocationHandler implements InvocationHandler {
         Object[] structure = serializer.newArray(array.length);
         for (int i = 0; i < array.length; i++) {
             ValueDescriptor valueDescriptor = valueDescriptors[i];
-            if (valueDescriptor != null && valueDescriptor.isDynamicService()) {
+            if (valueDescriptor != null && valueDescriptor.isReference()) {
                 ServiceInvocationHandler handler = (ServiceInvocationHandler) Proxy.getInvocationHandler(array[i]);
                 structure[i] = serializer.serialize(handler.getServiceLocator(), valueDescriptor);
             } else {

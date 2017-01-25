@@ -25,7 +25,7 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
     public static final String ELEM_ARGUMENT = "argument";
     public static final String ELEM_SERIALIZER_ADAPTER = "serializer-adapter";
     public static final String ELEM_TYPE_PARAMETERS = "type-parameters";
-    public static final String ELEM_DYNAMIC_SERVICE = "dynamic-service";
+    public static final String ELEM_REFERENCE = "reference";
     public static final String ATTR_NAME = "name";
     public static final String ATTR_ARG_TYPES = "arg-types";
     public static final String ATTR_NUMBER = "number";
@@ -148,9 +148,9 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
         Element typeParametersElement = getElement(valueElement, ELEM_TYPE_PARAMETERS);
         if (typeParametersElement != null)
             valueDescriptor.setTypeParameters(getClasses(typeParametersElement.getTextContent()));
-        Element dynamicServiceElement = getElement(valueElement, ELEM_DYNAMIC_SERVICE);
-        if (dynamicServiceElement != null)
-            valueDescriptor.setDynamicService(Boolean.parseBoolean(dynamicServiceElement.getTextContent()));
+        Element referenceElement = getElement(valueElement, ELEM_REFERENCE);
+        if (referenceElement != null)
+            valueDescriptor.setReference(Boolean.parseBoolean(referenceElement.getTextContent()));
         return valueDescriptor;
     }
 

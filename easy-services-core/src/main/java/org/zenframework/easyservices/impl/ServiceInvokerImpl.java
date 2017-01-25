@@ -219,7 +219,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
             throw new SerializationException("Incorrect number of arguments: " + structure.length + ", expected: " + result.length);
         for (int i = 0; i < result.length; i++) {
             ValueDescriptor valueDescriptor = valueDescriptors[i];
-            if (valueDescriptor != null && valueDescriptor.isDynamicService()) {
+            if (valueDescriptor != null && valueDescriptor.isReference()) {
                 ServiceLocator serviceLocator = (ServiceLocator) serializer.deserialize(structure[i], ServiceLocator.class, valueDescriptor);
                 if (serviceLocator.isAbsolute())
                     throw new ServiceException("Can't get dynamic service by absolute service locator '" + serviceLocator + "'");
@@ -233,7 +233,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private String serialize(Object result, Serializer serializer, ValueDescriptor returnDescriptor) throws NamingException {
-        if (returnDescriptor != null && returnDescriptor.isDynamicService()) {
+        if (returnDescriptor != null && returnDescriptor.isReference()) {
             String name = getName(result);
             try {
                 serviceRegistry.lookup(name);

@@ -14,6 +14,6 @@ public @interface Value {
 
     Class<?>[] typeParameters() default {};
 
-    boolean dynamicService() default false;
+    boolean reference() default false;
 
 }

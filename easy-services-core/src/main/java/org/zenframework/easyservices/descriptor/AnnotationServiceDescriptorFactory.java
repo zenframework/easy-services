@@ -49,7 +49,7 @@ public class AnnotationServiceDescriptorFactory implements ServiceDescriptorFact
                     int modifiers = returnValue.serializerAdapter().getModifiers();
                     if (!Modifier.isAbstract(modifiers) && !Modifier.isInterface(modifiers))
                         returnDescriptor.setSerializerAdapter(returnValue.serializerAdapter().newInstance());
-                    returnDescriptor.setDynamicService(returnValue.dynamicService());
+                    returnDescriptor.setReference(returnValue.reference());
                     methodDescriptor.setReturnDescriptor(returnDescriptor);
                     useful = true;
                 }
@@ -62,7 +62,7 @@ public class AnnotationServiceDescriptorFactory implements ServiceDescriptorFact
                         int modifiers = argValue.serializerAdapter().getModifiers();
                         if (!Modifier.isAbstract(modifiers) && !Modifier.isInterface(modifiers))
                             argDescriptor.setSerializerAdapter(argValue.serializerAdapter().newInstance());
-                        argDescriptor.setDynamicService(argValue.dynamicService());
+                        argDescriptor.setReference(argValue.reference());
                         methodDescriptor.setArgumentDescriptor(i, argDescriptor);
                         useful = true;
                     }
