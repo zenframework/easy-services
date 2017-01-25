@@ -6,95 +6,71 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 
-import javax.naming.InitialContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.easyservices.ErrorDescription;
-import org.zenframework.easyservices.InvocationException;
-import org.zenframework.easyservices.RequestContext;
-import org.zenframework.easyservices.RequestMapper;
-import org.zenframework.easyservices.ServiceException;
+import org.zenframework.easyservices.ErrorHandler;
 import org.zenframework.easyservices.ServiceInvoker;
-import org.zenframework.easyservices.descriptor.AnnotationServiceDescriptorFactory;
-import org.zenframework.easyservices.descriptor.ServiceDescriptor;
-import org.zenframework.easyservices.descriptor.ServiceDescriptorFactory;
-import org.zenframework.easyservices.serialize.Serializer;
-import org.zenframework.easyservices.serialize.SerializerFactory;
+import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 
 public class ServiceHttpRequestHandler {
 
-    private static final String DEFAULT_SERVICE_INFO_ALIAS = "serviceInfo";
-
+    @SuppressWarnings("unused")
     private static final Logger LOG = LoggerFactory.getLogger(ServiceHttpRequestHandler.class);
 
-    private InitialContext serviceRegistry;
-    private SerializerFactory<?> serializerFactory;
-    private RequestMapper requestMapper;
-    private ErrorMapper errorMapper;
-    private ServiceInvoker serviceInvoker;
-    private ServiceDescriptorFactory serviceDescriptorFactory = new AnnotationServiceDescriptorFactory();
-    private String servicesPath = "/services";
-    private String serviceInfoAlias = DEFAULT_SERVICE_INFO_ALIAS;
+    private static final ErrorMapper DEFAULT_ERROR_MAPPER = new ErrorMapper();
+    private static final String DEFAULT_SERVICES_PATH = "/services";
+    private static final ServiceInvoker DEFAULT_SERVICE_INVOKER = new ServiceInvokerImpl();
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private ErrorMapper errorMapper = DEFAULT_ERROR_MAPPER;
+    private String servicesPath = DEFAULT_SERVICES_PATH;
+    private ServiceInvoker serviceInvoker = DEFAULT_SERVICE_INVOKER;
+
     public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        Serializer serializer = serializerFactory.getSerializer();
-        int status = HttpServletResponse.SC_OK;
+        final StatusHolder status = new StatusHolder();
         String result;
         try {
-            RequestContext context = requestMapper.getRequestContext(getRequestURI(request), getContextPath(request));
-            Object service = serviceRegistry.lookup(context.getServiceName());
-            ServiceDescriptor serviceDescriptor = serviceDescriptorFactory.getServiceDescriptor(service.getClass(), context.getServiceName());
-            result = context.getMethodName().equals(serviceInfoAlias) ? serviceInvoker.getServiceInfo(service, serializer, serviceDescriptor)
-                    : serviceInvoker.invoke(context, service, serializer, serviceDescriptor);
-        } catch (Throwable e) {
-            if (e instanceof ServiceException)
-                LOG.warn(e.getMessage(), e);
-            else
-                LOG.error(e.getMessage(), e);
-            if (e instanceof InvocationException)
-                e = e.getCause();
-            status = errorMapper == null ? HttpServletResponse.SC_INTERNAL_SERVER_ERROR : errorMapper.getStatus(e);
-            result = serializer.compile(serializer.serialize(new ErrorDescription(e)));
+            result = serviceInvoker.invoke(getRequestURI(request), getContextPath(request), new ErrorHandler() {
+
+                @Override
+                public void onError(Throwable e) {
+                    status.status = errorMapper == null ? HttpServletResponse.SC_INTERNAL_SERVER_ERROR : errorMapper.getStatus(e);
+                }
+
+            });
+        } catch (Exception e) {
+            status.status = HttpServletResponse.SC_BAD_REQUEST;
+            result = e.getMessage();
         }
         response.setCharacterEncoding("UTF-8");
-        response.setStatus(status);
+        response.setStatus(status.status);
         response.getWriter().write(result);
-    }
-
-    public void setServiceRegistry(InitialContext serviceRegistry) {
-        this.serviceRegistry = serviceRegistry;
-    }
-
-    public void setSerializerFactory(SerializerFactory<?> serializerFactory) {
-        this.serializerFactory = serializerFactory;
-    }
-
-    public void setRequestMapper(RequestMapper requestMapper) {
-        this.requestMapper = requestMapper;
     }
 
     public void setErrorMapper(ErrorMapper errorMapper) {
         this.errorMapper = errorMapper;
     }
 
-    public void setServiceInvoker(ServiceInvoker serviceInvoker) {
-        this.serviceInvoker = serviceInvoker;
-    }
-
-    public void setServiceDescriptorFactory(ServiceDescriptorFactory serviceDescriptorFactory) {
-        this.serviceDescriptorFactory = serviceDescriptorFactory;
-    }
-
     public void setServicesPath(String servicesPath) {
         this.servicesPath = servicesPath;
     }
 
-    public void setServiceInfoAlias(String serviceInfoAlias) {
-        this.serviceInfoAlias = serviceInfoAlias;
+    public void setServiceInvoker(ServiceInvoker serviceInvoker) {
+        this.serviceInvoker = serviceInvoker;
+    }
+
+    public ErrorMapper getErrorMapper() {
+        return errorMapper;
+    }
+
+    public String getServicesPath() {
+        return servicesPath;
+    }
+
+    public ServiceInvoker getServiceInvoker() {
+        return serviceInvoker;
     }
 
     private static URI getRequestURI(HttpServletRequest request) throws URISyntaxException, UnsupportedEncodingException {
@@ -109,6 +85,12 @@ public class ServiceHttpRequestHandler {
         if (contextPath == null)
             contextPath = "";
         return contextPath + servicesPath;
+    }
+
+    private static class StatusHolder {
+
+        int status = HttpServletResponse.SC_OK;
+
     }
 
 }

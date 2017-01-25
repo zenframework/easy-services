@@ -2,7 +2,6 @@ package org.zenframework.easyservices.serialize.json;
 
 import org.zenframework.easyservices.serialize.AbstractSerializer;
 import org.zenframework.easyservices.serialize.SerializationException;
-import org.zenframework.easyservices.serialize.SerializerAdapter;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
 import com.google.gson.Gson;
@@ -36,13 +35,34 @@ public class JsonSerializer extends AbstractSerializer<JsonElement> {
     }
 
     @Override
+    public JsonElement[] parseArray(String data) throws SerializationException {
+        if (data == null || data.equals(NULL_STR))
+            return null;
+        JsonArray json = parser.parse(data).getAsJsonArray();
+        JsonElement[] structure = new JsonElement[json.size()];
+        for (int i = 0; i < structure.length; i++)
+            structure[i] = json.get(i);
+        return structure;
+    }
+
+    @Override
     public String compile(JsonElement structure) {
         return structure == null ? NULL_STR : structure.toString();
     }
 
     @Override
-    public Object deserialize(JsonElement objStruct, Class<?> objType) throws SerializationException {
-        return gson.fromJson(objStruct, objType);
+    public String compile(JsonElement[] array) {
+        if (array == null)
+            return NULL_STR;
+        JsonArray json = new JsonArray();
+        for (JsonElement e : array)
+            json.add(e);
+        return json.toString();
+    }
+
+    @Override
+    public Object deserialize(JsonElement structure, Class<?> objType) throws SerializationException {
+        return gson.fromJson(structure, objType);
     }
 
     @Override
@@ -53,36 +73,12 @@ public class JsonSerializer extends AbstractSerializer<JsonElement> {
     }
 
     @Override
-    public JsonElement serialize(Object[] array) {
-        if (array == null)
-            return new JsonArray();
-        return gson.toJsonTree(array);
-    }
-
-    @Override
-    public JsonElement serialize(Object[] array, SerializerAdapter<JsonElement>[] adapters) {
-        if (array == null)
-            return serialize(array);
-        JsonArray json = new JsonArray();
-        for (int i = 0; i < array.length; i++)
-            json.add(serialize(array[i], adapters[i]));
-        return json;
+    public JsonElement[] newArray(int length) {
+        return new JsonElement[length];
     }
 
     public Gson getGson() {
         return gson;
-    }
-
-    @Override
-    protected JsonElement[] toArray(JsonElement json) {
-        if (json.isJsonArray()) {
-            JsonArray jsonArr = json.getAsJsonArray();
-            JsonElement[] arr = new JsonElement[jsonArr.size()];
-            for (int i = 0; i < arr.length; i++)
-                arr[i] = jsonArr.get(i);
-            return arr;
-        }
-        return new JsonElement[] { json };
     }
 
 }

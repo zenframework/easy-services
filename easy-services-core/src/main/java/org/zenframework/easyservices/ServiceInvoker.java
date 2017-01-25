@@ -1,12 +1,9 @@
 package org.zenframework.easyservices;
 
-import org.zenframework.easyservices.descriptor.ServiceDescriptor;
-import org.zenframework.easyservices.serialize.Serializer;
+import java.net.URI;
 
 public interface ServiceInvoker {
 
-    String getServiceInfo(Object service, Serializer<?> serializer, ServiceDescriptor descriptor);
-
-    String invoke(RequestContext context, Object service, Serializer<?> serializer, ServiceDescriptor descriptor) throws ServiceException;
+    String invoke(URI requestUri, String contextPath, ErrorHandler errorHandler);
 
 }

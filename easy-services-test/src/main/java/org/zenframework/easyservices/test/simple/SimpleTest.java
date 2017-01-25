@@ -13,9 +13,9 @@ public class SimpleTest extends AbstractServiceTest {
 
     @Override
     public void tearDown() throws Exception {
+        super.tearDown();
         getServiceRegistry().unbind("/add");
         getServiceRegistry().unbind("/sub");
-        super.tearDown();
     }
 
     public void testSimpleServices() throws Exception {

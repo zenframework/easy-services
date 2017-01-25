@@ -50,8 +50,8 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
     }
 
     @Override
-    public ServiceDescriptor getServiceDescriptor(Class<?> serviceClass, String serviceName) {
-        return descriptors.get(serviceName);
+    public ServiceDescriptor getServiceDescriptor(Class<?> serviceClass) {
+        return descriptors.get(serviceClass.getCanonicalName());
     }
 
     private static Element getElement(Element element, String name) {

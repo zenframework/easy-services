@@ -2,7 +2,7 @@ package org.zenframework.easyservices.test;
 
 import java.io.IOException;
 
-import javax.naming.InitialContext;
+import javax.naming.Context;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -12,8 +12,10 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ClientFactory;
 import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
+import org.zenframework.easyservices.jndi.JNDIHelper;
 
 import junit.framework.TestCase;
 
@@ -49,12 +51,12 @@ public abstract class AbstractServiceTest extends TestCase {
         super.tearDown();
     }
 
-    protected static <T> T getClient(Class<T> serviceClass, String serviceName) {
+    protected static <T> T getClient(Class<T> serviceClass, String serviceName) throws ClientException {
         return CONTEXT.getBean(ClientFactory.class).getClient(serviceClass, serviceName);
     }
 
-    protected static InitialContext getServiceRegistry() {
-        return CONTEXT.getBean(InitialContext.class);
+    protected static Context getServiceRegistry() {
+        return JNDIHelper.getDefaultContext();
     }
 
 }

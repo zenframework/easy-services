@@ -2,6 +2,7 @@ package org.zenframework.easyservices.impl;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -9,26 +10,113 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.naming.Context;
+import javax.naming.NamingException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.commons.bean.PrettyStringBuilder;
+import org.zenframework.commons.bean.ServiceUtil;
 import org.zenframework.commons.debug.TimeChecker;
 import org.zenframework.easyservices.ClassInfo;
+import org.zenframework.easyservices.ErrorDescription;
+import org.zenframework.easyservices.ErrorHandler;
 import org.zenframework.easyservices.InvocationException;
 import org.zenframework.easyservices.RequestContext;
+import org.zenframework.easyservices.RequestMapper;
 import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.ServiceInvoker;
+import org.zenframework.easyservices.ServiceLocator;
+import org.zenframework.easyservices.descriptor.AnnotationServiceDescriptorFactory;
 import org.zenframework.easyservices.descriptor.ServiceDescriptor;
+import org.zenframework.easyservices.descriptor.ServiceDescriptorFactory;
+import org.zenframework.easyservices.descriptor.ValueDescriptor;
+import org.zenframework.easyservices.jndi.JNDIHelper;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
+import org.zenframework.easyservices.serialize.SerializerFactory;
 
 public class ServiceInvokerImpl implements ServiceInvoker {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceInvokerImpl.class);
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private static final RequestMapper DEFAULT_REQUEST_MAPPER = new RequestMapperImpl();
+    private static final ServiceDescriptorFactory DEFAULT_SERVICE_DESCRIPTOR_FACTORY = new AnnotationServiceDescriptorFactory();
+    private static final SerializerFactory<?> DEFAULT_SERIALIZER_FACTORY = ServiceUtil.getService(SerializerFactory.class);
+    private static final String DEFAULT_SERVICE_INFO_ALIAS = "serviceInfo";
+
+    private Context serviceRegistry = JNDIHelper.getDefaultContext();
+    private RequestMapper requestMapper = DEFAULT_REQUEST_MAPPER;
+    private ServiceDescriptorFactory serviceDescriptorFactory = DEFAULT_SERVICE_DESCRIPTOR_FACTORY;
+    private SerializerFactory<?> serializerFactory = DEFAULT_SERIALIZER_FACTORY;
+    private String serviceInfoAlias = DEFAULT_SERVICE_INFO_ALIAS;
+
     @Override
-    public String getServiceInfo(Object service, Serializer serializer, ServiceDescriptor descriptor) {
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public String invoke(URI requestUri, String contextPath, ErrorHandler errorHandler) {
+        Serializer serializer = serializerFactory.getSerializer();
+        String result;
+        try {
+            RequestContext context = requestMapper.getRequestContext(requestUri, contextPath);
+            Object service = serviceRegistry.lookup(context.getServiceName());
+            ServiceDescriptor serviceDescriptor = serviceDescriptorFactory.getServiceDescriptor(service.getClass());
+            result = context.getMethodName().equals(serviceInfoAlias) ? getServiceInfo(service, serializer)
+                    : invokeMethod(context, service, serializer, serviceDescriptor);
+        } catch (Throwable e) {
+            if (e instanceof ServiceException)
+                LOG.warn(e.getMessage(), e);
+            else
+                LOG.error(e.getMessage(), e);
+            if (e instanceof InvocationException)
+                e = e.getCause();
+            result = serializer.compile(serializer.serialize(new ErrorDescription(e)));
+            errorHandler.onError(e);
+        }
+        return result;
+    }
+
+    public void setServiceRegistry(Context serviceRegistry) {
+        this.serviceRegistry = serviceRegistry;
+    }
+
+    public void setSerializerFactory(SerializerFactory<?> serializerFactory) {
+        this.serializerFactory = serializerFactory;
+    }
+
+    public void setRequestMapper(RequestMapper requestMapper) {
+        this.requestMapper = requestMapper;
+    }
+
+    public void setServiceDescriptorFactory(ServiceDescriptorFactory serviceDescriptorFactory) {
+        this.serviceDescriptorFactory = serviceDescriptorFactory;
+    }
+
+    public void setServiceInfoAlias(String serviceInfoAlias) {
+        this.serviceInfoAlias = serviceInfoAlias;
+    }
+
+    public Context getServiceRegistry() {
+        return serviceRegistry;
+    }
+
+    public RequestMapper getRequestMapper() {
+        return requestMapper;
+    }
+
+    public ServiceDescriptorFactory getServiceDescriptorFactory() {
+        return serviceDescriptorFactory;
+    }
+
+    public SerializerFactory<?> getSerializerFactory() {
+        return serializerFactory;
+    }
+
+    public String getServiceInfoAlias() {
+        return serviceInfoAlias;
+    }
+
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private String getServiceInfo(Object service, Serializer serializer) {
         if (service == null)
             return null;
         Map<String, Object> serviceInfo = new HashMap<String, Object>();
@@ -48,8 +136,8 @@ public class ServiceInvokerImpl implements ServiceInvoker {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    @Override
-    public String invoke(RequestContext context, Object service, Serializer serializer, ServiceDescriptor serviceDescriptor) throws ServiceException {
+    private String invokeMethod(RequestContext context, Object service, Serializer serializer, ServiceDescriptor serviceDescriptor)
+            throws ServiceException {
         Method method = null;
         Object args[] = null;
         Object result;
@@ -57,7 +145,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
         for (Method m : service.getClass().getMethods()) {
             if (m.getName().equals(context.getMethodName())) {
                 try {
-                    args = serializer.deserialize(serializer.parse(context.getArguments()), m.getParameterTypes(),
+                    args = deserialize(serializer, serializer.parseArray(context.getArguments()), m.getParameterTypes(),
                             ServiceDescriptor.getArgumentDescriptors(serviceDescriptor, m));
                     method = m;
                     break;
@@ -79,6 +167,17 @@ public class ServiceInvokerImpl implements ServiceInvoker {
             result = method.invoke(service, args);
             if (time != null)
                 time.printDifference(result);
+            ValueDescriptor returnDescriptor = ServiceDescriptor.getReturnDescriptor(serviceDescriptor, method);
+            if (returnDescriptor != null && returnDescriptor.isDynamicService()) {
+                String name = getName(result);
+                try {
+                    serviceRegistry.lookup(name);
+                } catch (NamingException e) {
+                    serviceRegistry.bind(name, result);
+                }
+                return serializer.compile(serializer.serialize(ServiceLocator.relative(name)));
+            }
+            return serializer.compile(serializer.serialize(result, returnDescriptor));
         } catch (Throwable e) {
             if (e instanceof InvocationTargetException)
                 e = ((InvocationTargetException) e).getTargetException();
@@ -86,8 +185,6 @@ public class ServiceInvokerImpl implements ServiceInvoker {
                 time.printDifference(e);
             throw new InvocationException(context, args, e);
         }
-
-        return serializer.compile(serializer.serialize(result, ServiceDescriptor.getReturnDescriptor(serviceDescriptor, method)));
     }
 
     private static Object getClassInfo(Class<?> clazz, Collection<Class<?>> structured, int arrayDeep) {
@@ -120,6 +217,35 @@ public class ServiceInvokerImpl implements ServiceInvoker {
                 return classInfo;
             }
         }
+    }
+
+    /*@SuppressWarnings({ "rawtypes", "unchecked" })
+    private static Object[] deserialize(Serializer serializer, Object[] structure, Class<?> objTypes[]) throws SerializationException {
+        if (structure == null)
+            return new Object[0];
+        Object[] result = new Object[objTypes.length];
+        if (structure.length != result.length)
+            throw new SerializationException("Incorrect number of arguments: " + structure.length + ", expected: " + result.length);
+        for (int i = 0; i < result.length; i++)
+            result[i] = serializer.deserialize(structure[i], objTypes[i]);
+        return result;
+    }*/
+
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public Object[] deserialize(Serializer serializer, Object[] structure, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors)
+            throws SerializationException {
+        if (structure == null)
+            return new Object[0];
+        Object[] result = new Object[objTypes.length];
+        if (structure.length != result.length)
+            throw new SerializationException("Incorrect number of arguments: " + structure.length + ", expected: " + result.length);
+        for (int i = 0; i < result.length; i++)
+            result[i] = serializer.deserialize(structure[i], objTypes[i], valueDescriptors[i]);
+        return result;
+    }
+
+    private static String getName(Object obj) {
+        return "/dynamic/" + System.identityHashCode(obj);
     }
 
 }

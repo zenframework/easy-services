@@ -17,21 +17,21 @@ public class AnnotationServiceDescriptorFactory implements ServiceDescriptorFact
     private final Map<String, ServiceDescriptor> serviceDescriptorsCache = new HashMap<String, ServiceDescriptor>();
 
     @Override
-    public ServiceDescriptor getServiceDescriptor(Class<?> serviceClass, String serviceName) {
+    public ServiceDescriptor getServiceDescriptor(Class<?> serviceClass) {
         ServiceDescriptor descriptor;
         synchronized (serviceDescriptorsCache) {
-            descriptor = serviceDescriptorsCache.get(serviceName);
+            descriptor = serviceDescriptorsCache.get(serviceClass.getCanonicalName());
         }
         if (descriptor == null) {
-            descriptor = getServiceDescriptor(serviceClass);
+            descriptor = extractServiceDescriptor(serviceClass);
             synchronized (serviceDescriptorsCache) {
-                serviceDescriptorsCache.put(serviceName, descriptor);
+                serviceDescriptorsCache.put(serviceClass.getCanonicalName(), descriptor);
             }
         }
         return descriptor;
     }
 
-    private ServiceDescriptor getServiceDescriptor(Class<?> serviceClass) {
+    private ServiceDescriptor extractServiceDescriptor(Class<?> serviceClass) {
         ServiceDescriptor serviceDescriptor = new ServiceDescriptor();
         for (Method method : serviceClass.getMethods()) {
             Alias methodAlias = findMethodAnnotation(method, Alias.class);

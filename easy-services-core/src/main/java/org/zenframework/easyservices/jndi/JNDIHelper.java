@@ -4,36 +4,50 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.naming.Context;
-import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.naming.spi.NamingManager;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.jndi.impl.InitialContextFactoryImpl;
 
 public class JNDIHelper {
 
-    public static InitialContext getInitialContext() throws NamingException {
+    private static final Logger LOG = LoggerFactory.getLogger(JNDIHelper.class);
+
+    private static Context DEFAULT_CONTEXT = initDefaultContext();
+
+    private JNDIHelper() {}
+
+    public static Context getDefaultContext() {
+        return DEFAULT_CONTEXT;
+    }
+
+    public static Context newDefaultContext() throws NamingException {
         Properties props = new Properties();
         props.put(Context.INITIAL_CONTEXT_FACTORY, InitialContextFactoryImpl.class.getName());
-        return new InitialContext(props);
+        return NamingManager.getInitialContext(props);
     }
 
-    public static InitialContext getInitialContext(Map<?, ?> environment) throws NamingException {
-        return getInitialContext(environment, null);
+    public static Context bindAll(Map<String, Object> bindings) throws NamingException {
+        return bindAll(DEFAULT_CONTEXT, bindings);
     }
 
-    public static InitialContext getInitialContext(Map<?, ?> environment, Map<String, Object> bindings)
-            throws NamingException {
-        Properties props = new Properties();
-        props.putAll(environment);
-        return bindAll(new InitialContext(props), bindings);
-    }
-
-    public static InitialContext bindAll(InitialContext context, Map<String, Object> bindings) throws NamingException {
+    public static Context bindAll(Context context, Map<String, Object> bindings) throws NamingException {
         if (bindings != null) {
             for (Map.Entry<String, Object> entry : bindings.entrySet())
                 context.bind(entry.getKey(), entry.getValue());
         }
         return context;
+    }
+
+    private static Context initDefaultContext() {
+        try {
+            return newDefaultContext();
+        } catch (NamingException e) {
+            LOG.error("Can't initialize default context", e);
+            return null;
+        }
     }
 
 }

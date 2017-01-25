@@ -12,7 +12,7 @@ public class ValueDescriptor {
         return typeParameters;
     }
 
-    public void setTypeParameters(Class<?>[] typeParameters) {
+    public void setTypeParameters(Class<?>... typeParameters) {
         this.typeParameters = typeParameters;
     }
 

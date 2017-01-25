@@ -15,8 +15,8 @@ public class DescriptorTest extends AbstractServiceTest {
 
     @Override
     public void tearDown() throws Exception {
-        getServiceRegistry().unbind("/util");
         super.tearDown();
+        getServiceRegistry().unbind("/util");
     }
 
     public void testDescriptors() throws Exception {

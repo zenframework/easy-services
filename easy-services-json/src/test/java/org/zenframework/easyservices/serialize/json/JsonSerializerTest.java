@@ -3,6 +3,7 @@ package org.zenframework.easyservices.serialize.json;
 import java.util.List;
 import java.util.Map;
 
+import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.json.adapters.ListJsonSerializerAdapter;
 import org.zenframework.easyservices.serialize.json.adapters.MapJsonSerializerAdapter;
@@ -19,10 +20,10 @@ public class JsonSerializerTest extends TestCase {
 
     public void testStrToArgs() throws Exception {
         Serializer<JsonElement> serializer = new JsonSerializer(null, new Gson());
-        Object args[] = serializer.deserialize(serializer.parse(TEST_JSON_ARR), new Class<?>[] { SimpleBean.class, SimpleBean.class });
-        assertTrue(args.length == 2);
-        assertTrue(args[0] instanceof SimpleBean);
-        assertTrue(args[1] instanceof SimpleBean);
+        JsonElement[] structure = serializer.parseArray(TEST_JSON_ARR);
+        assertTrue(structure.length == 2);
+        for (JsonElement e : structure)
+            assertTrue(serializer.deserialize(e, SimpleBean.class) instanceof SimpleBean);
     }
 
     public void testNullSerialization() throws Exception {
@@ -34,8 +35,10 @@ public class JsonSerializerTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testListSerialization() throws Exception {
         Serializer<JsonElement> serializer = new JsonSerializer(null, new Gson());
-        List<SimpleBean> list = (List<SimpleBean>) serializer.deserialize(serializer.parse(TEST_JSON_ARR), new ListJsonSerializerAdapter(),
-                SimpleBean.class);
+        ValueDescriptor descriptor = new ValueDescriptor();
+        descriptor.setSerializerAdapter(new ListJsonSerializerAdapter());
+        descriptor.setTypeParameters(SimpleBean.class);
+        List<SimpleBean> list = (List<SimpleBean>) serializer.deserialize(serializer.parse(TEST_JSON_ARR), List.class, descriptor);
         assertEquals(new SimpleBean("qwe", 1), list.get(0));
         assertEquals(new SimpleBean("asd", 2), list.get(1));
     }
@@ -43,8 +46,10 @@ public class JsonSerializerTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testMapSerialization() throws Exception {
         Serializer<JsonElement> serializer = new JsonSerializer(null, new Gson());
-        Map<String, SimpleBean> map = (Map<String, SimpleBean>) serializer.deserialize(serializer.parse(TEST_JSON_OBJ),
-                new MapJsonSerializerAdapter(), String.class, SimpleBean.class);
+        ValueDescriptor descriptor = new ValueDescriptor();
+        descriptor.setSerializerAdapter(new MapJsonSerializerAdapter());
+        descriptor.setTypeParameters(String.class, SimpleBean.class);
+        Map<String, SimpleBean> map = (Map<String, SimpleBean>) serializer.deserialize(serializer.parse(TEST_JSON_OBJ), Map.class, descriptor);
         assertEquals(new SimpleBean("qwe", 1), map.get("a"));
         assertEquals(new SimpleBean("asd", 2), map.get("b"));
     }
