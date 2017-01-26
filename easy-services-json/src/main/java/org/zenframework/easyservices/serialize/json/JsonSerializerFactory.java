@@ -15,8 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.ErrorDescription;
 import org.zenframework.easyservices.serialize.Serializer;
-import org.zenframework.easyservices.serialize.SerializerAdapter;
 import org.zenframework.easyservices.serialize.SerializerFactory;
+import org.zenframework.easyservices.serialize.json.adapters.JsonSerializerAdapter;
 import org.zenframework.easyservices.serialize.json.adapters.ListJsonSerializerAdapter;
 import org.zenframework.easyservices.serialize.json.adapters.MapJsonSerializerAdapter;
 import org.zenframework.easyservices.serialize.json.adapters.SetJsonSerializerAdapter;
@@ -25,24 +25,23 @@ import org.zenframework.easyservices.serialize.json.gson.ErrorDescriptionJsonSer
 import org.zenframework.easyservices.serialize.json.gson.LocaleTypeAdapter;
 
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
 import com.google.gson.TypeAdapterFactory;
 
-public class JsonSerializerFactory implements SerializerFactory<JsonElement> {
+public class JsonSerializerFactory implements SerializerFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsonSerializerFactory.class);
 
-    private static final Map<Class<?>, SerializerAdapter<JsonElement, ?>> SERIALIZER_ADAPTERS_DEFAULT = getDefaultSerializerAdapters();
+    private static final Map<Class<?>, JsonSerializerAdapter<?>> SERIALIZER_ADAPTERS_DEFAULT = getDefaultJsonSerializerAdapters();
     private static final Collection<TypeAdapterFactory> TYPE_ADAPTER_FACTORIES_DEFAULT = getDefaultTypeAdapterFactories();
     private static final Map<Type, Object> TYPE_ADAPTERS_DEFAULT = getDefaultTypeAdapters();
 
-    private Map<Class<?>, SerializerAdapter<JsonElement, ?>> serializerAdapters = SERIALIZER_ADAPTERS_DEFAULT;
+    private Map<Class<?>, JsonSerializerAdapter<?>> serializerAdapters = SERIALIZER_ADAPTERS_DEFAULT;
     private Collection<TypeAdapterFactory> typeAdapterFactories = TYPE_ADAPTER_FACTORIES_DEFAULT;
     private Map<Type, Object> typeAdapters = TYPE_ADAPTERS_DEFAULT;
     private boolean exposedOnly = false;
 
     @Override
-    public Serializer<JsonElement> getSerializer() {
+    public Serializer getSerializer() {
         GsonBuilder builder = new GsonBuilder();
         if (exposedOnly)
             builder.excludeFieldsWithoutExposeAnnotation();
@@ -54,14 +53,13 @@ public class JsonSerializerFactory implements SerializerFactory<JsonElement> {
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public <T> SerializerAdapter<JsonElement, T> getAdapter(Class<T> type) {
-        Map.Entry<Class<?>, SerializerAdapter<JsonElement, ?>> candidate = null;
-        for (Map.Entry<Class<?>, SerializerAdapter<JsonElement, ?>> entry : serializerAdapters.entrySet()) {
+    public <T> JsonSerializerAdapter<T> getAdapter(Class<T> type) {
+        Map.Entry<Class<?>, JsonSerializerAdapter<?>> candidate = null;
+        for (Map.Entry<Class<?>, JsonSerializerAdapter<?>> entry : serializerAdapters.entrySet()) {
             if (entry.getKey().isAssignableFrom(type) && (candidate == null || candidate.getKey().isAssignableFrom(entry.getKey())))
                 candidate = entry;
         }
-        return candidate != null ? (SerializerAdapter<JsonElement, T>) candidate.getValue() : null;
+        return candidate != null ? (JsonSerializerAdapter<T>) candidate.getValue() : null;
     }
 
     public void setTypeAdapterFactories(Collection<TypeAdapterFactory> typeAdapterFactories) {
@@ -96,8 +94,8 @@ public class JsonSerializerFactory implements SerializerFactory<JsonElement> {
         return typeAdapters;
     }
 
-    private static Map<Class<?>, SerializerAdapter<JsonElement, ?>> getDefaultSerializerAdapters() {
-        Map<Class<?>, SerializerAdapter<JsonElement, ?>> adapters = new HashMap<Class<?>, SerializerAdapter<JsonElement, ?>>();
+    private static Map<Class<?>, JsonSerializerAdapter<?>> getDefaultJsonSerializerAdapters() {
+        Map<Class<?>, JsonSerializerAdapter<?>> adapters = new HashMap<Class<?>, JsonSerializerAdapter<?>>();
         adapters.put(Collection.class, new ListJsonSerializerAdapter());
         adapters.put(Map.class, new MapJsonSerializerAdapter());
         adapters.put(Set.class, new SetJsonSerializerAdapter());

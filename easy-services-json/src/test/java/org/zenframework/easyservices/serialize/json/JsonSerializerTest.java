@@ -9,7 +9,6 @@ import org.zenframework.easyservices.serialize.json.adapters.ListJsonSerializerA
 import org.zenframework.easyservices.serialize.json.adapters.MapJsonSerializerAdapter;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 
 import junit.framework.TestCase;
 
@@ -19,37 +18,37 @@ public class JsonSerializerTest extends TestCase {
     private static final String TEST_JSON_OBJ = "{ a : {'str':'qwe','i':1}, b : {'str':'asd','i':2} }";
 
     public void testStrToArgs() throws Exception {
-        Serializer<JsonElement> serializer = new JsonSerializer(null, new Gson());
-        JsonElement[] structure = serializer.parseArray(TEST_JSON_ARR);
-        assertTrue(structure.length == 2);
-        for (JsonElement e : structure)
-            assertTrue(serializer.deserialize(e, SimpleBean.class) instanceof SimpleBean);
+        Serializer serializer = new JsonSerializer(null, new Gson());
+        Object[] result = serializer.deserialize(TEST_JSON_ARR, new Class<?>[] { SimpleBean.class, SimpleBean.class }, new ValueDescriptor[2]);
+        assertTrue(result.length == 2);
+        for (Object o : result)
+            assertTrue(o instanceof SimpleBean);
     }
 
     public void testNullSerialization() throws Exception {
-        Serializer<JsonElement> serializer = new JsonSerializer(null, new Gson());
-        assertEquals("null", serializer.compile(serializer.serialize((Object) null)));
-        assertNull(serializer.deserialize(serializer.parse("null"), SimpleBean.class));
+        Serializer serializer = new JsonSerializer(null, new Gson());
+        assertEquals("null", serializer.serialize((Object) null));
+        assertNull(serializer.deserialize("null", SimpleBean.class));
     }
 
     @SuppressWarnings("unchecked")
     public void testListSerialization() throws Exception {
-        Serializer<JsonElement> serializer = new JsonSerializer(null, new Gson());
+        Serializer serializer = new JsonSerializer(null, new Gson());
         ValueDescriptor descriptor = new ValueDescriptor();
-        descriptor.setSerializerAdapter(new ListJsonSerializerAdapter());
+        descriptor.addAdapter(new ListJsonSerializerAdapter());
         descriptor.setTypeParameters(SimpleBean.class);
-        List<SimpleBean> list = (List<SimpleBean>) serializer.deserialize(serializer.parse(TEST_JSON_ARR), List.class, descriptor);
+        List<SimpleBean> list = (List<SimpleBean>) serializer.deserialize(TEST_JSON_ARR, List.class, descriptor);
         assertEquals(new SimpleBean("qwe", 1), list.get(0));
         assertEquals(new SimpleBean("asd", 2), list.get(1));
     }
 
     @SuppressWarnings("unchecked")
     public void testMapSerialization() throws Exception {
-        Serializer<JsonElement> serializer = new JsonSerializer(null, new Gson());
+        Serializer serializer = new JsonSerializer(null, new Gson());
         ValueDescriptor descriptor = new ValueDescriptor();
-        descriptor.setSerializerAdapter(new MapJsonSerializerAdapter());
+        descriptor.addAdapter(new MapJsonSerializerAdapter());
         descriptor.setTypeParameters(String.class, SimpleBean.class);
-        Map<String, SimpleBean> map = (Map<String, SimpleBean>) serializer.deserialize(serializer.parse(TEST_JSON_OBJ), Map.class, descriptor);
+        Map<String, SimpleBean> map = (Map<String, SimpleBean>) serializer.deserialize(TEST_JSON_OBJ, Map.class, descriptor);
         assertEquals(new SimpleBean("qwe", 1), map.get("a"));
         assertEquals(new SimpleBean("asd", 2), map.get("b"));
     }

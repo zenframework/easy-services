@@ -1,12 +1,26 @@
 package org.zenframework.easyservices.descriptor;
 
-import org.zenframework.easyservices.serialize.SerializerAdapter;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ValueDescriptor {
 
-    private Class<?>[] typeParameters;
-    private SerializerAdapter<?, ?> serializerAdapter;
-    private boolean reference;
+    private final Set<Object> adapters = new HashSet<Object>();
+    private Class<?>[] typeParameters = new Class<?>[0];
+    private boolean reference = false;
+
+    @SuppressWarnings("unchecked")
+    public <T> T getAdapter(Class<T> cls) {
+        for (Object adapter : adapters)
+            if (cls.isInstance(adapter))
+                return (T) adapter;
+        return null;
+    }
+
+    public void addAdapter(Object adapter) {
+        this.adapters.add(adapter);
+    }
 
     public Class<?>[] getTypeParameters() {
         return typeParameters;
@@ -16,12 +30,13 @@ public class ValueDescriptor {
         this.typeParameters = typeParameters;
     }
 
-    public SerializerAdapter<?, ?> getSerializerAdapter() {
-        return serializerAdapter;
+    public Set<Object> getAdapters() {
+        return adapters;
     }
 
-    public void setSerializerAdapter(SerializerAdapter<?, ?> serializerAdapter) {
-        this.serializerAdapter = serializerAdapter;
+    public void setAdapters(Collection<Object> adapters) {
+        this.adapters.clear();
+        this.adapters.addAll(adapters);
     }
 
     public boolean isReference() {

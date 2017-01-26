@@ -14,7 +14,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.zenframework.easyservices.serialize.SerializerAdapter;
 
 public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
 
@@ -23,7 +22,7 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
     public static final String ELEM_ALIAS = "alias";
     public static final String ELEM_RETURN = "return";
     public static final String ELEM_ARGUMENT = "argument";
-    public static final String ELEM_SERIALIZER_ADAPTER = "serializer-adapter";
+    public static final String ELEM_ADAPTER = "adapter";
     public static final String ELEM_TYPE_PARAMETERS = "type-parameters";
     public static final String ELEM_REFERENCE = "reference";
     public static final String ATTR_NAME = "name";
@@ -136,14 +135,12 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
 
     private static ValueDescriptor getValueDescriptor(Element valueElement) throws SAXException {
         ValueDescriptor valueDescriptor = new ValueDescriptor();
-        Element serializerAdapterElement = getElement(valueElement, ELEM_SERIALIZER_ADAPTER);
-        if (serializerAdapterElement != null) {
-            try {
-                valueDescriptor
-                        .setSerializerAdapter((SerializerAdapter<?, ?>) Class.forName(serializerAdapterElement.getTextContent()).newInstance());
-            } catch (Exception e) {
-                throw new SAXException(e);
-            }
+        Enumeration<Element> adapterElements = getElements(valueElement, ELEM_ADAPTER);
+        try {
+            while (adapterElements.hasMoreElements())
+                valueDescriptor.addAdapter(Class.forName(adapterElements.nextElement().getTextContent()).newInstance());
+        } catch (Exception e) {
+            throw new SAXException(e);
         }
         Element typeParametersElement = getElement(valueElement, ELEM_TYPE_PARAMETERS);
         if (typeParametersElement != null)

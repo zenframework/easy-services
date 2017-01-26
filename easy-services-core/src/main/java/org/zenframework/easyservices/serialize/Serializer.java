@@ -1,25 +1,16 @@
 package org.zenframework.easyservices.serialize;
 
+import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 
-public interface Serializer<S> {
+public interface Serializer {
 
-    S parse(String data) throws SerializationException;
+    <T> T deserialize(String data, Class<T> objType) throws SerializationException;
 
-    S[] parseArray(String data) throws SerializationException;
+    <T> T deserialize(String data, Class<T> objType, ValueDescriptor valueDescriptor) throws SerializationException;
 
-    String compile(S structure);
+    Object[] deserialize(String data, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws ServiceException;
 
-    String compile(S[] array);
-
-    <T> T deserialize(S structure, Class<T> objType) throws SerializationException;
-
-    <T> T deserialize(S structure, Class<T> objType, ValueDescriptor valueDescriptor) throws SerializationException;
-
-    S serialize(Object object);
-
-    S serialize(Object object, ValueDescriptor valueDescriptor);
-
-    S[] newArray(int length);
+    String serialize(Object object);
 
 }

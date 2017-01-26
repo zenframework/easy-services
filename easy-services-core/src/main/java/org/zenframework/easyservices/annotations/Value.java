@@ -9,8 +9,7 @@ import java.lang.annotation.Target;
 @Retention(value = RetentionPolicy.RUNTIME)
 public @interface Value {
 
-    @SuppressWarnings("rawtypes")
-    Class<? extends org.zenframework.easyservices.serialize.SerializerAdapter> serializerAdapter() default org.zenframework.easyservices.serialize.SerializerAdapter.class;
+    Class<?>[] adapters() default {};
 
     Class<?>[] typeParameters() default {};
 

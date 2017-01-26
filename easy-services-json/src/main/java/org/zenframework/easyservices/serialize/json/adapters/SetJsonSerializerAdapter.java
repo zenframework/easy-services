@@ -9,16 +9,16 @@ import org.zenframework.easyservices.serialize.json.JsonSerializer;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 
-public class SetJsonSerializerAdapter extends JsonSerializerAdapter<Set<?>> {
+public class SetJsonSerializerAdapter implements JsonSerializerAdapter<Set<?>> {
 
     @Override
-    protected Set<?> deserialize(JsonSerializer jsonSerializer, JsonElement parsedElement, Class<?>... typeParameters) throws SerializationException {
+    public Set<?> deserialize(JsonSerializer jsonSerializer, JsonElement parsedElement, Class<?>... typeParameters) throws SerializationException {
         if (typeParameters == null || typeParameters.length != 1)
             throw new SerializationException("Expected 1 type parameter, but got " + typeParameters);
         Set<Object> result = new HashSet<Object>();
         JsonArray array = parsedElement.getAsJsonArray();
         for (int i = 0; i < array.size(); i++)
-            result.add(jsonSerializer.deserialize(array.get(i), typeParameters[0]));
+            result.add(jsonSerializer.getGson().fromJson(array.get(i), typeParameters[0]));
         return result;
     }
 

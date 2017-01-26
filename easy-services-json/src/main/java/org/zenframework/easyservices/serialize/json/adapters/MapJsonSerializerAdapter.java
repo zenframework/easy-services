@@ -9,11 +9,10 @@ import org.zenframework.easyservices.serialize.json.JsonSerializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-public class MapJsonSerializerAdapter extends JsonSerializerAdapter<Map<?, ?>> {
+public class MapJsonSerializerAdapter implements JsonSerializerAdapter<Map<?, ?>> {
 
     @Override
-    protected Map<?, ?> deserialize(JsonSerializer jsonSerializer, JsonElement parsedElement, Class<?>... typeParameters)
-            throws SerializationException {
+    public Map<?, ?> deserialize(JsonSerializer jsonSerializer, JsonElement parsedElement, Class<?>... typeParameters) throws SerializationException {
         if (typeParameters == null || typeParameters.length != 2)
             throw new SerializationException("Expected 2 type parameter, but got " + typeParameters);
         if (typeParameters[0] != String.class)
@@ -21,7 +20,7 @@ public class MapJsonSerializerAdapter extends JsonSerializerAdapter<Map<?, ?>> {
         Map<String, Object> result = new HashMap<String, Object>();
         JsonObject object = parsedElement.getAsJsonObject();
         for (Map.Entry<String, JsonElement> entry : object.entrySet())
-            result.put(entry.getKey(), jsonSerializer.deserialize(entry.getValue(), typeParameters[1]));
+            result.put(entry.getKey(), jsonSerializer.getGson().fromJson(entry.getValue(), typeParameters[1]));
         return result;
     }
 

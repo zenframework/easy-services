@@ -14,16 +14,16 @@ public class ClientFactoryImpl implements ClientFactory {
 
     private static final RequestMapper DEFAULT_REQUEST_MAPPER = new RequestMapperImpl();
     private static final ServiceDescriptorFactory DEFAULT_SERVICE_DESCRIPTOR_FACTORY = new AnnotationServiceDescriptorFactory();
-    private static final SerializerFactory<?> DEFAULT_SERIALIZER_FACTORY = ServiceUtil.getService(SerializerFactory.class);
+    private static final SerializerFactory DEFAULT_SERIALIZER_FACTORY = ServiceUtil.getService(SerializerFactory.class);
 
     private ServiceDescriptorFactory serviceDescriptorFactory = DEFAULT_SERVICE_DESCRIPTOR_FACTORY;
     private RequestMapper requestMapper = DEFAULT_REQUEST_MAPPER;
-    private SerializerFactory<?> serializerFactory = DEFAULT_SERIALIZER_FACTORY;
+    private SerializerFactory serializerFactory = DEFAULT_SERIALIZER_FACTORY;
     private String baseUrl;
 
     public ClientFactoryImpl() {}
 
-    public ClientFactoryImpl(String baseUrl, SerializerFactory<?> serializerFactory, RequestMapper requestMapper) {
+    public ClientFactoryImpl(String baseUrl, SerializerFactory serializerFactory, RequestMapper requestMapper) {
         this.baseUrl = baseUrl;
         this.serializerFactory = serializerFactory;
         this.requestMapper = requestMapper;
@@ -44,7 +44,7 @@ public class ClientFactoryImpl implements ClientFactory {
         this.serviceDescriptorFactory = serviceDescriptorFactory;
     }
 
-    public void setSerializerFactory(SerializerFactory<?> serializerFactory) {
+    public void setSerializerFactory(SerializerFactory serializerFactory) {
         this.serializerFactory = serializerFactory;
     }
 

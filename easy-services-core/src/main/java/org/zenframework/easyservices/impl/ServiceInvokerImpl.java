@@ -42,17 +42,16 @@ public class ServiceInvokerImpl implements ServiceInvoker {
 
     private static final RequestMapper DEFAULT_REQUEST_MAPPER = new RequestMapperImpl();
     private static final ServiceDescriptorFactory DEFAULT_SERVICE_DESCRIPTOR_FACTORY = new AnnotationServiceDescriptorFactory();
-    private static final SerializerFactory<?> DEFAULT_SERIALIZER_FACTORY = ServiceUtil.getService(SerializerFactory.class);
+    private static final SerializerFactory DEFAULT_SERIALIZER_FACTORY = ServiceUtil.getService(SerializerFactory.class);
     private static final String DEFAULT_SERVICE_INFO_ALIAS = "serviceInfo";
 
     private Context serviceRegistry = JNDIHelper.getDefaultContext();
     private RequestMapper requestMapper = DEFAULT_REQUEST_MAPPER;
     private ServiceDescriptorFactory serviceDescriptorFactory = DEFAULT_SERVICE_DESCRIPTOR_FACTORY;
-    private SerializerFactory<?> serializerFactory = DEFAULT_SERIALIZER_FACTORY;
+    private SerializerFactory serializerFactory = DEFAULT_SERIALIZER_FACTORY;
     private String serviceInfoAlias = DEFAULT_SERVICE_INFO_ALIAS;
 
     @Override
-    @SuppressWarnings({ "rawtypes", "unchecked" })
     public String invoke(URI requestUri, String contextPath, ErrorHandler errorHandler) {
         Serializer serializer = serializerFactory.getSerializer();
         String result;
@@ -69,7 +68,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
                 LOG.error(e.getMessage(), e);
             if (e instanceof InvocationException)
                 e = e.getCause();
-            result = serializer.compile(serializer.serialize(new ErrorDescription(e)));
+            result = serializer.serialize(new ErrorDescription(e));
             errorHandler.onError(e);
         }
         return result;
@@ -79,7 +78,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
         this.serviceRegistry = serviceRegistry;
     }
 
-    public void setSerializerFactory(SerializerFactory<?> serializerFactory) {
+    public void setSerializerFactory(SerializerFactory serializerFactory) {
         this.serializerFactory = serializerFactory;
     }
 
@@ -107,7 +106,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
         return serviceDescriptorFactory;
     }
 
-    public SerializerFactory<?> getSerializerFactory() {
+    public SerializerFactory getSerializerFactory() {
         return serializerFactory;
     }
 
@@ -115,7 +114,6 @@ public class ServiceInvokerImpl implements ServiceInvoker {
         return serviceInfoAlias;
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     private String getServiceInfo(Object service, Serializer serializer) {
         if (service == null)
             return null;
@@ -132,21 +130,29 @@ public class ServiceInvokerImpl implements ServiceInvoker {
                 argsInfo.add(getClassInfo(argType, structured, 0));
             methodInfo.put(ClassInfo.RETURNS, getClassInfo(method.getReturnType(), structured, 0));
         }
-        return serializer.compile(serializer.serialize(serviceInfo));
+        return serializer.serialize(serviceInfo);
     }
 
-    @SuppressWarnings({ "rawtypes" })
     private String invokeMethod(RequestContext context, Object service, Serializer serializer, ServiceDescriptor serviceDescriptor)
             throws ServiceException, NamingException {
+
         Method method = null;
+        ValueDescriptor[] argDescriptors = null;
         Object args[] = null;
         Object result;
 
+        // Try to find appropriate method
         for (Method m : service.getClass().getMethods()) {
             if (m.getName().equals(context.getMethodName())) {
                 try {
-                    args = deserialize(serializer, serializer.parseArray(context.getArguments()), m.getParameterTypes(),
-                            ServiceDescriptor.getArgumentDescriptors(serviceDescriptor, m));
+                    argDescriptors = ServiceDescriptor.getArgumentDescriptors(serviceDescriptor, m);
+                    Class<?>[] argTypes = m.getParameterTypes();
+                    for (int i = 0; i < argTypes.length; i++) {
+                        ValueDescriptor argDescriptor = argDescriptors[i];
+                        if (argDescriptor != null && argDescriptor.isReference())
+                            argTypes[i] = ServiceLocator.class;
+                    }
+                    args = serializer.deserialize(context.getArguments(), argTypes, argDescriptors);
                     method = m;
                     break;
                 } catch (SerializationException e) {
@@ -164,10 +170,30 @@ public class ServiceInvokerImpl implements ServiceInvoker {
             time = new TimeChecker(new StringBuilder(1024).append(context.getServiceName()).append('.').append(context.getMethodName())
                     .append(new PrettyStringBuilder().toString(args)).toString(), LOG);
         try {
+            // Find and replace references
+            for (int i = 0; i < args.length; i++) {
+                ValueDescriptor argDescriptor = argDescriptors[i];
+                if (argDescriptor != null && argDescriptor.isReference()) {
+                    ServiceLocator locator = (ServiceLocator) args[i];
+                    if (locator.isAbsolute())
+                        throw new ServiceException("Can't get dynamic service by absolute service locator '" + locator + "'");
+                    args[i] = serviceRegistry.lookup(locator.getServiceName());
+                }
+            }
             result = method.invoke(service, args);
             if (time != null)
                 time.printDifference(result);
-            return serialize(result, serializer, ServiceDescriptor.getReturnDescriptor(serviceDescriptor, method));
+            ValueDescriptor returnDescriptor = ServiceDescriptor.getReturnDescriptor(serviceDescriptor, method);
+            if (returnDescriptor != null && returnDescriptor.isReference()) {
+                String name = getName(result);
+                try {
+                    serviceRegistry.lookup(name);
+                } catch (NamingException e) {
+                    serviceRegistry.bind(name, result);
+                }
+                result = ServiceLocator.relative(name);
+            }
+            return serializer.serialize(result);
         } catch (Throwable e) {
             if (e instanceof InvocationTargetException)
                 e = ((InvocationTargetException) e).getTargetException();
@@ -175,6 +201,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
                 time.printDifference(e);
             throw new InvocationException(context, args, e);
         }
+
     }
 
     private static Object getClassInfo(Class<?> clazz, Collection<Class<?>> structured, int arrayDeep) {
@@ -207,42 +234,6 @@ public class ServiceInvokerImpl implements ServiceInvoker {
                 return classInfo;
             }
         }
-    }
-
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private Object[] deserialize(Serializer serializer, Object[] structure, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors)
-            throws ServiceException, NamingException {
-        if (structure == null)
-            return new Object[0];
-        Object[] result = new Object[objTypes.length];
-        if (structure.length != result.length)
-            throw new SerializationException("Incorrect number of arguments: " + structure.length + ", expected: " + result.length);
-        for (int i = 0; i < result.length; i++) {
-            ValueDescriptor valueDescriptor = valueDescriptors[i];
-            if (valueDescriptor != null && valueDescriptor.isReference()) {
-                ServiceLocator serviceLocator = (ServiceLocator) serializer.deserialize(structure[i], ServiceLocator.class, valueDescriptor);
-                if (serviceLocator.isAbsolute())
-                    throw new ServiceException("Can't get dynamic service by absolute service locator '" + serviceLocator + "'");
-                result[i] = serviceRegistry.lookup(serviceLocator.getServiceName());
-            } else {
-                result[i] = serializer.deserialize(structure[i], objTypes[i], valueDescriptor);
-            }
-        }
-        return result;
-    }
-
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private String serialize(Object result, Serializer serializer, ValueDescriptor returnDescriptor) throws NamingException {
-        if (returnDescriptor != null && returnDescriptor.isReference()) {
-            String name = getName(result);
-            try {
-                serviceRegistry.lookup(name);
-            } catch (NamingException e) {
-                serviceRegistry.bind(name, result);
-            }
-            result = ServiceLocator.relative(name);
-        }
-        return serializer.compile(serializer.serialize(result, returnDescriptor));
     }
 
     private static String getName(Object obj) {
