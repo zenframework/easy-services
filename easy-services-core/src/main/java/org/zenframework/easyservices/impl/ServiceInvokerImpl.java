@@ -114,7 +114,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
         return serviceInfoAlias;
     }
 
-    private String getServiceInfo(Object service, Serializer serializer) {
+    protected String getServiceInfo(Object service, Serializer serializer) {
         if (service == null)
             return null;
         Map<String, Object> serviceInfo = new HashMap<String, Object>();
@@ -133,7 +133,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
         return serializer.serialize(serviceInfo);
     }
 
-    private String invokeMethod(RequestContext context, Object service, Serializer serializer, ServiceDescriptor serviceDescriptor)
+    protected String invokeMethod(RequestContext context, Object service, Serializer serializer, ServiceDescriptor serviceDescriptor)
             throws ServiceException, NamingException {
 
         Method method = null;
@@ -169,7 +169,9 @@ public class ServiceInvokerImpl implements ServiceInvoker {
         if (LOG.isDebugEnabled())
             time = new TimeChecker(new StringBuilder(1024).append(context.getServiceName()).append('.').append(context.getMethodName())
                     .append(new PrettyStringBuilder().toString(args)).toString(), LOG);
+
         try {
+
             // Find and replace references
             for (int i = 0; i < args.length; i++) {
                 ValueDescriptor argDescriptor = argDescriptors[i];
@@ -180,9 +182,13 @@ public class ServiceInvokerImpl implements ServiceInvoker {
                     args[i] = serviceRegistry.lookup(locator.getServiceName());
                 }
             }
+
+            // Invoke method
             result = method.invoke(service, args);
             if (time != null)
                 time.printDifference(result);
+
+            // If method must return reference, bind result to service register and set result to service locator
             ValueDescriptor returnDescriptor = ServiceDescriptor.getReturnDescriptor(serviceDescriptor, method);
             if (returnDescriptor != null && returnDescriptor.isReference()) {
                 String name = getName(result);
@@ -193,7 +199,9 @@ public class ServiceInvokerImpl implements ServiceInvoker {
                 }
                 result = ServiceLocator.relative(name);
             }
+
             return serializer.serialize(result);
+
         } catch (Throwable e) {
             if (e instanceof InvocationTargetException)
                 e = ((InvocationTargetException) e).getTargetException();
@@ -204,7 +212,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
 
     }
 
-    private static Object getClassInfo(Class<?> clazz, Collection<Class<?>> structured, int arrayDeep) {
+    protected static Object getClassInfo(Class<?> clazz, Collection<Class<?>> structured, int arrayDeep) {
         if (clazz.isArray())
             return getClassInfo(clazz.getComponentType(), structured, arrayDeep + 1);
         String mapped = ClassInfo.mapSimpleClass(clazz);
@@ -236,7 +244,7 @@ public class ServiceInvokerImpl implements ServiceInvoker {
         }
     }
 
-    private static String getName(Object obj) {
+    protected static String getName(Object obj) {
         return "/dynamic/" + System.identityHashCode(obj);
     }
 

@@ -23,29 +23,31 @@ public class RequestMapperImpl implements RequestMapper {
     public RequestContext getRequestContext(URI requestUri, String contextPath) throws IncorrectRequestException {
         if (contextPath == null)
             contextPath = "";
-        RequestContext context = new RequestContext();
-        Map<String, List<String>> params = splitQuery(requestUri);
         String path = requestUri.getPath();
         if (!path.startsWith(contextPath))
             throw new IncorrectRequestException(requestUri, "Incorrect context path '" + contextPath + "'");
-        if (!params.containsKey(METHOD_PARAM))
-            throw new IncorrectRequestException(requestUri,
-                    "Can't get service method: parameter '" + METHOD_PARAM + "' is null");
-        context.setServiceName(path.substring(contextPath.length()));
-        context.setMethodName(params.get(METHOD_PARAM).get(0));
-        if (params.containsKey(ARGUMENTS_PARAM))
-            context.setArguments(params.get(ARGUMENTS_PARAM).get(0));
-        return context;
+        return getRequestContext(requestUri, contextPath, path, splitQuery(requestUri));
     }
 
     @Override
-    public URI getRequestURI(String serviceUrl, String methodName, String args)
-            throws UnsupportedEncodingException, URISyntaxException {
+    public URI getRequestURI(String serviceUrl, String methodName, String args) throws UnsupportedEncodingException, URISyntaxException {
         StringBuilder str = new StringBuilder();
         str.append(serviceUrl).append('?').append(METHOD_PARAM).append('=').append(methodName);
         if (args != null)
             str.append('&').append(ARGUMENTS_PARAM).append('=').append(URLEncoder.encode(args, "UTF-8"));
         return new URI(str.toString());
+    }
+
+    protected RequestContext getRequestContext(URI requestUri, String contextPath, String path, Map<String, List<String>> params)
+            throws IncorrectRequestException {
+        RequestContext context = new RequestContext();
+        if (!params.containsKey(METHOD_PARAM))
+            throw new IncorrectRequestException(requestUri, "Can't get service method: parameter '" + METHOD_PARAM + "' is null");
+        context.setServiceName(path.substring(contextPath.length()));
+        context.setMethodName(params.get(METHOD_PARAM).get(0));
+        if (params.containsKey(ARGUMENTS_PARAM))
+            context.setArguments(params.get(ARGUMENTS_PARAM).get(0));
+        return context;
     }
 
     private static Map<String, List<String>> splitQuery(URI uri) throws IncorrectRequestException {
@@ -59,8 +61,7 @@ public class RequestMapperImpl implements RequestMapper {
                 if (!query_pairs.containsKey(key)) {
                     query_pairs.put(key, new LinkedList<String>());
                 }
-                final String value = idx > 0 && pair.length() > idx + 1 ? URLDecoder.decode(pair.substring(idx + 1), "UTF-8")
-                        : null;
+                final String value = idx > 0 && pair.length() > idx + 1 ? URLDecoder.decode(pair.substring(idx + 1), "UTF-8") : null;
                 query_pairs.get(key).add(value);
             }
             return query_pairs;
