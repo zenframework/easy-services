@@ -13,18 +13,18 @@ import org.zenframework.easyservices.annotations.Value;
 
 public class AnnotationServiceDescriptorFactory implements ServiceDescriptorFactory {
 
-    private final Map<String, ServiceDescriptor> serviceDescriptorsCache = new HashMap<String, ServiceDescriptor>();
+    private final Map<String, ServiceDescriptor> servicesCache = new HashMap<String, ServiceDescriptor>();
 
     @Override
     public ServiceDescriptor getServiceDescriptor(Class<?> serviceClass) {
         ServiceDescriptor descriptor;
-        synchronized (serviceDescriptorsCache) {
-            descriptor = serviceDescriptorsCache.get(serviceClass.getCanonicalName());
+        synchronized (servicesCache) {
+            descriptor = servicesCache.get(serviceClass.getCanonicalName());
         }
         if (descriptor == null) {
             descriptor = extractServiceDescriptor(serviceClass);
-            synchronized (serviceDescriptorsCache) {
-                serviceDescriptorsCache.put(serviceClass.getCanonicalName(), descriptor);
+            synchronized (servicesCache) {
+                servicesCache.put(serviceClass.getCanonicalName(), descriptor);
             }
         }
         return descriptor;
@@ -35,30 +35,31 @@ public class AnnotationServiceDescriptorFactory implements ServiceDescriptorFact
         for (Method method : serviceClass.getMethods()) {
             Alias methodAlias = findMethodAnnotation(method, Alias.class);
             Value returnValue = findMethodAnnotation(method, Value.class);
-            try {
-                MethodDescriptor methodDescriptor = new MethodDescriptor(method.getParameterTypes().length);
-                boolean useful = false;
-                if (methodAlias != null) {
-                    methodDescriptor.setAlias(methodAlias.value());
-                    useful = true;
-                }
-                if (returnValue != null) {
-                    methodDescriptor.setReturnDescriptor(getValueDescriptor(returnValue));
-                    useful = true;
-                }
-                Value[] argValues = findArgsAnnotations(method, Value.class, new Value[method.getParameterTypes().length]);
-                for (int i = 0; i < argValues.length; i++) {
-                    Value argValue = argValues[i];
-                    if (argValue != null) {
-                        methodDescriptor.setArgumentDescriptor(i, getValueDescriptor(argValue));
-                        useful = true;
-                    }
-                }
-                if (useful)
-                    serviceDescriptor.setMethodDescriptor(method, methodDescriptor);
-            } catch (Exception e) {
-                throw new RuntimeException("Can't initialize method descriptor " + method, e);
+            if (returnValue == null)
+                returnValue = method.getReturnType().getAnnotation(Value.class);
+            Class<?>[] argTypes = method.getParameterTypes();
+            MethodDescriptor methodDescriptor = new MethodDescriptor(argTypes.length);
+            boolean useful = false;
+            if (methodAlias != null) {
+                methodDescriptor.setAlias(methodAlias.value());
+                useful = true;
             }
+            if (returnValue != null) {
+                methodDescriptor.setReturnDescriptor(getValueDescriptor(returnValue));
+                useful = true;
+            }
+            Value[] argValues = findArgsAnnotations(method, Value.class, new Value[argTypes.length]);
+            for (int i = 0; i < argValues.length; i++) {
+                Value argValue = argValues[i];
+                if (argValue == null)
+                    argValue = argTypes[i].getAnnotation(Value.class);
+                if (argValue != null) {
+                    methodDescriptor.setArgumentDescriptor(i, getValueDescriptor(argValue));
+                    useful = true;
+                }
+            }
+            if (useful)
+                serviceDescriptor.setMethodDescriptor(method, methodDescriptor);
         }
         return serviceDescriptor;
     }
@@ -99,14 +100,18 @@ public class AnnotationServiceDescriptorFactory implements ServiceDescriptorFact
         return annotations;
     }
 
-    private static ValueDescriptor getValueDescriptor(Value value) throws InstantiationException, IllegalAccessException {
-        ValueDescriptor descriptor = new ValueDescriptor();
-        descriptor.setTypeParameters(value.typeParameters());
-        Class<?>[] adapterClasses = value.adapters();
-        for (Class<?> cls : adapterClasses)
-            descriptor.addAdapter(cls.newInstance());
-        descriptor.setReference(value.reference());
-        return descriptor;
+    private static ValueDescriptor getValueDescriptor(Value value) {
+        try {
+            ValueDescriptor descriptor = new ValueDescriptor();
+            descriptor.setTypeParameters(value.typeParameters());
+            Class<?>[] adapterClasses = value.adapters();
+            for (Class<?> cls : adapterClasses)
+                descriptor.addAdapter(cls.newInstance());
+            descriptor.setReference(value.reference());
+            return descriptor;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Can't get value descriptor", e);
+        }
     }
 
 }
