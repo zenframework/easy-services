@@ -14,9 +14,9 @@ import org.zenframework.commons.debug.TimeChecker;
 import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.RequestMapper;
 import org.zenframework.easyservices.ServiceLocator;
-import org.zenframework.easyservices.descriptor.ServiceDescriptorFactory;
+import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
-import org.zenframework.easyservices.descriptor.ServiceDescriptor;
+import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
@@ -27,11 +27,11 @@ public class ServiceInvocationHandler implements InvocationHandler {
 
     private final ServiceLocator serviceLocator;
     private final Class<?> serviceClass;
-    private final ServiceDescriptorFactory serviceDescriptorFactory;
+    private final ClassDescriptorFactory serviceDescriptorFactory;
     private final SerializerFactory serializerFactory;
     private final RequestMapper requestMapper;
 
-    public ServiceInvocationHandler(ServiceLocator serviceLocator, Class<?> serviceClass, ServiceDescriptorFactory serviceDescriptorFactory,
+    public ServiceInvocationHandler(ServiceLocator serviceLocator, Class<?> serviceClass, ClassDescriptorFactory serviceDescriptorFactory,
             SerializerFactory serializerFactory, RequestMapper requestMapper) {
         this.serviceLocator = serviceLocator;
         this.serviceClass = serviceClass;
@@ -48,10 +48,10 @@ public class ServiceInvocationHandler implements InvocationHandler {
             throw new ClientException("Service locator '" + serviceLocator + "' must be absolute");
 
         Serializer serializer = serializerFactory.getSerializer();
-        ServiceDescriptor serviceDescriptor = serviceDescriptorFactory.getServiceDescriptor(serviceClass);
-        MethodDescriptor methodDescriptor = serviceDescriptor != null ? serviceDescriptor.getMethodDescriptor(method)
+        ClassDescriptor classDescriptor = serviceDescriptorFactory.getClassDescriptor(serviceClass);
+        MethodDescriptor methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(method)
                 : new MethodDescriptor(args.length);
-        ValueDescriptor[] argDescriptors = methodDescriptor.getArgumentDescriptors();
+        ValueDescriptor[] argDescriptors = methodDescriptor.getParameterDescriptors();
 
         // Find and replace proxy objects with references
         if (args != null) {

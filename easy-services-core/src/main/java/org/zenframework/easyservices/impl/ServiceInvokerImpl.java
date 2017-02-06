@@ -3,6 +3,7 @@ package org.zenframework.easyservices.impl;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,10 +26,10 @@ import org.zenframework.easyservices.RequestMapper;
 import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.ServiceInvoker;
 import org.zenframework.easyservices.ServiceLocator;
-import org.zenframework.easyservices.descriptor.AnnotationServiceDescriptorFactory;
+import org.zenframework.easyservices.descriptor.AnnotationClassDescriptorFactory;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
-import org.zenframework.easyservices.descriptor.ServiceDescriptor;
-import org.zenframework.easyservices.descriptor.ServiceDescriptorFactory;
+import org.zenframework.easyservices.descriptor.ClassDescriptor;
+import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.jndi.JNDIHelper;
 import org.zenframework.easyservices.serialize.SerializationException;
@@ -42,13 +43,13 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
     private static final String PARAM_SERVICE_REGISTRY = "serviceRegistry";
     private static final String PARAM_SERIALIZER_FACTORY = "serializerFactory";
     private static final String PARAM_REQUEST_MAPPER = "requestMapper";
-    private static final String PARAM_SERVICE_DESCRIPTOR_FACTORY = "serviceDescriptorFactory";
+    private static final String PARAM_CLASS_DESCRIPTOR_FACTORY = "classDescriptorFactory";
 
     private static final SerializerFactory DEFAULT_SERIALIZER_FACTORY = ServiceUtil.getService(SerializerFactory.class);
 
     private Context serviceRegistry = JNDIHelper.getDefaultContext();
     private RequestMapper requestMapper = RequestMapperImpl.INSTANCE;
-    private ServiceDescriptorFactory serviceDescriptorFactory = AnnotationServiceDescriptorFactory.INSTANE;
+    private ClassDescriptorFactory classDescriptorFactory = AnnotationClassDescriptorFactory.INSTANSE;
     private SerializerFactory serializerFactory = DEFAULT_SERIALIZER_FACTORY;
 
     @Override
@@ -58,9 +59,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         try {
             RequestContext context = requestMapper.getRequestContext(requestUri, contextPath);
             Object service = serviceRegistry.lookup(context.getServiceName());
-            ServiceDescriptor serviceDescriptor = serviceDescriptorFactory.getServiceDescriptor(service.getClass());
-            result = context.getMethodName() == null ? getServiceInfo(service, serializer)
-                    : invokeMethod(context, service, serializer, serviceDescriptor);
+            result = context.getMethodName() == null ? getServiceInfo(service, serializer) : invokeMethod(context, service, serializer);
         } catch (Throwable e) {
             if (e instanceof ServiceException)
                 LOG.warn(e.getMessage(), e);
@@ -80,13 +79,13 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         if (!serviceRegistryConfig.isEmpty())
             serviceRegistry = JNDIHelper.newDefaultContext(serviceRegistryConfig);
         requestMapper = (RequestMapper) config.getInstance(PARAM_REQUEST_MAPPER, requestMapper);
-        serviceDescriptorFactory = (ServiceDescriptorFactory) config.getInstance(PARAM_SERVICE_DESCRIPTOR_FACTORY, serviceDescriptorFactory);
+        classDescriptorFactory = (ClassDescriptorFactory) config.getInstance(PARAM_CLASS_DESCRIPTOR_FACTORY, classDescriptorFactory);
         serializerFactory = (SerializerFactory) config.getInstance(PARAM_SERIALIZER_FACTORY, serializerFactory);
     }
 
     @Override
     public void destroy(Config config) {
-        config.destroyInstances(requestMapper, serviceDescriptorFactory, serializerFactory);
+        config.destroyInstances(requestMapper, classDescriptorFactory, serializerFactory);
     }
 
     public void setServiceRegistry(Context serviceRegistry) {
@@ -101,8 +100,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         this.requestMapper = requestMapper;
     }
 
-    public void setServiceDescriptorFactory(ServiceDescriptorFactory serviceDescriptorFactory) {
-        this.serviceDescriptorFactory = serviceDescriptorFactory;
+    public void setClassDescriptorFactory(ClassDescriptorFactory classDescriptorFactory) {
+        this.classDescriptorFactory = classDescriptorFactory;
     }
 
     public Context getServiceRegistry() {
@@ -113,8 +112,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         return requestMapper;
     }
 
-    public ServiceDescriptorFactory getServiceDescriptorFactory() {
-        return serviceDescriptorFactory;
+    public ClassDescriptorFactory getClassDescriptorFactory() {
+        return classDescriptorFactory;
     }
 
     public SerializerFactory getSerializerFactory() {
@@ -131,8 +130,9 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         return serializer.serialize(serviceInfo);
     }
 
-    protected String invokeMethod(RequestContext context, Object service, Serializer serializer, ServiceDescriptor serviceDescriptor)
-            throws ServiceException, NamingException {
+    protected String invokeMethod(RequestContext context, Object service, Serializer serializer) throws ServiceException, NamingException {
+
+        ClassDescriptor serviceClassDescriptor = classDescriptorFactory.getClassDescriptor(service.getClass());
 
         Method method = null;
         MethodDescriptor methodDescriptor = null;
@@ -144,8 +144,9 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             if (m.getName().equals(context.getMethodName())) {
                 try {
                     Class<?>[] argTypes = m.getParameterTypes();
-                    methodDescriptor = serviceDescriptor != null ? serviceDescriptor.getMethodDescriptor(m) : new MethodDescriptor(argTypes.length);
-                    ValueDescriptor[] argDescriptors = methodDescriptor.getArgumentDescriptors();
+                    methodDescriptor = serviceClassDescriptor != null ? serviceClassDescriptor.getMethodDescriptor(m)
+                            : new MethodDescriptor(argTypes.length);
+                    ValueDescriptor[] argDescriptors = methodDescriptor.getParameterDescriptors();
                     for (int i = 0; i < argTypes.length; i++) {
                         ValueDescriptor argDescriptor = argDescriptors[i];
                         if (argDescriptor != null && argDescriptor.isReference())
@@ -156,7 +157,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
                     break;
                 } catch (SerializationException e) {
                     LOG.debug("Can't convert given args " + context.getArguments() + " to method '" + context.getMethodName() + "' argument types "
-                            + m.getParameterTypes());
+                            + Arrays.toString(m.getParameterTypes()));
                 }
             }
         }
@@ -172,7 +173,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         try {
 
             // Find and replace references
-            ValueDescriptor[] argDescriptors = methodDescriptor.getArgumentDescriptors();
+            ValueDescriptor[] argDescriptors = methodDescriptor.getParameterDescriptors();
             for (int i = 0; i < args.length; i++) {
                 ValueDescriptor argDescriptor = argDescriptors[i];
                 if (argDescriptor != null && argDescriptor.isReference()) {

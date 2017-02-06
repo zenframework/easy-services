@@ -18,12 +18,25 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 /**
- * Parses XML-based services and default values descriptors
+ * Parses XML-based class descriptors
  * XML structure (all elements are optional, all attributes are required):
- * <[root]>
+ * 
+ * <classes>
  *
- *     <!-- Value descriptors can be defined in <service> tag ... -->
- *     <service class="org.example.service.UserManager">
+ *     <!-- Default value descriptors can be defined in class/value tag ... -->
+ *     <class name="org.example.model.User">
+ *         <value>
+ *             <adapter>org.example.adapter.UserAdapter</adapter>
+ *         </value>
+ *     </class>
+ *     <class name="org.example.service.Session">
+ *         <value>
+ *             <reference>true</reference>
+ *         </value>
+ *     </class>
+ * 
+ *     <!-- ... or value descriptors can be defined in class/method tag ... -->
+ *     <class name="org.example.service.UserManager">
  *         <!-- returns void -->
  *         <method name="register" arg-types="org.example.model.User">
  *             <arg number="0">
@@ -50,26 +63,20 @@ import org.xml.sax.SAXException;
  *                 <type-parameters>java.lang.String, org.example.model.User</type-parameters>
  *             </return>
  *         </method>
- *     </service>
+ *     </class>
  *     
- *     <!-- ... or most configs can be done with <default> tag -->
- *     <default class="org.example.model.User">
- *         <adapter>org.example.adapter.UserAdapter</adapter>
- *     </default>
- *     <default class="org.example.service.Session">
- *         <reference>true</reference>
- *     </default>
+ * </classes>
  * 
- * </[root]>
  * @author Oleg S. Lekshin
  *
  */
-public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
+public class XmlClassDescriptorFactory implements ClassDescriptorFactory {
 
     private static final Map<String, Class<?>> PRIMITIVES = getPrimitives();
 
-    public static final String ELEM_SERVICE = "service";
-    public static final String ELEM_DEFAULT = "default";
+    public static final String ELEM_CLASSES = "classes";
+    public static final String ELEM_CLASS = "class";
+    public static final String ELEM_VALUE = "value";
     public static final String ELEM_METHOD = "method";
     public static final String ELEM_ALIAS = "alias";
     public static final String ELEM_RETURN = "return";
@@ -77,65 +84,108 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
     public static final String ELEM_ADAPTER = "adapter";
     public static final String ELEM_TYPE_PARAMETERS = "type-parameters";
     public static final String ELEM_REFERENCE = "reference";
-    public static final String ATTR_CLASS = "class";
     public static final String ATTR_NAME = "name";
     public static final String ATTR_ARG_TYPES = "arg-types";
     public static final String ATTR_NUMBER = "number";
 
-    private final Map<Class<?>, ServiceDescriptor> services = new HashMap<Class<?>, ServiceDescriptor>();
-    private final Map<Class<?>, ValueDescriptor> defaults = new HashMap<Class<?>, ValueDescriptor>();
+    private final Map<Class<?>, ClassDescriptor> classes = new HashMap<Class<?>, ClassDescriptor>();
 
-    public XmlServiceDescriptorFactory(String url) throws ParserConfigurationException, SAXException, IOException {
+    public XmlClassDescriptorFactory(String url) throws ParserConfigurationException, SAXException, IOException {
         this(new URL(url));
     }
 
-    public XmlServiceDescriptorFactory(URL url) throws ParserConfigurationException, SAXException, IOException {
+    public XmlClassDescriptorFactory(URL url) throws ParserConfigurationException, SAXException, IOException {
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document doc = builder.parse(url.openStream());
-        Element root = doc.getDocumentElement();
+        Element rootElement = doc.getDocumentElement();
 
-        // defaults
-        Enumeration<Element> defaultElements = getElements(root, ELEM_DEFAULT);
-        while (defaultElements.hasMoreElements()) {
-            Element defaultElement = defaultElements.nextElement();
-            Class<?> cls = getClass(getAttribute(defaultElement, ATTR_CLASS, true));
-            defaults.put(cls, getValueDescriptor(defaultElement));
+        // read xml
+        Enumeration<Element> classElements = getElements(rootElement, ELEM_CLASS);
+        while (classElements.hasMoreElements()) {
+            Element classElement = classElements.nextElement();
+            Class<?> cls = getClass(getAttribute(classElement, ATTR_NAME, true));
+            classes.put(cls, getClassDescriptor(classElement, cls));
         }
 
-        // services
-        Enumeration<Element> serviceElements = getElements(root, ELEM_SERVICE);
-        while (serviceElements.hasMoreElements()) {
-            Element serviceElement = serviceElements.nextElement();
-            Class<?> serviceClass = getClass(getAttribute(serviceElement, ATTR_CLASS, true));
-            services.put(serviceClass, getServiceDescriptor(serviceElement, serviceClass));
+        // update method descriptors
+        for (ClassDescriptor classDescriptor : classes.values()) {
+            for (Map.Entry<MethodIdentifier, MethodDescriptor> entry : classDescriptor.getMethodDescriptors().entrySet()) {
+                MethodIdentifier methodIdentifier = entry.getKey();
+                MethodDescriptor methodDescriptor = entry.getValue();
+                if (methodDescriptor.getReturnDescriptor() == null) {
+                    ClassDescriptor returnClassDescriptor = getClassDescriptor(methodIdentifier.getReturnType());
+                    if (returnClassDescriptor != null)
+                        methodDescriptor.setReturnDescriptor(returnClassDescriptor.getValueDescriptor());
+                }
+                Class<?>[] paramTypes = methodIdentifier.getParameterTypes();
+                ValueDescriptor[] paramDescriptors = methodDescriptor.getParameterDescriptors();
+                for (int i = 0; i < paramDescriptors.length; i++) {
+                    if (paramDescriptors[i] == null) {
+                        ClassDescriptor paramClassDescriptor = getClassDescriptor(paramTypes[i]);
+                        if (paramClassDescriptor != null)
+                            paramDescriptors[i] = paramClassDescriptor.getValueDescriptor();
+                    }
+                }
+            }
         }
 
     }
 
     @Override
-    public ServiceDescriptor getServiceDescriptor(Class<?> serviceClass) {
-        return services.get(serviceClass.getCanonicalName());
+    public ClassDescriptor getClassDescriptor(Class<?> cls) {
+        synchronized (classes) {
+            ClassDescriptor classDescriptor = classes.get(cls);
+            if (classDescriptor == null) {
+                classDescriptor = new ClassDescriptor();
+                for (Method method : cls.getMethods()) {
+                    Class<?>[] paramTypes = method.getParameterTypes();
+                    MethodDescriptor methodDescriptor = new MethodDescriptor(paramTypes.length);
+                    boolean useful = false;
+                    ClassDescriptor returnClassDescriptor = classes.get(method.getReturnType());
+                    if (returnClassDescriptor != null) {
+                        methodDescriptor.setReturnDescriptor(returnClassDescriptor.getValueDescriptor());
+                        useful = true;
+                    }
+                    for (int i = 0; i < paramTypes.length; i++) {
+                        ClassDescriptor paramClassDescriptor = classes.get(paramTypes[i]);
+                        if (paramClassDescriptor != null) {
+                            methodDescriptor.setParameterDescriptor(i, paramClassDescriptor.getValueDescriptor());
+                            useful = useful || paramClassDescriptor.getValueDescriptor() != null;
+                        }
+                    }
+                    if (useful)
+                        classDescriptor.setMethodDescriptor(method, methodDescriptor);
+                }
+                classes.put(cls, classDescriptor);
+            }
+            return classDescriptor;
+        }
     }
 
-    private ServiceDescriptor getServiceDescriptor(Element serviceElement, Class<?> serviceClass) throws SAXException {
-        ServiceDescriptor serviceDescriptor = new ServiceDescriptor();
-        Enumeration<Element> methodElements = getElements(serviceElement, ELEM_METHOD);
+    private ClassDescriptor getClassDescriptor(Element classElement, Class<?> cls) throws SAXException {
+        ClassDescriptor classDescriptor = new ClassDescriptor();
+        Element valueElement = getElement(classElement, ELEM_VALUE);
+        if (valueElement != null) {
+            ValueDescriptor valueDescriptor = getValueDescriptor(valueElement);
+            classDescriptor.setValueDescriptor(valueDescriptor);
+        }
+        Enumeration<Element> methodElements = getElements(classElement, ELEM_METHOD);
         while (methodElements.hasMoreElements()) {
             Element methodElement = methodElements.nextElement();
             String methodName = getAttribute(methodElement, ATTR_NAME, true);
-            Class<?>[] argTypes = getClasses(getAttribute(methodElement, ATTR_ARG_TYPES, false));
+            Class<?>[] paramTypes = getClasses(getAttribute(methodElement, ATTR_ARG_TYPES, false));
             try {
-                Method method = serviceClass.getMethod(methodName, argTypes);
-                MethodIdentifier methodIdentifier = new MethodIdentifier(methodName, argTypes);
-                MethodDescriptor methodDescriptor = getMethodDescriptor(methodElement, argTypes, method.getReturnType());
-                serviceDescriptor.getMethodDescriptors().put(methodIdentifier, methodDescriptor);
+                Method method = cls.getMethod(methodName, paramTypes);
+                MethodIdentifier methodIdentifier = new MethodIdentifier(method);
+                MethodDescriptor methodDescriptor = getMethodDescriptor(methodElement, paramTypes, method.getReturnType());
+                classDescriptor.getMethodDescriptors().put(methodIdentifier, methodDescriptor);
             } catch (NoSuchMethodException e) {
                 throw new SAXException(e);
             }
         }
-        return serviceDescriptor;
+        return classDescriptor;
     }
 
     private MethodDescriptor getMethodDescriptor(Element methodElement, Class<?>[] argTypes, Class<?> returnType) throws SAXException {
@@ -146,24 +196,22 @@ public class XmlServiceDescriptorFactory implements ServiceDescriptorFactory {
         Element returnElement = getElement(methodElement, ELEM_RETURN);
         if (returnElement != null) {
             ValueDescriptor returnDescriptor = getValueDescriptor(returnElement);
-            if (returnDescriptor == null)
-                returnDescriptor = defaults.get(returnType);
             methodDescriptor.setReturnDescriptor(returnDescriptor);
         }
         Enumeration<Element> argElements = getElements(methodElement, ELEM_ARGUMENT);
         while (argElements.hasMoreElements()) {
             Element argElement = argElements.nextElement();
             ValueDescriptor argDescriptor = getValueDescriptor(argElement);
-            methodDescriptor.setArgumentDescriptor(Integer.parseInt(getAttribute(argElement, ATTR_NUMBER, true)), argDescriptor);
+            methodDescriptor.setParameterDescriptor(Integer.parseInt(getAttribute(argElement, ATTR_NUMBER, true)), argDescriptor);
         }
         return methodDescriptor;
     }
 
-    private static Element getElement(Element element, String name) {
+    private static Element getElement(Element element, String name) throws SAXException {
         NodeList nodes = element.getElementsByTagName(name);
-        if (nodes.getLength() > 0)
-            return (Element) nodes.item(0);
-        return null;
+        if (nodes.getLength() > 1)
+            throw new SAXException("Multiple '" + element.getNodeName() + "/" + name + "' elements found");
+        return (Element) nodes.item(0);
     }
 
     private static Enumeration<Element> getElements(Element element, String name) {

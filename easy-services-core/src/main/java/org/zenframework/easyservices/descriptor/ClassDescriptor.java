@@ -4,9 +4,10 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ServiceDescriptor {
+public class ClassDescriptor {
 
     private final Map<MethodIdentifier, MethodDescriptor> methodDescriptors = new HashMap<MethodIdentifier, MethodDescriptor>();
+    private ValueDescriptor valueDescriptor;
 
     public Map<MethodIdentifier, MethodDescriptor> getMethodDescriptors() {
         return methodDescriptors;
@@ -18,11 +19,20 @@ public class ServiceDescriptor {
     }
 
     public MethodDescriptor getMethodDescriptor(Method method) {
-        return methodDescriptors.get(new MethodIdentifier(method.getName(), method.getParameterTypes()));
+        MethodDescriptor methodDescriptor = methodDescriptors.get(new MethodIdentifier(method));
+        return methodDescriptor != null ? methodDescriptor : new MethodDescriptor(method.getParameterTypes().length);
     }
 
     public void setMethodDescriptor(Method method, MethodDescriptor methodDescriptor) {
         this.methodDescriptors.put(new MethodIdentifier(method), methodDescriptor);
+    }
+
+    public ValueDescriptor getValueDescriptor() {
+        return valueDescriptor;
+    }
+
+    public void setValueDescriptor(ValueDescriptor valueDescriptor) {
+        this.valueDescriptor = valueDescriptor;
     }
 
 }

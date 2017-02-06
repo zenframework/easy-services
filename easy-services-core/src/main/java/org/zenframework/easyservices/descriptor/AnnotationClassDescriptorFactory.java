@@ -11,28 +11,30 @@ import java.util.Map;
 import org.zenframework.easyservices.annotations.Alias;
 import org.zenframework.easyservices.annotations.Value;
 
-public class AnnotationServiceDescriptorFactory implements ServiceDescriptorFactory {
+public class AnnotationClassDescriptorFactory implements ClassDescriptorFactory {
 
-    private final Map<String, ServiceDescriptor> servicesCache = new HashMap<String, ServiceDescriptor>();
+    public static final AnnotationClassDescriptorFactory INSTANSE = new AnnotationClassDescriptorFactory();
+
+    private final Map<Class<?>, ClassDescriptor> cache = new HashMap<Class<?>, ClassDescriptor>();
 
     @Override
-    public ServiceDescriptor getServiceDescriptor(Class<?> serviceClass) {
-        ServiceDescriptor descriptor;
-        synchronized (servicesCache) {
-            descriptor = servicesCache.get(serviceClass.getCanonicalName());
-        }
-        if (descriptor == null) {
-            descriptor = extractServiceDescriptor(serviceClass);
-            synchronized (servicesCache) {
-                servicesCache.put(serviceClass.getCanonicalName(), descriptor);
+    public ClassDescriptor getClassDescriptor(Class<?> cls) {
+        synchronized (cache) {
+            ClassDescriptor classDescriptor = cache.get(cls);
+            if (classDescriptor == null) {
+                classDescriptor = extractClassDescriptor(cls);
+                cache.put(cls, classDescriptor);
             }
+            return classDescriptor;
         }
-        return descriptor;
     }
 
-    private ServiceDescriptor extractServiceDescriptor(Class<?> serviceClass) {
-        ServiceDescriptor serviceDescriptor = new ServiceDescriptor();
-        for (Method method : serviceClass.getMethods()) {
+    private static ClassDescriptor extractClassDescriptor(Class<?> cls) {
+        ClassDescriptor classDescriptor = new ClassDescriptor();
+        Value value = cls.getAnnotation(Value.class);
+        if (value != null)
+            classDescriptor.setValueDescriptor(getValueDescriptor(value));
+        for (Method method : cls.getMethods()) {
             Alias methodAlias = findMethodAnnotation(method, Alias.class);
             Value returnValue = findMethodAnnotation(method, Value.class);
             if (returnValue == null)
@@ -54,14 +56,14 @@ public class AnnotationServiceDescriptorFactory implements ServiceDescriptorFact
                 if (argValue == null)
                     argValue = argTypes[i].getAnnotation(Value.class);
                 if (argValue != null) {
-                    methodDescriptor.setArgumentDescriptor(i, getValueDescriptor(argValue));
+                    methodDescriptor.setParameterDescriptor(i, getValueDescriptor(argValue));
                     useful = true;
                 }
             }
             if (useful)
-                serviceDescriptor.setMethodDescriptor(method, methodDescriptor);
+                classDescriptor.setMethodDescriptor(method, methodDescriptor);
         }
-        return serviceDescriptor;
+        return classDescriptor;
     }
 
     private static <T extends Annotation> T findMethodAnnotation(Method method, Class<T> annotationClass) {

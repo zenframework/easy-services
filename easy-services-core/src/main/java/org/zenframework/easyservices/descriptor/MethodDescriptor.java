@@ -6,10 +6,10 @@ public class MethodDescriptor {
 
     private String alias = null;
     private ValueDescriptor returnDescriptor = null;
-    private final ValueDescriptor[] argumentDescriptors;
+    private final ValueDescriptor[] parameterDescriptors;
 
     public MethodDescriptor(int argsCount) {
-        this.argumentDescriptors = new ValueDescriptor[argsCount];
+        this.parameterDescriptors = new ValueDescriptor[argsCount];
     }
 
     public String getAlias() {
@@ -28,21 +28,21 @@ public class MethodDescriptor {
         this.returnDescriptor = returnDescriptor;
     }
 
-    public ValueDescriptor[] getArgumentDescriptors() {
-        return argumentDescriptors;
+    public ValueDescriptor[] getParameterDescriptors() {
+        return parameterDescriptors;
     }
 
-    public void setArgumentDescriptorsMap(Map<Integer, ValueDescriptor> argumentDescriptorsMap) {
-        for (int i = 0; i < argumentDescriptors.length; i++)
-            argumentDescriptors[i] = argumentDescriptorsMap.get(i);
+    public void setArgumentDescriptorsMap(Map<Integer, ValueDescriptor> paramDescriptorsMap) {
+        for (int i = 0; i < parameterDescriptors.length; i++)
+            parameterDescriptors[i] = paramDescriptorsMap.get(i);
     }
 
     public ValueDescriptor getArgumentDescriptor(int arg) {
-        return argumentDescriptors[arg];
+        return parameterDescriptors[arg];
     }
 
-    public void setArgumentDescriptor(int arg, ValueDescriptor argDescriptor) {
-        argumentDescriptors[arg] = argDescriptor;
+    public void setParameterDescriptor(int arg, ValueDescriptor paramDescriptor) {
+        parameterDescriptors[arg] = paramDescriptor;
     }
 
 }
