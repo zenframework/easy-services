@@ -9,6 +9,8 @@ import javax.naming.spi.NamingManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zenframework.commons.config.Config;
+import org.zenframework.commons.config.ConfigException;
 import org.zenframework.easyservices.jndi.impl.InitialContextFactoryImpl;
 
 public class JNDIHelper {
@@ -27,6 +29,17 @@ public class JNDIHelper {
         Properties props = new Properties();
         props.put(Context.INITIAL_CONTEXT_FACTORY, InitialContextFactoryImpl.class.getName());
         return NamingManager.getInitialContext(props);
+    }
+
+    public static Context newDefaultContext(Config config) throws ConfigException {
+        Properties props = new Properties();
+        for (String name : config.getNames())
+            props.put(name, config.getParam(name));
+        try {
+            return NamingManager.getInitialContext(props);
+        } catch (NamingException e) {
+            throw new ConfigException("Can't initialize default JNDI context", e);
+        }
     }
 
     public static Context bindAll(Map<String, Object> bindings) throws NamingException {
