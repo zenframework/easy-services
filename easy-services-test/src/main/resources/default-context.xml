@@ -11,10 +11,18 @@
         </property>
     </bean>
 
-    <bean id="servicesHttpRequestHandler" class="org.zenframework.easyservices.http.ServiceHttpRequestHandler" scope="singleton" />
-
     <bean id="jettyPort" class="java.lang.Integer">
         <constructor-arg value="10000" />
+    </bean>
+    
+    <bean id="server" class="org.zenframework.easyservices.test.HttpServer" scope="singleton">
+        <property name="port" value="#{jettyPort}" />
+        <property name="resourceFactory">
+            <bean class="org.zenframework.commons.resource.ClasspathResourceFactory" />
+        </property>
+        <property name="serviceHttpRequestHandler">
+            <bean class="org.zenframework.easyservices.http.ServiceHttpRequestHandler" />
+        </property>
     </bean>
 
     <bean id="clientFactory" class="org.zenframework.easyservices.impl.ClientFactoryImpl" scope="singleton">

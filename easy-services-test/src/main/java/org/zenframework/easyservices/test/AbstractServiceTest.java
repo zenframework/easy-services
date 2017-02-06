@@ -1,20 +1,11 @@
 package org.zenframework.easyservices.test;
 
-import java.io.IOException;
-
 import javax.naming.Context;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ClientFactory;
-import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
 import org.zenframework.easyservices.jndi.JNDIHelper;
 
 import junit.framework.TestCase;
@@ -23,25 +14,11 @@ public abstract class AbstractServiceTest extends TestCase {
 
     protected static final ApplicationContext CONTEXT = new ClassPathXmlApplicationContext("classpath:default-context.xml");
 
-    private final int jettyPort = CONTEXT.getBean("jettyPort", Integer.class);
-    private final ServiceHttpRequestHandler httpRequestHandler = CONTEXT.getBean(ServiceHttpRequestHandler.class);
-
-    private Server server;
+    private HttpServer server = CONTEXT.getBean(HttpServer.class);
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        server = new Server(jettyPort);
-        server.setHandler(new AbstractHandler() {
-
-            @Override
-            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
-                    throws IOException, ServletException {
-                httpRequestHandler.handleRequest(request, response);
-                baseRequest.setHandled(true);
-            }
-
-        });
         server.start();
     }
 
