@@ -12,12 +12,10 @@ import org.zenframework.easyservices.serialize.SerializerFactory;
 
 public class ClientFactoryImpl implements ClientFactory {
 
-    private static final RequestMapper DEFAULT_REQUEST_MAPPER = new RequestMapperImpl();
-    private static final ServiceDescriptorFactory DEFAULT_SERVICE_DESCRIPTOR_FACTORY = new AnnotationServiceDescriptorFactory();
     private static final SerializerFactory DEFAULT_SERIALIZER_FACTORY = ServiceUtil.getService(SerializerFactory.class);
 
-    private ServiceDescriptorFactory serviceDescriptorFactory = DEFAULT_SERVICE_DESCRIPTOR_FACTORY;
-    private RequestMapper requestMapper = DEFAULT_REQUEST_MAPPER;
+    private ServiceDescriptorFactory serviceDescriptorFactory = AnnotationServiceDescriptorFactory.INSTANE;
+    private RequestMapper requestMapper = RequestMapperImpl.INSTANCE;
     private SerializerFactory serializerFactory = DEFAULT_SERIALIZER_FACTORY;
     private String baseUrl;
 
