@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.servlet.simple;
+package org.zenframework.easyservices.http;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -8,7 +8,7 @@ import org.zenframework.easyservices.http.ErrorMapper;
 
 import junit.framework.TestCase;
 
-public class SimpleErrorMapperTest extends TestCase {
+public class ErrorMapperTest extends TestCase {
 
     private final ErrorMapper errorMapper = new ErrorMapper();
 
