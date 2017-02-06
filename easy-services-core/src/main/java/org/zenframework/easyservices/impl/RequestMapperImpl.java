@@ -16,8 +16,10 @@ import org.zenframework.easyservices.RequestMapper;
 
 public class RequestMapperImpl implements RequestMapper {
 
-    private static final String METHOD_PARAM = "method";
-    private static final String ARGUMENTS_PARAM = "args";
+    public static final RequestMapperImpl INSTANCE = new RequestMapperImpl();
+
+    private static final String PARAM_METHOD = "method";
+    private static final String PARAM_ARGUMENTS = "args";
 
     @Override
     public RequestContext getRequestContext(URI requestUri, String contextPath) throws IncorrectRequestException {
@@ -32,21 +34,20 @@ public class RequestMapperImpl implements RequestMapper {
     @Override
     public URI getRequestURI(String serviceUrl, String methodName, String args) throws UnsupportedEncodingException, URISyntaxException {
         StringBuilder str = new StringBuilder();
-        str.append(serviceUrl).append('?').append(METHOD_PARAM).append('=').append(methodName);
+        str.append(serviceUrl).append('?').append(PARAM_METHOD).append('=').append(methodName);
         if (args != null)
-            str.append('&').append(ARGUMENTS_PARAM).append('=').append(URLEncoder.encode(args, "UTF-8"));
+            str.append('&').append(PARAM_ARGUMENTS).append('=').append(URLEncoder.encode(args, "UTF-8"));
         return new URI(str.toString());
     }
 
     protected RequestContext getRequestContext(URI requestUri, String contextPath, String path, Map<String, List<String>> params)
             throws IncorrectRequestException {
         RequestContext context = new RequestContext();
-        if (!params.containsKey(METHOD_PARAM))
-            throw new IncorrectRequestException(requestUri, "Can't get service method: parameter '" + METHOD_PARAM + "' is null");
         context.setServiceName(path.substring(contextPath.length()));
-        context.setMethodName(params.get(METHOD_PARAM).get(0));
-        if (params.containsKey(ARGUMENTS_PARAM))
-            context.setArguments(params.get(ARGUMENTS_PARAM).get(0));
+        if (params.containsKey(PARAM_METHOD))
+            context.setMethodName(params.get(PARAM_METHOD).get(0));
+        if (params.containsKey(PARAM_ARGUMENTS))
+            context.setArguments(params.get(PARAM_ARGUMENTS).get(0));
         return context;
     }
 
