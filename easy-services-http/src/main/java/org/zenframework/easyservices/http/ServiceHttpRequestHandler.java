@@ -11,22 +11,38 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zenframework.commons.config.Config;
+import org.zenframework.commons.config.Configurable;
 import org.zenframework.easyservices.ErrorHandler;
 import org.zenframework.easyservices.ServiceInvoker;
 import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 
-public class ServiceHttpRequestHandler {
+public class ServiceHttpRequestHandler implements Configurable {
 
     @SuppressWarnings("unused")
     private static final Logger LOG = LoggerFactory.getLogger(ServiceHttpRequestHandler.class);
 
-    private static final ErrorMapper DEFAULT_ERROR_MAPPER = new ErrorMapper();
-    private static final String DEFAULT_SERVICES_PATH = "/services";
-    private static final ServiceInvoker DEFAULT_SERVICE_INVOKER = new ServiceInvokerImpl();
+    private static final String PARAM_ERROR_MAPPER = "errorMapper";
+    private static final String PARAM_SERVICES_PATH = "servicesPath";
+    private static final String PARAM_SERVICE_INVOKER = "serviceInvoker";
 
-    private ErrorMapper errorMapper = DEFAULT_ERROR_MAPPER;
+    private static final String DEFAULT_SERVICES_PATH = "/services";
+
+    private ErrorMapper errorMapper = new ErrorMapper();
     private String servicesPath = DEFAULT_SERVICES_PATH;
-    private ServiceInvoker serviceInvoker = DEFAULT_SERVICE_INVOKER;
+    private ServiceInvoker serviceInvoker = new ServiceInvokerImpl();
+
+    @Override
+    public void init(Config config) {
+        errorMapper = (ErrorMapper) config.getInstance(PARAM_ERROR_MAPPER, errorMapper);
+        servicesPath = config.getParam(PARAM_SERVICES_PATH, servicesPath);
+        serviceInvoker = (ServiceInvoker) config.getInstance(PARAM_SERVICE_INVOKER, serviceInvoker);
+    }
+
+    @Override
+    public void destroy(Config config) {
+        config.destroyInstances(errorMapper, serviceInvoker);
+    }
 
     public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {
         final StatusHolder status = new StatusHolder();
