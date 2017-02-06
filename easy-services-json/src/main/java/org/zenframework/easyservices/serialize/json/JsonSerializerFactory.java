@@ -1,6 +1,7 @@
 package org.zenframework.easyservices.serialize.json;
 
 import java.lang.reflect.Type;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -13,6 +14,10 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zenframework.commons.cls.ClassInfo;
+import org.zenframework.commons.cls.ClassRef;
+import org.zenframework.commons.cls.FieldInfo;
+import org.zenframework.commons.cls.MethodInfo;
 import org.zenframework.easyservices.ErrorDescription;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
@@ -20,9 +25,15 @@ import org.zenframework.easyservices.serialize.json.adapters.JsonSerializerAdapt
 import org.zenframework.easyservices.serialize.json.adapters.ListJsonSerializerAdapter;
 import org.zenframework.easyservices.serialize.json.adapters.MapJsonSerializerAdapter;
 import org.zenframework.easyservices.serialize.json.adapters.SetJsonSerializerAdapter;
+import org.zenframework.easyservices.serialize.json.gson.ClassInfoTypeAdapter;
+import org.zenframework.easyservices.serialize.json.gson.ClassRefTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.DateStringTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ErrorDescriptionJsonSerializer;
+import org.zenframework.easyservices.serialize.json.gson.FieldInfoTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.LocaleTypeAdapter;
+import org.zenframework.easyservices.serialize.json.gson.MethodInfoTypeAdapter;
+import org.zenframework.easyservices.serialize.json.gson.TypeTypeAdapter;
+import org.zenframework.easyservices.serialize.json.gson.URITypeAdapter;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapterFactory;
@@ -91,6 +102,12 @@ public class JsonSerializerFactory implements SerializerFactory {
         typeAdapters.put(Date.class, new DateStringTypeAdapter());
         typeAdapters.put(ErrorDescription.class, new ErrorDescriptionJsonSerializer());
         typeAdapters.put(Locale.class, new LocaleTypeAdapter());
+        typeAdapters.put(Type.class, new TypeTypeAdapter());
+        typeAdapters.put(URI.class, new URITypeAdapter());
+        typeAdapters.put(ClassInfo.class, new ClassInfoTypeAdapter());
+        typeAdapters.put(ClassRef.class, new ClassRefTypeAdapter());
+        typeAdapters.put(FieldInfo.class, new FieldInfoTypeAdapter());
+        typeAdapters.put(MethodInfo.class, new MethodInfoTypeAdapter());
         return typeAdapters;
     }
 
