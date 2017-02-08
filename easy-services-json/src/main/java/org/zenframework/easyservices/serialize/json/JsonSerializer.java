@@ -1,6 +1,5 @@
 package org.zenframework.easyservices.serialize.json;
 
-import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
@@ -42,7 +41,7 @@ public class JsonSerializer implements Serializer {
     }
 
     @Override
-    public Object[] deserialize(String data, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws ServiceException {
+    public Object[] deserialize(String data, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws SerializationException {
         if (data == null || data.equals(NULL_STR))
             return new Object[0];
         Object[] result = new Object[objTypes.length];

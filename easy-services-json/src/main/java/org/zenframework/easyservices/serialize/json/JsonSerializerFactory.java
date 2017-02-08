@@ -19,20 +19,23 @@ import org.zenframework.commons.cls.ClassRef;
 import org.zenframework.commons.cls.FieldInfo;
 import org.zenframework.commons.cls.MethodInfo;
 import org.zenframework.easyservices.ErrorDescription;
+import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.serialize.json.adapters.JsonSerializerAdapter;
 import org.zenframework.easyservices.serialize.json.adapters.ListJsonSerializerAdapter;
 import org.zenframework.easyservices.serialize.json.adapters.MapJsonSerializerAdapter;
 import org.zenframework.easyservices.serialize.json.adapters.SetJsonSerializerAdapter;
+import org.zenframework.easyservices.serialize.json.gson.ClassDescriptorTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ClassInfoTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ClassRefTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.DateStringTypeAdapter;
-import org.zenframework.easyservices.serialize.json.gson.ErrorDescriptionJsonSerializer;
+import org.zenframework.easyservices.serialize.json.gson.ErrorDescriptionTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.FieldInfoTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.LocaleTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.MethodInfoTypeAdapter;
-import org.zenframework.easyservices.serialize.json.gson.TypeTypeAdapter;
+import org.zenframework.easyservices.serialize.json.gson.ThrowableTypeAdapter;
+import org.zenframework.easyservices.serialize.json.gson.ClassTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.URITypeAdapter;
 
 import com.google.gson.GsonBuilder;
@@ -42,13 +45,9 @@ public class JsonSerializerFactory implements SerializerFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsonSerializerFactory.class);
 
-    private static final Map<Class<?>, JsonSerializerAdapter<?>> SERIALIZER_ADAPTERS_DEFAULT = getDefaultJsonSerializerAdapters();
-    private static final Collection<TypeAdapterFactory> TYPE_ADAPTER_FACTORIES_DEFAULT = getDefaultTypeAdapterFactories();
-    private static final Map<Type, Object> TYPE_ADAPTERS_DEFAULT = getDefaultTypeAdapters();
-
-    private Map<Class<?>, JsonSerializerAdapter<?>> serializerAdapters = SERIALIZER_ADAPTERS_DEFAULT;
-    private Collection<TypeAdapterFactory> typeAdapterFactories = TYPE_ADAPTER_FACTORIES_DEFAULT;
-    private Map<Type, Object> typeAdapters = TYPE_ADAPTERS_DEFAULT;
+    private final Map<Class<?>, JsonSerializerAdapter<?>> serializerAdapters = getDefaultJsonSerializerAdapters();
+    private final Collection<TypeAdapterFactory> typeAdapterFactories = getDefaultTypeAdapterFactories();
+    private final Map<Type, Object> typeAdapters = getDefaultTypeAdapters();
     private boolean exposedOnly = false;
 
     @Override
@@ -73,12 +72,16 @@ public class JsonSerializerFactory implements SerializerFactory {
         return candidate != null ? (JsonSerializerAdapter<T>) candidate.getValue() : null;
     }
 
+    public void setSerializerAdapters(Map<Class<?>, JsonSerializerAdapter<?>> serializerAdapters) {
+        this.serializerAdapters.putAll(serializerAdapters);
+    }
+
     public void setTypeAdapterFactories(Collection<TypeAdapterFactory> typeAdapterFactories) {
-        this.typeAdapterFactories = typeAdapterFactories;
+        this.typeAdapterFactories.addAll(typeAdapterFactories);
     }
 
     public void setTypeAdapters(Map<Type, Object> typeAdapters) {
-        this.typeAdapters = typeAdapters;
+        this.typeAdapters.putAll(typeAdapters);
     }
 
     public void setExposedOnly(boolean exposedOnly) {
@@ -99,15 +102,17 @@ public class JsonSerializerFactory implements SerializerFactory {
 
     private static Map<Type, Object> getDefaultTypeAdapters() {
         Map<Type, Object> typeAdapters = new HashMap<Type, Object>();
+        typeAdapters.put(Throwable.class, new ThrowableTypeAdapter());
         typeAdapters.put(Date.class, new DateStringTypeAdapter());
-        typeAdapters.put(ErrorDescription.class, new ErrorDescriptionJsonSerializer());
+        typeAdapters.put(ErrorDescription.class, new ErrorDescriptionTypeAdapter());
         typeAdapters.put(Locale.class, new LocaleTypeAdapter());
-        typeAdapters.put(Type.class, new TypeTypeAdapter());
+        typeAdapters.put(Class.class, new ClassTypeAdapter());
         typeAdapters.put(URI.class, new URITypeAdapter());
         typeAdapters.put(ClassInfo.class, new ClassInfoTypeAdapter());
         typeAdapters.put(ClassRef.class, new ClassRefTypeAdapter());
         typeAdapters.put(FieldInfo.class, new FieldInfoTypeAdapter());
         typeAdapters.put(MethodInfo.class, new MethodInfoTypeAdapter());
+        typeAdapters.put(ClassDescriptor.class, new ClassDescriptorTypeAdapter());
         return typeAdapters;
     }
 
