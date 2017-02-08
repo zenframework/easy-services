@@ -18,27 +18,35 @@ public class ClassInfoTypeAdapter extends TypeAdapter<ClassInfo> {
 
     @Override
     public void write(JsonWriter out, ClassInfo value) throws IOException {
-        out.beginObject();
-        out.name(NAME).value(value.getName());
-        out.name(FIELDS);
-        out.beginObject();
-        for (FieldInfo field : value.getFields().values()) {
-            out.name(field.getName());
-            FieldInfoTypeAdapter.INSTANCE.write(out, field);
+        if (value == null) {
+            out.nullValue();
+        } else {
+            out.beginObject();
+            out.name(NAME).value(value.getName());
+            out.name(FIELDS);
+            out.beginObject();
+            for (FieldInfo field : value.getFields().values()) {
+                out.name(field.getName());
+                FieldInfoTypeAdapter.INSTANCE.write(out, field);
+            }
+            out.endObject();
+            out.name(METHODS);
+            out.beginArray();
+            for (MethodInfo method : value.getMethods()) {
+                MethodInfoTypeAdapter.INSTANCE.write(out, method);
+            }
+            out.endArray();
+            out.endObject();
         }
-        out.endObject();
-        out.name(METHODS);
-        out.beginArray();
-        for (MethodInfo method : value.getMethods()) {
-            MethodInfoTypeAdapter.INSTANCE.write(out, method);
-        }
-        out.endArray();
-        out.endObject();
     }
 
     @Override
     public ClassInfo read(JsonReader in) throws IOException {
-        /*String className = null;
+        /*if (in.peek() == JsonToken.NULL) {
+            in.nextNull();
+            return null;
+        }
+        String className = null;
         Map<String, FieldInfo> fields = new HashMap<String, FieldInfo>();
         Set<MethodInfo> methods = new HashSet<MethodInfo>();
         in.beginObject();

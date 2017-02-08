@@ -7,6 +7,7 @@ import org.zenframework.commons.cls.FieldInfo;
 
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
 public class FieldInfoTypeAdapter extends TypeAdapter<FieldInfo> {
@@ -20,16 +21,24 @@ public class FieldInfoTypeAdapter extends TypeAdapter<FieldInfo> {
 
     @Override
     public void write(JsonWriter out, FieldInfo value) throws IOException {
-        out.beginObject();
-        out.name(NAME).value(value.getName());
-        out.name(TYPE).value(value.getType().getName());
-        out.name(READABLE).value(value.isReadable());
-        out.name(WRITABLE).value(value.isWritable());
-        out.endObject();
+        if (value == null) {
+            out.nullValue();
+        } else {
+            out.beginObject();
+            out.name(NAME).value(value.getName());
+            out.name(TYPE).value(value.getType().getName());
+            out.name(READABLE).value(value.isReadable());
+            out.name(WRITABLE).value(value.isWritable());
+            out.endObject();
+        }
     }
 
     @Override
     public FieldInfo read(JsonReader in) throws IOException {
+        if (in.peek() == JsonToken.NULL) {
+            in.nextNull();
+            return null;
+        }
         String fieldName = null;
         ClassRef type = null;
         boolean readable = false, writable = false;
