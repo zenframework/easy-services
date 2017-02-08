@@ -53,6 +53,13 @@ public class JsonSerializerTest extends TestCase {
         assertEquals(new SimpleBean("asd", 2), map.get("b"));
     }
 
+    public void testClassSerialization() throws Exception {
+        Serializer serializer = new JsonSerializerFactory().getSerializer();
+        String data = serializer.serialize(getClass());
+        System.out.println(data);
+        assertEquals(getClass(), serializer.deserialize(data, Class.class));
+    }
+
     public static class SimpleBean {
 
         private String str;

@@ -9,6 +9,7 @@ public class SimpleTest extends AbstractServiceTest {
         super.setUp();
         getServiceRegistry().bind("/add", new Addition());
         getServiceRegistry().bind("/sub", new Substraction());
+        getServiceRegistry().bind("/echo", new EchoImpl());
     }
 
     @Override
@@ -21,6 +22,16 @@ public class SimpleTest extends AbstractServiceTest {
     public void testSimpleServices() throws Exception {
         assertEquals(3, getClient(Function.class, "/add").call(1, 2));
         assertEquals(1, getClient(Function.class, "/sub").call(3, 2));
+        assertEquals(Integer.class, getClient(Echo.class, "/echo").echo(Integer.class));
+    }
+
+    public void testThrowCatchException() throws Exception {
+        try {
+            getClient(Echo.class, "/echo").throwException(new SimpleException("exception"));
+        } catch (Exception e) {
+            assertTrue(e instanceof SimpleException);
+            assertEquals("exception", e.getMessage());
+        }
     }
 
 }
