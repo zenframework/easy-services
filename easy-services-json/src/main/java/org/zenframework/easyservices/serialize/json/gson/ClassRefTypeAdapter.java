@@ -6,6 +6,7 @@ import org.zenframework.commons.cls.ClassRef;
 
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
 public class ClassRefTypeAdapter extends TypeAdapter<ClassRef> {
@@ -14,12 +15,21 @@ public class ClassRefTypeAdapter extends TypeAdapter<ClassRef> {
 
     @Override
     public void write(JsonWriter out, ClassRef value) throws IOException {
-        out.value(value.getName());
+        if (value == null) {
+            out.nullValue();
+        } else {
+            out.value(value.getName());
+        }
     }
 
     @Override
     public ClassRef read(JsonReader in) throws IOException {
-        return new ClassRef(in.nextString());
+        if (in.peek() == JsonToken.NULL) {
+            in.nextNull();
+            return null;
+        } else {
+            return new ClassRef(in.nextString());
+        }
     }
 
 }

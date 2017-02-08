@@ -26,9 +26,9 @@ public abstract class FilterTypeAdapter<T> extends TypeAdapter<T> {
         }
         if (value == null) {
             out.nullValue();
-            return;
+        } else {
+            out.value(toString(value));
         }
-        out.value(toString(value));
     }
 
     @Override

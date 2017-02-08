@@ -9,6 +9,7 @@ import org.zenframework.commons.cls.MethodInfo;
 
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 
 public class MethodInfoTypeAdapter extends TypeAdapter<MethodInfo> {
@@ -21,20 +22,28 @@ public class MethodInfoTypeAdapter extends TypeAdapter<MethodInfo> {
 
     @Override
     public void write(JsonWriter out, MethodInfo value) throws IOException {
-        out.beginObject();
-        out.name(NAME).value(value.getName());
-        out.name(PARAMETER_TYPES);
-        out.beginArray();
-        for (ClassRef paramType : value.getParameterTypes())
-            ClassRefTypeAdapter.INSTANCE.write(out, paramType);
-        out.endArray();
-        out.name(RETURN_TYPE);
-        ClassRefTypeAdapter.INSTANCE.write(out, value.getReturnType());
-        out.endObject();
+        if (value == null) {
+            out.nullValue();
+        } else {
+            out.beginObject();
+            out.name(NAME).value(value.getName());
+            out.name(PARAMETER_TYPES);
+            out.beginArray();
+            for (ClassRef paramType : value.getParameterTypes())
+                ClassRefTypeAdapter.INSTANCE.write(out, paramType);
+            out.endArray();
+            out.name(RETURN_TYPE);
+            ClassRefTypeAdapter.INSTANCE.write(out, value.getReturnType());
+            out.endObject();
+        }
     }
 
     @Override
     public MethodInfo read(JsonReader in) throws IOException {
+        if (in.peek() == JsonToken.NULL) {
+            in.nextNull();
+            return null;
+        }
         String methodName = null;
         List<ClassRef> paramTypes = new ArrayList<ClassRef>();
         ClassRef returnType = null;

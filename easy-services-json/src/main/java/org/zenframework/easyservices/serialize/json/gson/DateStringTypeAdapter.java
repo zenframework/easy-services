@@ -28,13 +28,17 @@ public class DateStringTypeAdapter extends TypeAdapter<Date> {
     public void write(JsonWriter out, Date value) throws IOException {
         if (value == null) {
             out.nullValue();
-            return;
+        } else {
+            out.value(dateFormat.format(value));
         }
-        out.value(dateFormat.format(value));
     }
 
     @Override
     public Date read(JsonReader in) throws IOException {
+        if (in.peek() == JsonToken.NULL) {
+            in.nextNull();
+            return null;
+        }
         Throwable cause = null;
         if (in.peek() == JsonToken.NULL) {
             in.nextNull();
