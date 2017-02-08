@@ -1,6 +1,5 @@
 package org.zenframework.easyservices.impl;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.Arrays;
@@ -27,9 +26,9 @@ import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.ServiceInvoker;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.descriptor.AnnotationClassDescriptorFactory;
-import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
+import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.jndi.JNDIHelper;
 import org.zenframework.easyservices.serialize.SerializationException;
@@ -58,7 +57,9 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         String result;
         try {
             RequestContext context = requestMapper.getRequestContext(requestUri, contextPath);
-            Object service = serviceRegistry.lookup(context.getServiceName());
+            Object service = lookupSystemService(context.getServiceName());
+            if (service == null)
+                service = serviceRegistry.lookup(context.getServiceName());
             result = context.getMethodName() == null ? getServiceInfo(service, serializer) : invokeMethod(context, service, serializer);
         } catch (Throwable e) {
             if (e instanceof ServiceException)
@@ -136,6 +137,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
         Method method = null;
         MethodDescriptor methodDescriptor = null;
+        ValueDescriptor[] paramDescriptors = null;
         Object args[] = null;
         Object result;
 
@@ -144,15 +146,14 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             if (m.getName().equals(context.getMethodName())) {
                 try {
                     Class<?>[] argTypes = m.getParameterTypes();
-                    methodDescriptor = serviceClassDescriptor != null ? serviceClassDescriptor.getMethodDescriptor(m)
-                            : new MethodDescriptor(argTypes.length);
-                    ValueDescriptor[] argDescriptors = methodDescriptor.getParameterDescriptors();
+                    methodDescriptor = serviceClassDescriptor != null ? serviceClassDescriptor.getMethodDescriptor(m) : null;
+                    paramDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[argTypes.length];
                     for (int i = 0; i < argTypes.length; i++) {
-                        ValueDescriptor argDescriptor = argDescriptors[i];
+                        ValueDescriptor argDescriptor = paramDescriptors[i];
                         if (argDescriptor != null && argDescriptor.isReference())
                             argTypes[i] = ServiceLocator.class;
                     }
-                    args = serializer.deserialize(context.getArguments(), argTypes, argDescriptors);
+                    args = serializer.deserialize(context.getArguments(), argTypes, paramDescriptors);
                     method = m;
                     break;
                 } catch (SerializationException e) {
@@ -170,51 +171,60 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             time = new TimeChecker(new StringBuilder(1024).append(context.getServiceName()).append('.').append(context.getMethodName())
                     .append(new PrettyStringBuilder().toString(args)).toString(), LOG);
 
-        try {
+        //try {
 
-            // Find and replace references
-            ValueDescriptor[] argDescriptors = methodDescriptor.getParameterDescriptors();
-            for (int i = 0; i < args.length; i++) {
-                ValueDescriptor argDescriptor = argDescriptors[i];
-                if (argDescriptor != null && argDescriptor.isReference()) {
-                    ServiceLocator locator = (ServiceLocator) args[i];
-                    if (locator.isAbsolute())
-                        throw new ServiceException("Can't get dynamic service by absolute service locator '" + locator + "'");
-                    args[i] = serviceRegistry.lookup(locator.getServiceName());
-                }
+        // Find and replace references
+        for (int i = 0; i < args.length; i++) {
+            ValueDescriptor argDescriptor = paramDescriptors[i];
+            if (argDescriptor != null && argDescriptor.isReference()) {
+                ServiceLocator locator = (ServiceLocator) args[i];
+                if (locator.isAbsolute())
+                    throw new ServiceException("Can't get dynamic service by absolute service locator '" + locator + "'");
+                args[i] = serviceRegistry.lookup(locator.getServiceName());
             }
-
-            // Invoke method
-            result = method.invoke(service, args);
-            if (time != null)
-                time.printDifference(result);
-
-            // If method must return reference, bind result to service register and set result to service locator
-            ValueDescriptor returnDescriptor = methodDescriptor.getReturnDescriptor();
-            if (returnDescriptor != null && returnDescriptor.isReference()) {
-                String name = getName(result);
-                try {
-                    serviceRegistry.lookup(name);
-                } catch (NamingException e) {
-                    serviceRegistry.bind(name, result);
-                }
-                result = ServiceLocator.relative(name);
-            }
-
-            return serializer.serialize(result);
-
-        } catch (Throwable e) {
-            if (e instanceof InvocationTargetException)
-                e = ((InvocationTargetException) e).getTargetException();
-            if (time != null)
-                time.printDifference(e);
-            throw new InvocationException(context, args, e);
         }
+
+        // Invoke method
+        try {
+            result = method.invoke(service, args);
+        } catch (Throwable e) {
+            result = e;
+        }
+        if (time != null)
+            time.printDifference(result);
+
+        // If method must return reference, bind result to service register and set result to service locator
+        ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
+        if (returnDescriptor != null && returnDescriptor.isReference()) {
+            String name = getName(result);
+            try {
+                serviceRegistry.lookup(name);
+            } catch (NamingException e) {
+                serviceRegistry.bind(name, result);
+            }
+            result = ServiceLocator.relative(name);
+        }
+
+        return serializer.serialize(result);
+
+        //} catch (Throwable e) {
+        //    if (e instanceof InvocationTargetException)
+        //        e = ((InvocationTargetException) e).getTargetException();
+        //    if (time != null)
+        //        time.printDifference(e);
+        //    throw new InvocationException(context, args, e);
+        //}
 
     }
 
+    protected Object lookupSystemService(String name) {
+        if (ClassDescriptorFactory.NAME.equals(name))
+            return classDescriptorFactory;
+        return null;
+    }
+
     protected static String getName(Object obj) {
-        return "/dynamic/" + System.identityHashCode(obj);
+        return "/dynamic/" + obj.getClass().getCanonicalName() + '@' + System.identityHashCode(obj);
     }
 
 }
