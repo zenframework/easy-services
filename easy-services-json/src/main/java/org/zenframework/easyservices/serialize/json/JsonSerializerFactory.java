@@ -1,6 +1,5 @@
 package org.zenframework.easyservices.serialize.json;
 
-import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.Collection;
 import java.util.Date;
@@ -10,7 +9,6 @@ import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,32 +20,30 @@ import org.zenframework.easyservices.ErrorDescription;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
-import org.zenframework.easyservices.serialize.json.adapters.JsonSerializerAdapter;
-import org.zenframework.easyservices.serialize.json.adapters.ListJsonSerializerAdapter;
-import org.zenframework.easyservices.serialize.json.adapters.MapJsonSerializerAdapter;
-import org.zenframework.easyservices.serialize.json.adapters.SetJsonSerializerAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ClassDescriptorTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ClassInfoTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ClassRefTypeAdapter;
+import org.zenframework.easyservices.serialize.json.gson.ClassTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.DateStringTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ErrorDescriptionTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.FieldInfoTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.LocaleTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.MethodInfoTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ThrowableTypeAdapter;
-import org.zenframework.easyservices.serialize.json.gson.ClassTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.URITypeAdapter;
 
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
+import com.google.gson.reflect.TypeToken;
 
 public class JsonSerializerFactory implements SerializerFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(JsonSerializerFactory.class);
 
-    private final Map<Class<?>, JsonSerializerAdapter<?>> serializerAdapters = getDefaultJsonSerializerAdapters();
     private final Collection<TypeAdapterFactory> typeAdapterFactories = getDefaultTypeAdapterFactories();
-    private final Map<Type, Object> typeAdapters = getDefaultTypeAdapters();
+    private final Map<Class<?>, TypeAdapter<?>> typeAdapters = getDefaultTypeAdapters();
     private boolean exposedOnly = false;
 
     @Override
@@ -55,37 +51,37 @@ public class JsonSerializerFactory implements SerializerFactory {
         GsonBuilder builder = new GsonBuilder();
         if (exposedOnly)
             builder.excludeFieldsWithoutExposeAnnotation();
+        builder.registerTypeAdapterFactory(new SimpleTypeAdapterFactory());
         for (TypeAdapterFactory factory : typeAdapterFactories)
             builder.registerTypeAdapterFactory(factory);
-        for (Map.Entry<Type, Object> entry : typeAdapters.entrySet())
-            builder.registerTypeAdapter(entry.getKey(), entry.getValue());
-        return new JsonSerializer(this, builder.create());
-    }
-
-    @SuppressWarnings("unchecked")
-    public <T> JsonSerializerAdapter<T> getAdapter(Class<T> type) {
-        Map.Entry<Class<?>, JsonSerializerAdapter<?>> candidate = null;
-        for (Map.Entry<Class<?>, JsonSerializerAdapter<?>> entry : serializerAdapters.entrySet()) {
-            if (entry.getKey().isAssignableFrom(type) && (candidate == null || candidate.getKey().isAssignableFrom(entry.getKey())))
-                candidate = entry;
-        }
-        return candidate != null ? (JsonSerializerAdapter<T>) candidate.getValue() : null;
-    }
-
-    public void setSerializerAdapters(Map<Class<?>, JsonSerializerAdapter<?>> serializerAdapters) {
-        this.serializerAdapters.putAll(serializerAdapters);
+        return new JsonSerializer(builder.create());
     }
 
     public void setTypeAdapterFactories(Collection<TypeAdapterFactory> typeAdapterFactories) {
         this.typeAdapterFactories.addAll(typeAdapterFactories);
     }
 
-    public void setTypeAdapters(Map<Type, Object> typeAdapters) {
+    public void setTypeAdapters(Map<Class<?>, TypeAdapter<?>> typeAdapters) {
         this.typeAdapters.putAll(typeAdapters);
     }
 
     public void setExposedOnly(boolean exposedOnly) {
         this.exposedOnly = exposedOnly;
+    }
+
+    private class SimpleTypeAdapterFactory implements TypeAdapterFactory {
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
+            Map.Entry<Class<?>, TypeAdapter<?>> candidate = null;
+            for (Map.Entry<Class<?>, TypeAdapter<?>> entry : typeAdapters.entrySet()) {
+                if (entry.getKey().isAssignableFrom(type.getRawType()) && (candidate == null || candidate.getKey().isAssignableFrom(entry.getKey())))
+                    candidate = entry;
+            }
+            return candidate != null ? (TypeAdapter<T>) candidate.getValue() : null;
+        }
+
     }
 
     private static Collection<TypeAdapterFactory> getDefaultTypeAdapterFactories() {
@@ -100,8 +96,8 @@ public class JsonSerializerFactory implements SerializerFactory {
         return factories;
     }
 
-    private static Map<Type, Object> getDefaultTypeAdapters() {
-        Map<Type, Object> typeAdapters = new HashMap<Type, Object>();
+    private static Map<Class<?>, TypeAdapter<?>> getDefaultTypeAdapters() {
+        Map<Class<?>, TypeAdapter<?>> typeAdapters = new HashMap<Class<?>, TypeAdapter<?>>();
         typeAdapters.put(Throwable.class, new ThrowableTypeAdapter());
         typeAdapters.put(Date.class, new DateStringTypeAdapter());
         typeAdapters.put(ErrorDescription.class, new ErrorDescriptionTypeAdapter());
@@ -114,14 +110,6 @@ public class JsonSerializerFactory implements SerializerFactory {
         typeAdapters.put(MethodInfo.class, new MethodInfoTypeAdapter());
         typeAdapters.put(ClassDescriptor.class, new ClassDescriptorTypeAdapter());
         return typeAdapters;
-    }
-
-    private static Map<Class<?>, JsonSerializerAdapter<?>> getDefaultJsonSerializerAdapters() {
-        Map<Class<?>, JsonSerializerAdapter<?>> adapters = new HashMap<Class<?>, JsonSerializerAdapter<?>>();
-        adapters.put(Collection.class, new ListJsonSerializerAdapter());
-        adapters.put(Map.class, new MapJsonSerializerAdapter());
-        adapters.put(Set.class, new SetJsonSerializerAdapter());
-        return adapters;
     }
 
 }

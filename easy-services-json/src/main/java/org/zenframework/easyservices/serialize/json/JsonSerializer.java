@@ -3,11 +3,10 @@ package org.zenframework.easyservices.serialize.json;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
-import org.zenframework.easyservices.serialize.json.adapters.JsonSerializerAdapter;
+import org.zenframework.easyservices.serialize.json.gson.GsonUtil;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 public class JsonSerializer implements Serializer {
@@ -15,11 +14,9 @@ public class JsonSerializer implements Serializer {
     private static final String NULL_STR = "null";
 
     private final JsonParser parser = new JsonParser();
-    private final JsonSerializerFactory factory;
     private final Gson gson;
 
-    public JsonSerializer(JsonSerializerFactory factory, Gson gson) {
-        this.factory = factory;
+    public JsonSerializer(Gson gson) {
         this.gson = gson;
     }
 
@@ -34,10 +31,7 @@ public class JsonSerializer implements Serializer {
     public <T> T deserialize(String data, Class<T> objType, ValueDescriptor valueDescriptor) throws SerializationException {
         if (data == null || data.equals(NULL_STR))
             return null;
-        JsonSerializerAdapter<T> adapter = getJsonSerializerAdapter(objType, valueDescriptor);
-        if (adapter != null)
-            return adapter.deserialize(this, parser.parse(data), valueDescriptor != null ? valueDescriptor.getTypeParameters() : new Class<?>[0]);
-        return deserialize(data, objType);
+        return gson.fromJson(data, valueDescriptor != null ? GsonUtil.getParameterizedType(objType, valueDescriptor.getTypeParameters()) : objType);
     }
 
     @Override
@@ -49,7 +43,8 @@ public class JsonSerializer implements Serializer {
         if (json.size() != result.length)
             throw new SerializationException("Incorrect number of arguments: " + json.size() + ", expected: " + result.length);
         for (int i = 0; i < result.length; i++)
-            result[i] = deserialize(json.get(i), objTypes[i], valueDescriptors[i]);
+            result[i] = gson.fromJson(json.get(i),
+                    valueDescriptors[i] != null ? GsonUtil.getParameterizedType(objTypes[i], valueDescriptors[i].getTypeParameters()) : objTypes[i]);
         return result;
     }
 
@@ -66,26 +61,6 @@ public class JsonSerializer implements Serializer {
 
     public JsonParser getParser() {
         return parser;
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> JsonSerializerAdapter<T> getJsonSerializerAdapter(Class<T> objType, ValueDescriptor valueDescriptor) {
-        JsonSerializerAdapter<T> adapter = null;
-        if (valueDescriptor != null) {
-            adapter = valueDescriptor.getAdapter(JsonSerializerAdapter.class);
-            if (adapter == null)
-                adapter = factory.getAdapter(objType);
-        }
-        return adapter;
-    }
-
-    private <T> T deserialize(JsonElement json, Class<T> objType, ValueDescriptor valueDescriptor) throws SerializationException {
-        if (json == null)
-            return null;
-        JsonSerializerAdapter<T> adapter = getJsonSerializerAdapter(objType, valueDescriptor);
-        if (adapter != null)
-            return adapter.deserialize(this, json, valueDescriptor != null ? valueDescriptor.getTypeParameters() : new Class<?>[0]);
-        return gson.fromJson(json, objType);
     }
 
 }

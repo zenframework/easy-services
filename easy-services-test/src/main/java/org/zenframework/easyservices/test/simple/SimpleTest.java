@@ -17,6 +17,7 @@ public class SimpleTest extends AbstractServiceTest {
         super.tearDown();
         getServiceRegistry().unbind("/add");
         getServiceRegistry().unbind("/sub");
+        getServiceRegistry().unbind("/echo");
     }
 
     public void testSimpleServices() throws Exception {
@@ -29,6 +30,7 @@ public class SimpleTest extends AbstractServiceTest {
         try {
             getClient(Echo.class, "/echo").throwException(new SimpleException("exception"));
         } catch (Exception e) {
+            e.printStackTrace();
             assertTrue(e instanceof SimpleException);
             assertEquals("exception", e.getMessage());
         }
