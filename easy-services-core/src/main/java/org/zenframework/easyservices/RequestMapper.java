@@ -6,7 +6,7 @@ import java.net.URISyntaxException;
 
 public interface RequestMapper {
 
-    RequestContext getRequestContext(URI requestUri, String contextPath) throws IncorrectRequestException;
+    ServiceRequest getRequestContext(URI requestUri, String contextPath) throws IncorrectRequestException;
 
     URI getRequestURI(String serviceUrl, String methodName, String args)
             throws UnsupportedEncodingException, URISyntaxException;

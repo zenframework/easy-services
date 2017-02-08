@@ -1,6 +1,6 @@
 package org.zenframework.easyservices;
 
-public class RequestContext {
+public class ServiceRequest {
 
     private String serviceName;
     private String methodName;

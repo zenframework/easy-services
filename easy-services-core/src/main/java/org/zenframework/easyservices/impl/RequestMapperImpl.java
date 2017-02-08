@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.zenframework.easyservices.IncorrectRequestException;
-import org.zenframework.easyservices.RequestContext;
+import org.zenframework.easyservices.ServiceRequest;
 import org.zenframework.easyservices.RequestMapper;
 
 public class RequestMapperImpl implements RequestMapper {
@@ -22,7 +22,7 @@ public class RequestMapperImpl implements RequestMapper {
     private static final String PARAM_ARGUMENTS = "args";
 
     @Override
-    public RequestContext getRequestContext(URI requestUri, String contextPath) throws IncorrectRequestException {
+    public ServiceRequest getRequestContext(URI requestUri, String contextPath) throws IncorrectRequestException {
         if (contextPath == null)
             contextPath = "";
         String path = requestUri.getPath();
@@ -40,9 +40,9 @@ public class RequestMapperImpl implements RequestMapper {
         return new URI(str.toString());
     }
 
-    protected RequestContext getRequestContext(URI requestUri, String contextPath, String path, Map<String, List<String>> params)
+    protected ServiceRequest getRequestContext(URI requestUri, String contextPath, String path, Map<String, List<String>> params)
             throws IncorrectRequestException {
-        RequestContext context = new RequestContext();
+        ServiceRequest context = new ServiceRequest();
         context.setServiceName(path.substring(contextPath.length()));
         if (params.containsKey(PARAM_METHOD))
             context.setMethodName(params.get(PARAM_METHOD).get(0));

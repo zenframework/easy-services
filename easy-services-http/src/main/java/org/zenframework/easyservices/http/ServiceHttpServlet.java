@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.zenframework.commons.config.Config;
 import org.zenframework.commons.web.GenericConfig;
 import org.zenframework.easyservices.ServiceInvoker;
 
@@ -15,6 +16,8 @@ public class ServiceHttpServlet extends HttpServlet {
     private static final long serialVersionUID = 6337141493514767757L;
 
     private final ServiceHttpRequestHandler requestHandler = new ServiceHttpRequestHandler();
+
+    private Config config;
 
     public void setErrorMapper(ErrorMapper errorMapper) {
         requestHandler.setErrorMapper(errorMapper);
@@ -42,8 +45,13 @@ public class ServiceHttpServlet extends HttpServlet {
 
     @Override
     public void init() throws ServletException {
-        GenericConfig config = new GenericConfig(getServletConfig());
+        config = new GenericConfig(getServletConfig());
         requestHandler.init(config);
+    }
+
+    @Override
+    public void destroy() {
+        requestHandler.destroy(config);
     }
 
     @Override

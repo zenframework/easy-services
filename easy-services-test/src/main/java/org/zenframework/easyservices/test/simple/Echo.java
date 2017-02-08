@@ -6,4 +6,6 @@ public interface Echo {
 
     void throwException(Exception e) throws Exception;
 
+    int nextInteger();
+
 }

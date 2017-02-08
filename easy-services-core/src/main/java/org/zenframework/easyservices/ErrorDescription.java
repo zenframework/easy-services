@@ -11,9 +11,13 @@ public class ErrorDescription implements Serializable {
     private final String className;
     private final String message;
 
+    public ErrorDescription(String className, String message) {
+        this.className = className;
+        this.message = message;
+    }
+
     public ErrorDescription(Throwable e) {
-        this.className = e.getClass().getCanonicalName();
-        this.message = e.getMessage();
+        this(e.getClass().getName(), e.getMessage());
     }
 
     public long getTimestamp() {

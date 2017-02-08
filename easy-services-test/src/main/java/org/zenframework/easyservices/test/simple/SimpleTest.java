@@ -36,4 +36,10 @@ public class SimpleTest extends AbstractServiceTest {
         }
     }
 
+    public void testSingleCall() throws Exception {
+        Echo echo = getClient(Echo.class, "/echo");
+        assertEquals(0, echo.nextInteger());
+        assertEquals(1, echo.nextInteger());
+    }
+
 }

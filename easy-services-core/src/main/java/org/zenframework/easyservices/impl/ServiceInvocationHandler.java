@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,7 @@ import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
+import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
@@ -76,12 +78,9 @@ public class ServiceInvocationHandler implements InvocationHandler {
 
             // Call service
             URL url = requestMapper.getRequestURI(serviceLocator.getServiceUrl(), method.getName(), serializedArgs).toURL();
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                Object content = connection.getContent();
-                System.out.println(content);
-            }
-            String data = readData(url.openStream());
+            URLConnection connection = url.openConnection();
+            checkError(connection, serializer);
+            String data = readData(connection.getInputStream());
             if (time != null)
                 time.printDifference(data);
 
@@ -125,6 +124,17 @@ public class ServiceInvocationHandler implements InvocationHandler {
             return str.toString();
         } finally {
             reader.close();
+        }
+    }
+
+    // TODO must be extendable
+    private void checkError(URLConnection connection, Serializer serializer) throws SerializationException, IOException, Throwable {
+        if (connection instanceof HttpURLConnection) {
+            HttpURLConnection httpConnection = (HttpURLConnection) connection;
+            if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                String data = httpConnection.getResponseMessage();
+                throw (Throwable) serializer.deserialize(data, Throwable.class);
+            }
         }
     }
 
