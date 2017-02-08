@@ -70,7 +70,7 @@ import org.xml.sax.SAXException;
  * @author Oleg S. Lekshin
  *
  */
-public class XmlClassDescriptorFactory implements ClassDescriptorFactory {
+public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
 
     private static final Map<String, Class<?>> PRIMITIVES = getPrimitives();
 
@@ -115,7 +115,7 @@ public class XmlClassDescriptorFactory implements ClassDescriptorFactory {
                 MethodIdentifier methodIdentifier = entry.getKey();
                 MethodDescriptor methodDescriptor = entry.getValue();
                 if (methodDescriptor.getReturnDescriptor() == null) {
-                    ClassDescriptor returnClassDescriptor = getClassDescriptor(methodIdentifier.getReturnType());
+                    ClassDescriptor returnClassDescriptor = classes.get(methodIdentifier.getReturnType());
                     if (returnClassDescriptor != null)
                         methodDescriptor.setReturnDescriptor(returnClassDescriptor.getValueDescriptor());
                 }
@@ -123,7 +123,7 @@ public class XmlClassDescriptorFactory implements ClassDescriptorFactory {
                 ValueDescriptor[] paramDescriptors = methodDescriptor.getParameterDescriptors();
                 for (int i = 0; i < paramDescriptors.length; i++) {
                     if (paramDescriptors[i] == null) {
-                        ClassDescriptor paramClassDescriptor = getClassDescriptor(paramTypes[i]);
+                        ClassDescriptor paramClassDescriptor = classes.get(paramTypes[i]);
                         if (paramClassDescriptor != null)
                             paramDescriptors[i] = paramClassDescriptor.getValueDescriptor();
                     }
@@ -134,34 +134,38 @@ public class XmlClassDescriptorFactory implements ClassDescriptorFactory {
     }
 
     @Override
-    public ClassDescriptor getClassDescriptor(Class<?> cls) {
-        synchronized (classes) {
-            ClassDescriptor classDescriptor = classes.get(cls);
-            if (classDescriptor == null) {
-                classDescriptor = new ClassDescriptor();
-                for (Method method : cls.getMethods()) {
-                    Class<?>[] paramTypes = method.getParameterTypes();
-                    MethodDescriptor methodDescriptor = new MethodDescriptor(paramTypes.length);
-                    boolean useful = false;
+    protected ClassDescriptor extractClassDescriptor(Class<?> cls) {
+        ClassDescriptor classDescriptor = classes.get(cls);
+        if (classDescriptor == null)
+            classDescriptor = new ClassDescriptor();
+        for (Method method : cls.getMethods()) {
+            Class<?>[] paramTypes = method.getParameterTypes();
+            MethodDescriptor methodDescriptor = classDescriptor.getMethodDescriptor(method);
+            if (methodDescriptor == null) {
+                methodDescriptor = new MethodDescriptor(paramTypes.length);
+                boolean useful = false;
+                if (methodDescriptor.getReturnDescriptor() == null) {
                     ClassDescriptor returnClassDescriptor = classes.get(method.getReturnType());
-                    if (returnClassDescriptor != null) {
+                    if (returnClassDescriptor != null && returnClassDescriptor.getValueDescriptor() != null) {
                         methodDescriptor.setReturnDescriptor(returnClassDescriptor.getValueDescriptor());
                         useful = true;
                     }
-                    for (int i = 0; i < paramTypes.length; i++) {
+                }
+                ValueDescriptor[] paramDescriptors = methodDescriptor.getParameterDescriptors();
+                for (int i = 0; i < paramTypes.length; i++) {
+                    if (paramDescriptors[i] == null) {
                         ClassDescriptor paramClassDescriptor = classes.get(paramTypes[i]);
-                        if (paramClassDescriptor != null) {
+                        if (paramClassDescriptor != null && paramClassDescriptor.getValueDescriptor() != null) {
                             methodDescriptor.setParameterDescriptor(i, paramClassDescriptor.getValueDescriptor());
                             useful = useful || paramClassDescriptor.getValueDescriptor() != null;
                         }
                     }
-                    if (useful)
-                        classDescriptor.setMethodDescriptor(method, methodDescriptor);
                 }
-                classes.put(cls, classDescriptor);
+                if (useful)
+                    classDescriptor.setMethodDescriptor(new MethodIdentifier(method), methodDescriptor);
             }
-            return classDescriptor;
         }
+        return classDescriptor;
     }
 
     private ClassDescriptor getClassDescriptor(Element classElement, Class<?> cls) throws SAXException {

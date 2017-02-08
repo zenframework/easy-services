@@ -4,32 +4,17 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.zenframework.easyservices.annotations.Alias;
 import org.zenframework.easyservices.annotations.Value;
 
-public class AnnotationClassDescriptorFactory implements ClassDescriptorFactory {
+public class AnnotationClassDescriptorFactory extends AbstractClassDescriptorFactory {
 
     public static final AnnotationClassDescriptorFactory INSTANSE = new AnnotationClassDescriptorFactory();
 
-    private final Map<Class<?>, ClassDescriptor> cache = new HashMap<Class<?>, ClassDescriptor>();
-
     @Override
-    public ClassDescriptor getClassDescriptor(Class<?> cls) {
-        synchronized (cache) {
-            ClassDescriptor classDescriptor = cache.get(cls);
-            if (classDescriptor == null) {
-                classDescriptor = extractClassDescriptor(cls);
-                cache.put(cls, classDescriptor);
-            }
-            return classDescriptor;
-        }
-    }
-
-    private static ClassDescriptor extractClassDescriptor(Class<?> cls) {
+    protected ClassDescriptor extractClassDescriptor(Class<?> cls) {
         ClassDescriptor classDescriptor = new ClassDescriptor();
         Value value = cls.getAnnotation(Value.class);
         if (value != null)
@@ -61,7 +46,7 @@ public class AnnotationClassDescriptorFactory implements ClassDescriptorFactory 
                 }
             }
             if (useful)
-                classDescriptor.setMethodDescriptor(method, methodDescriptor);
+                classDescriptor.setMethodDescriptor(new MethodIdentifier(method), methodDescriptor);
         }
         return classDescriptor;
     }

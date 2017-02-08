@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.net.HttpURLConnection;
 import java.net.URL;
 
 import org.slf4j.Logger;
@@ -43,24 +44,24 @@ public class ServiceInvocationHandler implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
+        if (args == null)
+            args = new Object[0];
+
         // Check service locator is absolute
         if (serviceLocator.isRelative())
             throw new ClientException("Service locator '" + serviceLocator + "' must be absolute");
 
         Serializer serializer = serializerFactory.getSerializer();
-        ClassDescriptor classDescriptor = serviceDescriptorFactory.getClassDescriptor(serviceClass);
-        MethodDescriptor methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(method)
-                : new MethodDescriptor(args.length);
-        ValueDescriptor[] argDescriptors = methodDescriptor.getParameterDescriptors();
+        ClassDescriptor classDescriptor = serviceDescriptorFactory != null ? serviceDescriptorFactory.getClassDescriptor(serviceClass) : null;
+        MethodDescriptor methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(method) : null;
+        ValueDescriptor[] argDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[args.length];
 
         // Find and replace proxy objects with references
-        if (args != null) {
-            for (int i = 0; i < args.length; i++) {
-                ValueDescriptor argDescriptor = argDescriptors[i];
-                if (argDescriptor != null && argDescriptor.isReference()) {
-                    ServiceInvocationHandler handler = (ServiceInvocationHandler) Proxy.getInvocationHandler(args[i]);
-                    args[i] = handler.getServiceLocator();
-                }
+        for (int i = 0; i < args.length; i++) {
+            ValueDescriptor argDescriptor = argDescriptors[i];
+            if (argDescriptor != null && argDescriptor.isReference()) {
+                ServiceInvocationHandler handler = (ServiceInvocationHandler) Proxy.getInvocationHandler(args[i]);
+                args[i] = handler.getServiceLocator();
             }
         }
 
@@ -69,23 +70,28 @@ public class ServiceInvocationHandler implements InvocationHandler {
 
         TimeChecker time = null;
         if (LOG.isDebugEnabled())
-            time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + ' ' + method.getName() + (args != null ? serializedArgs : "[]"), LOG);
+            time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + ' ' + method.getName() + serializedArgs, LOG);
 
         try {
 
             // Call service
             URL url = requestMapper.getRequestURI(serviceLocator.getServiceUrl(), method.getName(), serializedArgs).toURL();
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                Object content = connection.getContent();
+                System.out.println(content);
+            }
             String data = readData(url.openStream());
             if (time != null)
                 time.printDifference(data);
 
-            ValueDescriptor returnDescriptor = methodDescriptor.getReturnDescriptor();
+            ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
             // If result is reference, replace with proxy object
             if (returnDescriptor != null && returnDescriptor.isReference()) {
                 ServiceLocator locator = (ServiceLocator) serializer.deserialize(data, ServiceLocator.class, returnDescriptor);
                 if (locator.isRelative())
                     locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
-                return getProxy(locator, method.getReturnType());
+                return getProxy(method.getReturnType(), locator, serviceDescriptorFactory, serializerFactory, requestMapper);
             }
             // Else return deserialized result
             return serializer.deserialize(data, method.getReturnType(), returnDescriptor);
@@ -102,6 +108,13 @@ public class ServiceInvocationHandler implements InvocationHandler {
         return serviceLocator;
     }
 
+    @SuppressWarnings("unchecked")
+    public static <T> T getProxy(Class<T> serviceClass, ServiceLocator serviceLocator, ClassDescriptorFactory classDescriptorFactory,
+            SerializerFactory serializerFactory, RequestMapper requestMapper) {
+        return (T) Proxy.newProxyInstance(ClientFactoryImpl.class.getClassLoader(), new Class<?>[] { serviceClass },
+                new ServiceInvocationHandler(serviceLocator, serviceClass, classDescriptorFactory, serializerFactory, requestMapper));
+    }
+
     private static String readData(InputStream in) throws IOException {
         StringBuilder str = new StringBuilder(8192);
         char buf[] = new char[8192];
@@ -113,11 +126,6 @@ public class ServiceInvocationHandler implements InvocationHandler {
         } finally {
             reader.close();
         }
-    }
-
-    private Object getProxy(ServiceLocator serviceLocator, Class<?> serviceClass) throws IllegalArgumentException, ClientException {
-        return Proxy.newProxyInstance(getClass().getClassLoader(), new Class<?>[] { serviceClass },
-                new ServiceInvocationHandler(serviceLocator, serviceClass, serviceDescriptorFactory, serializerFactory, requestMapper));
     }
 
 }
