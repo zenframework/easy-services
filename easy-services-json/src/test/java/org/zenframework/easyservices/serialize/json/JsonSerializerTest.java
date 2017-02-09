@@ -1,5 +1,6 @@
 package org.zenframework.easyservices.serialize.json;
 
+import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +20,7 @@ public class JsonSerializerTest extends TestCase {
 
     public void testStrToArgs() throws Exception {
         Serializer serializer = new JsonSerializer(new Gson());
-        Object[] result = serializer.deserialize(TEST_JSON_ARR, new Class<?>[] { SimpleBean.class, SimpleBean.class }, new ValueDescriptor[2]);
+        Object[] result = serializer.deserialize(new ByteArrayInputStream(TEST_JSON_ARR.getBytes()), new Class<?>[] { SimpleBean.class, SimpleBean.class }, new ValueDescriptor[2]);
         assertTrue(result.length == 2);
         for (Object o : result)
             assertTrue(o instanceof SimpleBean);
@@ -28,7 +29,7 @@ public class JsonSerializerTest extends TestCase {
     public void testNullSerialization() throws Exception {
         Serializer serializer = new JsonSerializer(new Gson());
         assertEquals("null", serializer.serialize((Object) null));
-        assertNull(serializer.deserialize("null", SimpleBean.class));
+        assertNull(serializer.deserialize("null", SimpleBean.class, null));
     }
 
     @SuppressWarnings("unchecked")
@@ -65,7 +66,7 @@ public class JsonSerializerTest extends TestCase {
         Serializer serializer = new JsonSerializerFactory().getSerializer();
         String data = serializer.serialize(getClass());
         System.out.println(data);
-        assertEquals(getClass(), serializer.deserialize(data, Class.class));
+        assertEquals(getClass(), serializer.deserialize(data, Class.class, null));
     }
 
     public static class SimpleBean {

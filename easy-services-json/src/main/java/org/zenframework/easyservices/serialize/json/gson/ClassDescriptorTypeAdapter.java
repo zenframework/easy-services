@@ -24,6 +24,8 @@ public class ClassDescriptorTypeAdapter extends TypeAdapter<ClassDescriptor> {
             out.nullValue();
         } else {
             out.beginObject();
+            if (value.isDebug())
+                out.name("debug").value(true);
             if (value.getValueDescriptor() != null) {
                 out.name("value");
                 write(out, value.getValueDescriptor());
@@ -50,7 +52,9 @@ public class ClassDescriptorTypeAdapter extends TypeAdapter<ClassDescriptor> {
         in.beginObject();
         while (in.hasNext()) {
             String name = in.nextName();
-            if ("value".equals(name)) {
+            if ("debug".equals(name)) {
+                value.setDebug(in.nextBoolean());
+            } else if ("value".equals(name)) {
                 value.setValueDescriptor(readValueDescriptor(in));
             } else if ("methods".equals(name)) {
                 in.beginObject();
@@ -139,6 +143,8 @@ public class ClassDescriptorTypeAdapter extends TypeAdapter<ClassDescriptor> {
             out.nullValue();
         } else {
             out.beginObject();
+            if (value.isDebug())
+                out.name("debug").value(true);
             if (value.getAlias() != null)
                 out.name("alias").value(value.getAlias());
             out.name("parameters").beginArray();
@@ -158,13 +164,16 @@ public class ClassDescriptorTypeAdapter extends TypeAdapter<ClassDescriptor> {
             in.nextNull();
             return null;
         }
+        boolean debug = false;
         String alias = null;
         Map<Integer, ValueDescriptor> paramDescriptors = new HashMap<Integer, ValueDescriptor>();
         ValueDescriptor returnDescriptor = null;
         in.beginObject();
         while (in.hasNext()) {
             String name = in.nextName();
-            if ("alias".equals(name)) {
+            if ("debug".equals(name)) {
+                debug = in.nextBoolean();
+            } else if ("alias".equals(name)) {
                 alias = in.nextString();
             } else if ("parameters".equals(name)) {
                 in.beginArray();
@@ -180,6 +189,7 @@ public class ClassDescriptorTypeAdapter extends TypeAdapter<ClassDescriptor> {
         }
         in.endObject();
         MethodDescriptor value = new MethodDescriptor(paramDescriptors.size());
+        value.setDebug(debug);
         value.setAlias(alias);
         value.setParameterDescriptorsMap(paramDescriptors);
         value.setReturnDescriptor(returnDescriptor);

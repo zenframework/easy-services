@@ -28,8 +28,8 @@ public class ClientFactoryImpl implements ClientFactory {
 
     @Override
     public <T> T getClient(Class<T> serviceClass, String serviceName) {
-        return ServiceInvocationHandler.getProxy(serviceClass, ServiceLocator.qualified(baseUrl, serviceName), classDescriptorFactory,
-                serializerFactory, requestMapper);
+        return ClientProxy.getCGLibProxy(serviceClass, ServiceLocator.qualified(baseUrl, serviceName), classDescriptorFactory, serializerFactory,
+                requestMapper);
     }
 
     public void setBaseUrl(String baseUrl) {
@@ -55,7 +55,7 @@ public class ClientFactoryImpl implements ClientFactory {
         @Override
         protected ClassDescriptor extractClassDescriptor(Class<?> cls) {
             if (remoteClassDescriptorFactory == null)
-                remoteClassDescriptorFactory = ServiceInvocationHandler.getProxy(ClassDescriptorFactory.class,
+                remoteClassDescriptorFactory = ClientProxy.getCGLibProxy(ClassDescriptorFactory.class,
                         ServiceLocator.qualified(baseUrl, ClassDescriptorFactory.NAME), null, serializerFactory, requestMapper);
             return remoteClassDescriptorFactory.getClassDescriptor(cls);
         }

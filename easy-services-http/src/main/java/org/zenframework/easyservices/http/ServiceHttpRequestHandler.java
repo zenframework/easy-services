@@ -17,7 +17,6 @@ import org.zenframework.easyservices.IncorrectRequestException;
 import org.zenframework.easyservices.RequestMapper;
 import org.zenframework.easyservices.ServiceInvoker;
 import org.zenframework.easyservices.ServiceRequest;
-import org.zenframework.easyservices.ServiceResponse;
 import org.zenframework.easyservices.impl.RequestMapperImpl;
 import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 
@@ -53,17 +52,9 @@ public class ServiceHttpRequestHandler implements Configurable {
 
     public void handleRequest(HttpServletRequest request, final HttpServletResponse response) throws IOException {
         try {
-            ServiceRequest serviceRequest = requestMapper.getRequestContext(getRequestURI(request), getContextPath(request));
-            ServiceResponse serviceResponse = serviceInvoker.invoke(serviceRequest);
             response.setCharacterEncoding("UTF-8");
-            if (serviceResponse.isSuccess()) {
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.getWriter().print(serviceResponse.getSerializedResult());
-            } else {
-                response.sendError(
-                        errorMapper != null ? errorMapper.getStatus(serviceResponse.getError()) : HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                        serviceResponse.getSerializedResult());
-            }
+            ServiceRequest serviceRequest = requestMapper.getRequestContext(getRequestURI(request), getContextPath(request));
+            serviceInvoker.invoke(serviceRequest, new HttpServiceResponse(response, errorMapper));
         } catch (IncorrectRequestException e) {
             throw new RuntimeException(e);
         } catch (URISyntaxException e) {

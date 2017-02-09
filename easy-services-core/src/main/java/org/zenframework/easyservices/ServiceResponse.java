@@ -1,33 +1,12 @@
 package org.zenframework.easyservices;
 
-public class ServiceResponse {
+import java.io.IOException;
+import java.io.OutputStream;
 
-    private String serializedResult;
-    private Throwable error;
+public interface ServiceResponse {
 
-    public ServiceResponse(String serializedResult, Throwable error) {
-        this.serializedResult = serializedResult;
-        this.error = error;
-    }
+    OutputStream getOutputStream() throws IOException;
 
-    public boolean isSuccess() {
-        return error == null;
-    }
-
-    public String getSerializedResult() {
-        return serializedResult;
-    }
-
-    public void setSerializedResult(String serializedResult) {
-        this.serializedResult = serializedResult;
-    }
-
-    public Throwable getError() {
-        return error;
-    }
-
-    public void setError(Throwable error) {
-        this.error = error;
-    }
+    OutputStream getErrorStream(Throwable e) throws IOException;
 
 }

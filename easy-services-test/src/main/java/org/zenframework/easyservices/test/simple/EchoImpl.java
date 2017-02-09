@@ -21,4 +21,7 @@ public class EchoImpl implements Echo {
         return n.getAndIncrement();
     }
 
+    @Override
+    public void doNothing() {}
+
 }

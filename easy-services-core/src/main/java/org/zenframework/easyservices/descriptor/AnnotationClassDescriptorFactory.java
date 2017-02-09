@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.zenframework.easyservices.annotations.Alias;
+import org.zenframework.easyservices.annotations.Debug;
 import org.zenframework.easyservices.annotations.Value;
 
 public class AnnotationClassDescriptorFactory extends AbstractClassDescriptorFactory {
@@ -17,11 +18,15 @@ public class AnnotationClassDescriptorFactory extends AbstractClassDescriptorFac
     protected ClassDescriptor extractClassDescriptor(Class<?> cls) {
         ClassDescriptor classDescriptor = new ClassDescriptor();
         Value value = cls.getAnnotation(Value.class);
+        Debug clsDebug = cls.getAnnotation(Debug.class);
         if (value != null)
             classDescriptor.setValueDescriptor(getValueDescriptor(value));
+        if (clsDebug != null)
+            classDescriptor.setDebug(clsDebug.value());
         for (Method method : cls.getMethods()) {
             Alias methodAlias = findMethodAnnotation(method, Alias.class);
             Value returnValue = findMethodAnnotation(method, Value.class);
+            Debug methodDebug = findMethodAnnotation(method, Debug.class);
             if (returnValue == null)
                 returnValue = method.getReturnType().getAnnotation(Value.class);
             Class<?>[] argTypes = method.getParameterTypes();
@@ -33,6 +38,10 @@ public class AnnotationClassDescriptorFactory extends AbstractClassDescriptorFac
             }
             if (returnValue != null) {
                 methodDescriptor.setReturnDescriptor(getValueDescriptor(returnValue));
+                useful = true;
+            }
+            if (methodDebug != null) {
+                methodDescriptor.setDebug(methodDebug.value());
                 useful = true;
             }
             Value[] argValues = findArgsAnnotations(method, Value.class, new Value[argTypes.length]);

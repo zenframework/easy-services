@@ -1,5 +1,7 @@
 package org.zenframework.easyservices.impl;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -47,7 +49,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
     private SerializerFactory serializerFactory = DEFAULT_SERIALIZER_FACTORY;
 
     @Override
-    public ServiceResponse invoke(ServiceRequest request) {
+    public void invoke(ServiceRequest request, ServiceResponse response) throws IOException {
         Serializer serializer = serializerFactory.getSerializer();
         try {
             Object service = lookupSystemService(request.getServiceName());
@@ -55,8 +57,17 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
                 service = serviceRegistry.lookup(request.getServiceName());
             if (service == null)
                 throw new ServiceException("Service " + request.getServiceName() + " not found");
-            String result = request.getMethodName() == null ? getServiceInfo(service, serializer) : invokeMethod(request, service, serializer);
-            return new ServiceResponse(result, null);
+            OutputStream out = response.getOutputStream();
+            try {
+                if (request.getMethodName() == null)
+                    invokeServiceInfo(service, serializer, out);
+                else
+                    invokeMethod(request, service, serializer, out);
+            } finally {
+                out.close();
+            }
+        } catch (IOException e) {
+            throw e;
         } catch (Throwable e) {
             if (e instanceof InvocationTargetException) {
                 e = ((InvocationTargetException) e).getTargetException();
@@ -64,7 +75,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             } else {
                 LOG.error(e.getMessage(), e);
             }
-            return new ServiceResponse(serializer.serialize(e), e);
+            serializer.serialize(e, response.getErrorStream(e));
         }
     }
 
@@ -106,17 +117,17 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         return serializerFactory;
     }
 
-    protected String getServiceInfo(Object service, Serializer serializer) {
+    protected void invokeServiceInfo(Object service, Serializer serializer, OutputStream out) throws IOException {
         ClassInfo classInfo = ClassInfo.getClassRef(service.getClass()).getClassInfo();
         Map<String, Object> serviceInfo = new HashMap<String, Object>();
         serviceInfo.put("className", classInfo.getName());
         serviceInfo.put("classes", ClassInfo.getClassInfos(service.getClass()));
-        return serializer.serialize(serviceInfo);
+        serializer.serialize(serviceInfo, out);
     }
 
-    protected String invokeMethod(ServiceRequest request, Object service, Serializer serializer) throws Throwable {
+    protected void invokeMethod(ServiceRequest request, Object service, Serializer serializer, OutputStream out) throws Throwable {
 
-        ClassDescriptor serviceClassDescriptor = classDescriptorFactory.getClassDescriptor(service.getClass());
+        ClassDescriptor classDescriptor = classDescriptorFactory.getClassDescriptor(service.getClass());
 
         Method method = null;
         MethodDescriptor methodDescriptor = null;
@@ -129,7 +140,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             if (m.getName().equals(request.getMethodName())) {
                 try {
                     Class<?>[] argTypes = m.getParameterTypes();
-                    methodDescriptor = serviceClassDescriptor != null ? serviceClassDescriptor.getMethodDescriptor(m) : null;
+                    methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(m) : null;
                     paramDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[argTypes.length];
                     for (int i = 0; i < argTypes.length; i++) {
                         ValueDescriptor argDescriptor = paramDescriptors[i];
@@ -150,7 +161,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             throw new ServiceException("Can't find method [" + request.getMethodName() + "] applicable for given args " + request.getArguments());
 
         TimeChecker time = null;
-        if (LOG.isDebugEnabled())
+        boolean debug = methodDescriptor != null ? methodDescriptor.isDebug() : classDescriptor != null ? classDescriptor.isDebug() : false;
+        if (debug && LOG.isDebugEnabled())
             time = new TimeChecker(new StringBuilder(1024).append(request.getServiceName()).append('.').append(request.getMethodName())
                     .append(new PrettyStringBuilder().toString(args)).toString(), LOG);
 
@@ -196,7 +208,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             result = ServiceLocator.relative(name);
         }
 
-        return serializer.serialize(result);
+        serializer.serialize(result, out);
 
     }
 

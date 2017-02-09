@@ -79,6 +79,7 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
     public static final String ELEM_VALUE = "value";
     public static final String ELEM_METHOD = "method";
     public static final String ELEM_ALIAS = "alias";
+    public static final String ELEM_DEBUG = "debug";
     public static final String ELEM_RETURN = "return";
     public static final String ELEM_ARGUMENT = "argument";
     public static final String ELEM_ADAPTER = "adapter";
@@ -175,6 +176,9 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
             ValueDescriptor valueDescriptor = getValueDescriptor(valueElement);
             classDescriptor.setValueDescriptor(valueDescriptor);
         }
+        Element debugElement = getElement(classElement, ELEM_DEBUG);
+        if (debugElement != null)
+            classDescriptor.setDebug(Boolean.parseBoolean(debugElement.getTextContent()));
         Enumeration<Element> methodElements = getElements(classElement, ELEM_METHOD);
         while (methodElements.hasMoreElements()) {
             Element methodElement = methodElements.nextElement();
@@ -202,6 +206,9 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
             ValueDescriptor returnDescriptor = getValueDescriptor(returnElement);
             methodDescriptor.setReturnDescriptor(returnDescriptor);
         }
+        Element debugElement = getElement(methodElement, ELEM_DEBUG);
+        if (debugElement != null)
+            methodDescriptor.setDebug(Boolean.parseBoolean(debugElement.getTextContent()));
         Enumeration<Element> argElements = getElements(methodElement, ELEM_ARGUMENT);
         while (argElements.hasMoreElements()) {
             Element argElement = argElements.nextElement();

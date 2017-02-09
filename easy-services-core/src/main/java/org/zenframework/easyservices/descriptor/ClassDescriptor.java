@@ -10,6 +10,7 @@ public class ClassDescriptor {
 
     private final Map<MethodIdentifier, MethodDescriptor> methodDescriptors = new HashMap<MethodIdentifier, MethodDescriptor>();
     private ValueDescriptor valueDescriptor;
+    private boolean debug = false;
 
     public Map<MethodIdentifier, MethodDescriptor> getMethodDescriptors() {
         return methodDescriptors;
@@ -34,6 +35,14 @@ public class ClassDescriptor {
 
     public void setValueDescriptor(ValueDescriptor valueDescriptor) {
         this.valueDescriptor = valueDescriptor;
+    }
+
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 
     @Override

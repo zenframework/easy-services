@@ -1,7 +1,9 @@
 package org.zenframework.easyservices;
 
+import java.io.IOException;
+
 public interface ServiceInvoker {
 
-    ServiceResponse invoke(ServiceRequest request);
+    void invoke(ServiceRequest request, ServiceResponse response) throws IOException;
 
 }

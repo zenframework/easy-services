@@ -20,6 +20,7 @@ import org.zenframework.easyservices.ErrorDescription;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
+import org.zenframework.easyservices.serialize.json.gson.ByteArrayTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ClassDescriptorTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ClassInfoTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ClassRefTypeAdapter;
@@ -98,6 +99,7 @@ public class JsonSerializerFactory implements SerializerFactory {
 
     private static Map<Class<?>, TypeAdapter<?>> getDefaultTypeAdapters() {
         Map<Class<?>, TypeAdapter<?>> typeAdapters = new HashMap<Class<?>, TypeAdapter<?>>();
+        typeAdapters.put(byte[].class, new ByteArrayTypeAdapter());
         typeAdapters.put(Throwable.class, new ThrowableTypeAdapter());
         typeAdapters.put(Date.class, new DateStringTypeAdapter());
         typeAdapters.put(ErrorDescription.class, new ErrorDescriptionTypeAdapter());

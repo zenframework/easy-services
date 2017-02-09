@@ -10,6 +10,7 @@ public class MethodDescriptor {
     private ValueDescriptor returnDescriptor = null;
     private final ValueDescriptor[] parameterDescriptors;
     private boolean emptyParameterDescriptors = true;
+    private boolean debug = false;
 
     public MethodDescriptor(int argsCount) {
         this.parameterDescriptors = new ValueDescriptor[argsCount];
@@ -48,6 +49,14 @@ public class MethodDescriptor {
         parameterDescriptors[arg] = paramDescriptor;
         if (paramDescriptor != null)
             emptyParameterDescriptors = false;
+    }
+
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 
     @Override

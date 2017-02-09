@@ -8,4 +8,6 @@ public interface Echo {
 
     int nextInteger();
 
+    void doNothing();
+
 }

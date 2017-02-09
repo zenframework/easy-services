@@ -42,4 +42,9 @@ public class SimpleTest extends AbstractServiceTest {
         assertEquals(1, echo.nextInteger());
     }
 
+    public void testVoid() throws Exception {
+        Echo echo = getClient(Echo.class, "/echo");
+        echo.doNothing();
+    }
+
 }
