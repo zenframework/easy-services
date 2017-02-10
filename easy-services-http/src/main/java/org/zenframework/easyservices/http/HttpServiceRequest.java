@@ -25,8 +25,10 @@ public class HttpServiceRequest implements ServiceRequest {
     @Override
     public String getServiceName() {
         String path = request.getPathInfo();
+        if (servicesPath.equals(request.getServletPath()))
+            return path;
         if (!path.startsWith(servicesPath))
-            throw new IllegalStateException("Incorrect servies path " + path);
+            throw new IllegalStateException("Incorrect services path " + path);
         return path.substring(servicesPath.length());
     }
 
@@ -49,7 +51,7 @@ public class HttpServiceRequest implements ServiceRequest {
     public InputStream getInputStream() throws IOException {
         return request.getInputStream();
     }
-
+    
     @Override
     public Reader getReader() throws IOException {
         return request.getReader();

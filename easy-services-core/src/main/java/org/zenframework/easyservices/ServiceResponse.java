@@ -8,10 +8,8 @@ public interface ServiceResponse {
 
     OutputStream getOutputStream() throws IOException;
 
-    OutputStream getErrorOutputStream(Throwable e) throws IOException;
-
     Writer getWriter() throws IOException;
 
-    Writer getErrorWriter(Throwable e) throws IOException;
+    void sendError(Throwable e);
 
 }

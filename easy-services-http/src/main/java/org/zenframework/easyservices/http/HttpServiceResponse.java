@@ -1,9 +1,7 @@
 package org.zenframework.easyservices.http;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.StringWriter;
 import java.io.Writer;
 
 import javax.servlet.http.HttpServletResponse;
@@ -26,34 +24,13 @@ public class HttpServiceResponse implements ServiceResponse {
     }
 
     @Override
-    public OutputStream getErrorOutputStream(final Throwable e) {
-        return new ByteArrayOutputStream() {
-
-            @Override
-            public void close() throws IOException {
-                super.close();
-                response.sendError(getStatus(e), new String(toByteArray(), response.getCharacterEncoding()));
-            }
-
-        };
-    }
-
-    @Override
     public Writer getWriter() throws IOException {
         return response.getWriter();
     }
 
     @Override
-    public Writer getErrorWriter(final Throwable e) throws IOException {
-        return new StringWriter() {
-
-            @Override
-            public void close() throws IOException {
-                super.close();
-                response.sendError(getStatus(e), toString());
-            }
-
-        };
+    public void sendError(Throwable e) {
+        response.setStatus(getStatus(e));
     }
 
     private int getStatus(Throwable e) {

@@ -40,7 +40,7 @@ public class ServiceHttpRequestHandler implements Configurable {
     }
 
     public void handleRequest(HttpServletRequest request, final HttpServletResponse response) throws IOException {
-        //response.setCharacterEncoding("UTF-8");
+        response.setCharacterEncoding("UTF-8");
         serviceInvoker.invoke(new HttpServiceRequest(request, servicesPath), new HttpServiceResponse(response, errorMapper));
     }
 

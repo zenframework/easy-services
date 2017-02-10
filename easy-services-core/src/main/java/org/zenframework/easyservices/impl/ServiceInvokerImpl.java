@@ -54,19 +54,14 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
     @Override
     public void invoke(ServiceRequest request, ServiceResponse response) throws IOException {
         CharSerializer serializer = serializerFactory.getCharSerializer();
+        Object result = null;
         try {
             Object service = lookupSystemService(request.getServiceName());
             if (service == null)
                 service = serviceRegistry.lookup(request.getServiceName());
             if (service == null)
                 throw new ServiceException("Service " + request.getServiceName() + " not found");
-            Object result = request.getMethodName() == null ? getServiceInfo(service) : invokeMethod(request, service, serializer);
-            Writer out = response.getWriter();
-            try {
-                serializer.serialize(result, out);
-            } finally {
-                out.close();
-            }
+            result = request.getMethodName() == null ? getServiceInfo(service) : invokeMethod(request, service, serializer);
         } catch (IOException e) {
             throw e;
         } catch (Throwable e) {
@@ -76,12 +71,14 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             } else {
                 LOG.error(e.getMessage(), e);
             }
-            Writer out = response.getErrorWriter(e);
-            try {
-                serializer.serialize(e, out);
-            } finally {
-                out.close();
-            }
+            response.sendError(e);
+            result = e;
+        }
+        Writer out = response.getWriter();
+        try {
+            serializer.serialize(result, out);
+        } finally {
+            out.close();
         }
     }
 
@@ -133,6 +130,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
     protected Object invokeMethod(ServiceRequest request, Object service, CharSerializer serializer) throws Throwable {
 
+        String methodName = request.getMethodName();
         ClassDescriptor classDescriptor = classDescriptorFactory.getClassDescriptor(service.getClass());
 
         String argsStr = /*request.isStringArgs() ?*/ request.getArguments() /*: read(request.getInputStream())*/;
@@ -144,15 +142,20 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         Object result;
 
         // Try to find method by alias
-        Map.Entry<MethodIdentifier, MethodDescriptor> methodEntry = classDescriptor != null ? classDescriptor.findMethodEntry(request.getMethodName())
-                : null;
+        TimeChecker time = LOG.isDebugEnabled() ? new TimeChecker("FIND BY ALIAS " + methodName, LOG) : null;
+        Map.Entry<MethodIdentifier, MethodDescriptor> methodEntry = classDescriptor != null ? classDescriptor.findMethodEntry(methodName) : null;
         if (methodEntry != null) {
             method = service.getClass().getMethod(methodEntry.getKey().getName(), methodEntry.getKey().getParameterTypes());
             methodDescriptor = methodEntry.getValue();
             paramDescriptors = methodDescriptor.getParameterDescriptors();
             args = serializer.deserialize(argsStr, methodEntry.getKey().getParameterTypes(), paramDescriptors);
+            if (time != null)
+                time.printDifference(method);
         } else {
             // Try to find method by args
+            if (time != null)
+                time.printDifference(null);
+            time = LOG.isDebugEnabled() ? new TimeChecker("FIND BY ARGS " + methodName, LOG) : null;
             for (Method m : service.getClass().getMethods()) {
                 if (m.getName().equals(request.getMethodName())) {
                     try {
@@ -174,16 +177,16 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
                     }
                 }
             }
+            if (time != null)
+                time.printDifference(method);
         }
 
         if (method == null)
             throw new ServiceException("Can't find method [" + request.getMethodName() + "] applicable for given args");
 
-        TimeChecker time = null;
         boolean debug = methodDescriptor != null ? methodDescriptor.isDebug() : classDescriptor != null ? classDescriptor.isDebug() : false;
-        if (debug && LOG.isDebugEnabled())
-            time = new TimeChecker(new StringBuilder(1024).append(request.getServiceName()).append('.').append(request.getMethodName())
-                    .append(new PrettyStringBuilder().toString(args)).toString(), LOG);
+        time = debug && LOG.isDebugEnabled() ? new TimeChecker(new StringBuilder(1024).append(request.getServiceName()).append('.')
+                .append(request.getMethodName()).append(new PrettyStringBuilder().toString(args)).toString(), LOG) : null;
 
         // Find and replace references
         for (int i = 0; i < args.length; i++) {

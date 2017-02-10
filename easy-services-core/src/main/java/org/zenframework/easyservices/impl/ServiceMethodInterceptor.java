@@ -21,7 +21,6 @@ import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.CharSerializer;
-import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -71,34 +70,27 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
             }
         }
 
-        // Serialize arguments
-        String serializedArgs = serializer.serialize(args);
-
         TimeChecker time = null;
         if ((debug || isMethodDebug(classDescriptor, methodDescriptor)) && LOG.isDebugEnabled())
-            time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + ' ' + getMethodName(method, methodDescriptor) + serializedArgs, LOG);
+            time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + ' ' + getMethodName(method, methodDescriptor), LOG);
 
-        Writer out = null;
-        Reader in = null;
+        // Call service
+        URL url = getServiceURL(serviceLocator, getMethodName(method, methodDescriptor));
+        URLConnection connection = url.openConnection();
+        connection.setDoOutput(true);
+        connection.setDoInput(true);
+        Writer out = new OutputStreamWriter(connection.getOutputStream());
         try {
+            out.write("args=");
+            serializer.serialize(args, out);
+        } finally {
+            out.close();
+        }
 
-            // Call service
-            //URL url = requestMapper.getRequestURI(serviceLocator.getServiceUrl(), method.getName(), serializedArgs).toURL();
-            URL url = getServiceURL(serviceLocator, getMethodName(method, methodDescriptor));
-            URLConnection connection = url.openConnection();
-            connection.setDoOutput(true);
-            connection.setDoInput(true);
-            out = new OutputStreamWriter(connection.getOutputStream());
-            try {
-                out.write("args=");
-                serializer.serialize(args, out);
-            } finally {
-                out.close();
-            }
-            checkError(connection, serializer);
-            in = new InputStreamReader(connection.getInputStream());
+        // Receive response
+        try {
+            Reader in = new InputStreamReader(connection.getInputStream());
             Object result = null;
-
             ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
             if (returnDescriptor != null && returnDescriptor.isReference()) {
                 // If result is reference, replace with proxy object
@@ -111,18 +103,12 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
                 if (method.getReturnType() != void.class)
                     result = serializer.deserialize(in, method.getReturnType(), returnDescriptor);
             }
-
             if (time != null)
                 time.printDifference(result);
             return result;
-
-        } catch (Throwable e) {
-            if (time != null)
-                time.printDifference(e);
+        } catch (IOException e) {
+            tryHandleError(connection, serializer);
             throw e;
-        } finally {
-            if (in != null)
-                in.close();
         }
 
     }
@@ -136,13 +122,11 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
     }
 
     // TODO must be extendable
-    private void checkError(URLConnection connection, CharSerializer serializer) throws SerializationException, IOException, Throwable {
+    private void tryHandleError(URLConnection connection, CharSerializer serializer) throws Throwable {
         if (connection instanceof HttpURLConnection) {
             HttpURLConnection httpConnection = (HttpURLConnection) connection;
-            if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                String data = httpConnection.getResponseMessage();
-                throw (Throwable) serializer.deserialize(data, Throwable.class, null);
-            }
+            if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK)
+                throw (Throwable) serializer.deserialize(new InputStreamReader(httpConnection.getErrorStream()), Throwable.class, null);
         }
     }
 

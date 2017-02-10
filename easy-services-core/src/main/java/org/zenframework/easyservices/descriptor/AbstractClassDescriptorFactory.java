@@ -11,7 +11,7 @@ public abstract class AbstractClassDescriptorFactory implements ClassDescriptorF
 
     protected final Map<String, ClassDescriptor> cache = Collections.synchronizedMap(new HashMap<String, ClassDescriptor>());
 
-    private boolean autoAliasing = true;
+    private boolean autoAliasing = false;
 
     @Override
     public ClassDescriptor getClassDescriptor(Class<?> cls) {

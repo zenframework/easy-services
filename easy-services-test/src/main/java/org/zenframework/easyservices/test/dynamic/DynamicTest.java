@@ -1,5 +1,6 @@
 package org.zenframework.easyservices.test.dynamic;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -36,14 +37,23 @@ public class DynamicTest extends AbstractServiceTest {
         assertEquals(1, calc.call(sub, 3, 2));
     }
 
-    public void testStreams() throws Exception {
+    public void testRemoteStreams() throws Exception {
         StreamFactory streams = getClient(StreamFactory.class, "/streams");
         InputStream in = streams.getInputStream();
         OutputStream out = streams.getOuptputStream();
+        copy(in, out);
+    }
+
+    public void testLocalStreams() throws Exception {
+        StreamFactory streams = (StreamFactory) getServiceRegistry().lookup("/streams");
+        InputStream in = streams.getInputStream();
+        OutputStream out = streams.getOuptputStream();
+        copy(in, out);
+    }
+
+    private static void copy(InputStream in, OutputStream out) throws IOException {
         try {
-            byte[] buf = new byte[100];
-            for (int n = in.read(buf); n >= 0; n = in.read(buf))
-                out.write(buf, 0, n);
+            IOUtils.copy(in, out);
         } finally {
             IOUtils.closeQuietly(in, out);
         }
