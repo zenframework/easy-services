@@ -57,19 +57,19 @@ public class URLTest extends TestCase {
     }
 
     public void testUrlGet() throws Exception {
-        URL url = new URL("http://localhost:" + PORT + "/?hello");
-        assertEquals("hello", read(url.openStream()));
+        URL url = new URL("http://localhost:" + PORT + "/service?method=call&args=[]");
+        assertEquals("method=call&args=[]", read(url.openStream()));
     }
 
     public void testUrlPost() throws Exception {
-        URL url = new URL("http://localhost:" + PORT + "/");
+        URL url = new URL("http://localhost:" + PORT + "/service?method=call");
         URLConnection conn = url.openConnection();
         conn.setDoOutput(true);
         conn.setDoInput(true);
         Writer out = new OutputStreamWriter(conn.getOutputStream());
-        out.write("hello");
+        out.write("[]");
         out.close();
-        assertEquals("hello", read(conn.getInputStream()));
+        assertEquals("[]", read(conn.getInputStream()));
     }
 
     private static String read(InputStream in) throws IOException {

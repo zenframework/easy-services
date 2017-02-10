@@ -48,9 +48,6 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
     @Override
     public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
 
-        if (args == null)
-            args = new Object[0];
-
         // Check service locator is absolute
         if (serviceLocator.isRelative())
             throw new ClientException("Service locator '" + serviceLocator + "' must be absolute");
@@ -81,7 +78,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         connection.setDoInput(true);
         Writer out = new OutputStreamWriter(connection.getOutputStream());
         try {
-            out.write("args=");
+            //out.write("args=");
             serializer.serialize(args, out);
         } finally {
             out.close();

@@ -44,12 +44,14 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
     private static final String PARAM_SERVICE_REGISTRY = "serviceRegistry";
     private static final String PARAM_SERIALIZER_FACTORY = "serializerFactory";
     private static final String PARAM_CLASS_DESCRIPTOR_FACTORY = "classDescriptorFactory";
+    private static final String PARAM_DEBUG = "debug";
 
     private static final SerializerFactory DEFAULT_SERIALIZER_FACTORY = ServiceUtil.getService(SerializerFactory.class);
 
     private Context serviceRegistry = JNDIHelper.getDefaultContext();
     private ClassDescriptorFactory classDescriptorFactory = AnnotationClassDescriptorFactory.INSTANSE;
     private SerializerFactory serializerFactory = DEFAULT_SERIALIZER_FACTORY;
+    private boolean debug;
 
     @Override
     public void invoke(ServiceRequest request, ServiceResponse response) throws IOException {
@@ -89,6 +91,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             serviceRegistry = JNDIHelper.newDefaultContext(serviceRegistryConfig);
         classDescriptorFactory = (ClassDescriptorFactory) config.getInstance(PARAM_CLASS_DESCRIPTOR_FACTORY, classDescriptorFactory);
         serializerFactory = (SerializerFactory) config.getInstance(PARAM_SERIALIZER_FACTORY, serializerFactory);
+        debug = config.getParam(PARAM_DEBUG, false);
     }
 
     @Override
@@ -120,6 +123,14 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         return serializerFactory;
     }
 
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
+
     protected Map<String, Object> getServiceInfo(Object service) throws IOException {
         ClassInfo classInfo = ClassInfo.getClassRef(service.getClass()).getClassInfo();
         Map<String, Object> serviceInfo = new HashMap<String, Object>();
@@ -132,8 +143,6 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
         String methodName = request.getMethodName();
         ClassDescriptor classDescriptor = classDescriptorFactory.getClassDescriptor(service.getClass());
-
-        String argsStr = /*request.isStringArgs() ?*/ request.getArguments() /*: read(request.getInputStream())*/;
 
         Method method = null;
         MethodDescriptor methodDescriptor = null;
@@ -148,11 +157,15 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             method = service.getClass().getMethod(methodEntry.getKey().getName(), methodEntry.getKey().getParameterTypes());
             methodDescriptor = methodEntry.getValue();
             paramDescriptors = methodDescriptor.getParameterDescriptors();
-            args = serializer.deserialize(argsStr, methodEntry.getKey().getParameterTypes(), paramDescriptors);
+            if (request.isStringArgs())
+                args = serializer.deserialize(request.getArguments(), methodEntry.getKey().getParameterTypes(), paramDescriptors);
+            else
+                args = serializer.deserialize(request.getReader(), methodEntry.getKey().getParameterTypes(), paramDescriptors);
             if (time != null)
                 time.printDifference(method);
         } else {
             // Try to find method by args
+            String argsStr = request.isStringArgs() ? request.getArguments() : read(request.getReader());
             if (time != null)
                 time.printDifference(null);
             time = LOG.isDebugEnabled() ? new TimeChecker("FIND BY ARGS " + methodName, LOG) : null;
@@ -184,8 +197,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         if (method == null)
             throw new ServiceException("Can't find method [" + request.getMethodName() + "] applicable for given args");
 
-        boolean debug = methodDescriptor != null ? methodDescriptor.isDebug() : classDescriptor != null ? classDescriptor.isDebug() : false;
-        time = debug && LOG.isDebugEnabled() ? new TimeChecker(new StringBuilder(1024).append(request.getServiceName()).append('.')
+        boolean methodDebug = methodDescriptor != null ? methodDescriptor.isDebug() : classDescriptor != null ? classDescriptor.isDebug() : false;
+        time = (debug || methodDebug) && LOG.isDebugEnabled() ? new TimeChecker(new StringBuilder(1024).append(request.getServiceName()).append('.')
                 .append(request.getMethodName()).append(new PrettyStringBuilder().toString(args)).toString(), LOG) : null;
 
         // Find and replace references
@@ -257,7 +270,6 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         }
     }
 
-    @SuppressWarnings("unused")
     private static String read(Reader in) throws IOException {
         try {
             char[] buf = new char[4096];
