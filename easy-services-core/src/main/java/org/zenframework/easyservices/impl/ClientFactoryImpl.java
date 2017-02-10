@@ -2,7 +2,6 @@ package org.zenframework.easyservices.impl;
 
 import org.zenframework.commons.bean.ServiceUtil;
 import org.zenframework.easyservices.ClientFactory;
-import org.zenframework.easyservices.RequestMapper;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.descriptor.AbstractClassDescriptorFactory;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
@@ -14,22 +13,21 @@ public class ClientFactoryImpl implements ClientFactory {
     private static final SerializerFactory DEFAULT_SERIALIZER_FACTORY = ServiceUtil.getService(SerializerFactory.class);
 
     private ClassDescriptorFactory classDescriptorFactory = new ClientClassDescriptorFactory();
-    private RequestMapper requestMapper = RequestMapperImpl.INSTANCE;
     private SerializerFactory serializerFactory = DEFAULT_SERIALIZER_FACTORY;
     private String baseUrl;
+    private boolean debug;
 
     public ClientFactoryImpl() {}
 
-    public ClientFactoryImpl(String baseUrl, SerializerFactory serializerFactory, RequestMapper requestMapper) {
+    public ClientFactoryImpl(String baseUrl, SerializerFactory serializerFactory) {
         this.baseUrl = baseUrl;
         this.serializerFactory = serializerFactory;
-        this.requestMapper = requestMapper;
     }
 
     @Override
     public <T> T getClient(Class<T> serviceClass, String serviceName) {
         return ClientProxy.getCGLibProxy(serviceClass, ServiceLocator.qualified(baseUrl, serviceName), classDescriptorFactory, serializerFactory,
-                requestMapper);
+                debug);
     }
 
     public void setBaseUrl(String baseUrl) {
@@ -44,8 +42,8 @@ public class ClientFactoryImpl implements ClientFactory {
         this.serializerFactory = serializerFactory;
     }
 
-    public void setRequestMapper(RequestMapper requestMapper) {
-        this.requestMapper = requestMapper;
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 
     private class ClientClassDescriptorFactory extends AbstractClassDescriptorFactory {
@@ -56,7 +54,7 @@ public class ClientFactoryImpl implements ClientFactory {
         protected ClassDescriptor extractClassDescriptor(Class<?> cls) {
             if (remoteClassDescriptorFactory == null)
                 remoteClassDescriptorFactory = ClientProxy.getCGLibProxy(ClassDescriptorFactory.class,
-                        ServiceLocator.qualified(baseUrl, ClassDescriptorFactory.NAME), null, serializerFactory, requestMapper);
+                        ServiceLocator.qualified(baseUrl, ClassDescriptorFactory.NAME), null, serializerFactory, debug);
             return remoteClassDescriptorFactory.getClassDescriptor(cls);
         }
 

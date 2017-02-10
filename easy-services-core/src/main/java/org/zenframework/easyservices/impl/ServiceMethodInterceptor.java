@@ -1,9 +1,13 @@
 package org.zenframework.easyservices.impl;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -11,14 +15,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.commons.debug.TimeChecker;
 import org.zenframework.easyservices.ClientException;
-import org.zenframework.easyservices.RequestMapper;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
+import org.zenframework.easyservices.serialize.CharSerializer;
 import org.zenframework.easyservices.serialize.SerializationException;
-import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -32,15 +35,15 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
     private final Class<?> serviceClass;
     private final ClassDescriptorFactory serviceDescriptorFactory;
     private final SerializerFactory serializerFactory;
-    private final RequestMapper requestMapper;
+    private final boolean debug;
 
     public ServiceMethodInterceptor(ServiceLocator serviceLocator, Class<?> serviceClass, ClassDescriptorFactory serviceDescriptorFactory,
-            SerializerFactory serializerFactory, RequestMapper requestMapper) {
+            SerializerFactory serializerFactory, boolean debug) {
         this.serviceLocator = serviceLocator;
         this.serviceClass = serviceClass;
         this.serviceDescriptorFactory = serviceDescriptorFactory;
         this.serializerFactory = serializerFactory;
-        this.requestMapper = requestMapper;
+        this.debug = debug;
     }
 
     @Override
@@ -53,7 +56,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         if (serviceLocator.isRelative())
             throw new ClientException("Service locator '" + serviceLocator + "' must be absolute");
 
-        Serializer serializer = serializerFactory.getSerializer();
+        CharSerializer serializer = serializerFactory.getCharSerializer();
         ClassDescriptor classDescriptor = serviceDescriptorFactory != null ? serviceDescriptorFactory.getClassDescriptor(serviceClass) : null;
         MethodDescriptor methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(method) : null;
         ValueDescriptor[] argDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[args.length];
@@ -72,18 +75,28 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         String serializedArgs = serializer.serialize(args);
 
         TimeChecker time = null;
-        boolean debug = methodDescriptor != null ? methodDescriptor.isDebug() : classDescriptor != null ? classDescriptor.isDebug() : false;
-        if (debug && LOG.isDebugEnabled())
-            time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + ' ' + method.getName() + serializedArgs, LOG);
+        if ((debug || isMethodDebug(classDescriptor, methodDescriptor)) && LOG.isDebugEnabled())
+            time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + ' ' + getMethodName(method, methodDescriptor) + serializedArgs, LOG);
 
-        InputStream in = null;
+        Writer out = null;
+        Reader in = null;
         try {
 
             // Call service
-            URL url = requestMapper.getRequestURI(serviceLocator.getServiceUrl(), method.getName(), serializedArgs).toURL();
+            //URL url = requestMapper.getRequestURI(serviceLocator.getServiceUrl(), method.getName(), serializedArgs).toURL();
+            URL url = getServiceURL(serviceLocator, getMethodName(method, methodDescriptor));
             URLConnection connection = url.openConnection();
+            connection.setDoOutput(true);
+            connection.setDoInput(true);
+            out = new OutputStreamWriter(connection.getOutputStream());
+            try {
+                out.write("args=");
+                serializer.serialize(args, out);
+            } finally {
+                out.close();
+            }
             checkError(connection, serializer);
-            in = connection.getInputStream();
+            in = new InputStreamReader(connection.getInputStream());
             Object result = null;
 
             ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
@@ -92,7 +105,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
                 ServiceLocator locator = (ServiceLocator) serializer.deserialize(in, ServiceLocator.class, returnDescriptor);
                 if (locator.isRelative())
                     locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
-                result = ClientProxy.getCGLibProxy(method.getReturnType(), locator, serviceDescriptorFactory, serializerFactory, requestMapper);
+                result = ClientProxy.getCGLibProxy(method.getReturnType(), locator, serviceDescriptorFactory, serializerFactory, debug);
             } else {
                 // Else return deserialized result
                 if (method.getReturnType() != void.class)
@@ -114,12 +127,16 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
 
     }
 
+    private boolean isMethodDebug(ClassDescriptor classDescriptor, MethodDescriptor methodDescriptor) {
+        return methodDescriptor != null ? methodDescriptor.isDebug() : classDescriptor != null ? classDescriptor.isDebug() : false;
+    }
+
     public ServiceLocator getServiceLocator() {
         return serviceLocator;
     }
 
     // TODO must be extendable
-    private void checkError(URLConnection connection, Serializer serializer) throws SerializationException, IOException, Throwable {
+    private void checkError(URLConnection connection, CharSerializer serializer) throws SerializationException, IOException, Throwable {
         if (connection instanceof HttpURLConnection) {
             HttpURLConnection httpConnection = (HttpURLConnection) connection;
             if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
@@ -127,6 +144,15 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
                 throw (Throwable) serializer.deserialize(data, Throwable.class, null);
             }
         }
+    }
+
+    private static URL getServiceURL(ServiceLocator serviceLocator, String methodName) throws MalformedURLException {
+        return new URL(serviceLocator.getServiceUrl() + "?method=" + methodName);
+    }
+
+    private static String getMethodName(Method method, MethodDescriptor methodDescriptor) {
+        String alias = methodDescriptor != null ? methodDescriptor.getAlias() : null;
+        return alias != null ? alias : method.getName();
     }
 
 }

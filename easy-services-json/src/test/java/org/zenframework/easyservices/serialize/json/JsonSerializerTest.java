@@ -1,12 +1,11 @@
 package org.zenframework.easyservices.serialize.json;
 
-import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
-import org.zenframework.easyservices.serialize.Serializer;
+import org.zenframework.easyservices.serialize.CharSerializer;
 
 import com.google.gson.Gson;
 
@@ -19,22 +18,22 @@ public class JsonSerializerTest extends TestCase {
     private static final String TEST_JSON_OBJ2 = "{ a : [ {'str':'qwe','i':1} ], b : [ {'str':'asd','i':2} ] }";
 
     public void testStrToArgs() throws Exception {
-        Serializer serializer = new JsonSerializer(new Gson());
-        Object[] result = serializer.deserialize(new ByteArrayInputStream(TEST_JSON_ARR.getBytes()), new Class<?>[] { SimpleBean.class, SimpleBean.class }, new ValueDescriptor[2]);
+        CharSerializer serializer = new JsonSerializer(new Gson());
+        Object[] result = serializer.deserialize(TEST_JSON_ARR, new Class<?>[] { SimpleBean.class, SimpleBean.class }, new ValueDescriptor[2]);
         assertTrue(result.length == 2);
         for (Object o : result)
             assertTrue(o instanceof SimpleBean);
     }
 
     public void testNullSerialization() throws Exception {
-        Serializer serializer = new JsonSerializer(new Gson());
+        CharSerializer serializer = new JsonSerializer(new Gson());
         assertEquals("null", serializer.serialize((Object) null));
         assertNull(serializer.deserialize("null", SimpleBean.class, null));
     }
 
     @SuppressWarnings("unchecked")
     public void testGenericListSerialization() throws Exception {
-        Serializer serializer = new JsonSerializer(new Gson());
+        CharSerializer serializer = new JsonSerializer(new Gson());
         ValueDescriptor descriptor = new ValueDescriptor();
         descriptor.setTypeParameters(SimpleBean.class);
         List<SimpleBean> list = (List<SimpleBean>) serializer.deserialize(TEST_JSON_ARR, List.class, descriptor);
@@ -44,7 +43,7 @@ public class JsonSerializerTest extends TestCase {
 
     @SuppressWarnings("unchecked")
     public void testGenericMapSerialization() throws Exception {
-        Serializer serializer = new JsonSerializer(new Gson());
+        CharSerializer serializer = new JsonSerializer(new Gson());
         ValueDescriptor descriptor = new ValueDescriptor();
         descriptor.setTypeParameters(String.class, SimpleBean.class);
         Map<String, SimpleBean> map = (Map<String, SimpleBean>) serializer.deserialize(TEST_JSON_OBJ, Map.class, descriptor);
@@ -54,7 +53,7 @@ public class JsonSerializerTest extends TestCase {
 
     @SuppressWarnings("unchecked")
     public void testComplexGenericSerialization() throws Exception {
-        Serializer serializer = new JsonSerializer(new Gson());
+        CharSerializer serializer = new JsonSerializer(new Gson());
         ValueDescriptor descriptor = new ValueDescriptor();
         descriptor.setTypeParameters(String.class, List.class, SimpleBean.class);
         Map<String, List<SimpleBean>> map = (Map<String, List<SimpleBean>>) serializer.deserialize(TEST_JSON_OBJ2, Map.class, descriptor);
@@ -63,7 +62,7 @@ public class JsonSerializerTest extends TestCase {
     }
 
     public void testClassSerialization() throws Exception {
-        Serializer serializer = new JsonSerializerFactory().getSerializer();
+        CharSerializer serializer = new JsonSerializerFactory().getCharSerializer();
         String data = serializer.serialize(getClass());
         System.out.println(data);
         assertEquals(getClass(), serializer.deserialize(data, Class.class, null));

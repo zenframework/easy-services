@@ -1,6 +1,5 @@
 package org.zenframework.easyservices.impl;
 
-import org.zenframework.easyservices.RequestMapper;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
 import org.zenframework.easyservices.serialize.SerializerFactory;
@@ -16,9 +15,9 @@ public class ClientProxy {
     private ClientProxy() {}
 
     public static <T> T getCGLibProxy(Class<T> serviceClass, ServiceLocator serviceLocator, ClassDescriptorFactory classDescriptorFactory,
-            SerializerFactory serializerFactory, RequestMapper requestMapper) {
+            SerializerFactory serializerFactory, boolean debug) {
         return (T) Enhancer.create(serviceClass,
-                new ServiceMethodInterceptor(serviceLocator, serviceClass, classDescriptorFactory, serializerFactory, requestMapper));
+                new ServiceMethodInterceptor(serviceLocator, serviceClass, classDescriptorFactory, serializerFactory, debug));
     }
 
     public static <T extends MethodInterceptor> T getMethodInterceptor(Object proxy, Class<T> interceptorClass) {

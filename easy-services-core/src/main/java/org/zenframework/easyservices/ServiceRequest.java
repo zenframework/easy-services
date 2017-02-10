@@ -1,41 +1,17 @@
 package org.zenframework.easyservices;
 
-public class ServiceRequest {
+public interface ServiceRequest {
 
-    private String serviceName;
-    private String methodName;
-    private String arguments;
+    public String getServiceName();
 
-    public String getServiceName() {
-        return serviceName;
-    }
+    public String getMethodName();
 
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
+    //public boolean isStringArgs();
 
-    public String getMethodName() {
-        return methodName;
-    }
+    public String getArguments();
 
-    public void setMethodName(String methodName) {
-        this.methodName = methodName;
-    }
+    //public InputStream getInputStream() throws IOException;
 
-    public String getArguments() {
-        return arguments;
-    }
-
-    public void setArguments(String arguments) {
-        this.arguments = arguments;
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder str = new StringBuilder(1024).append(serviceName).append('.').append(methodName).append('(');
-        if (arguments != null)
-            str.append(arguments);
-        return str.append(')').toString();
-    }
+    //public Reader getReader() throws IOException;
 
 }

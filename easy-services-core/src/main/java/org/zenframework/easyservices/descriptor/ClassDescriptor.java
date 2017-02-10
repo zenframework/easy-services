@@ -22,7 +22,18 @@ public class ClassDescriptor {
     }
 
     public MethodDescriptor getMethodDescriptor(Method method) {
-        return methodDescriptors.get(new MethodIdentifier(method));
+        return getMethodDescriptor(new MethodIdentifier(method));
+    }
+
+    public MethodDescriptor getMethodDescriptor(MethodIdentifier methodId) {
+        return methodDescriptors.get(methodId);
+    }
+
+    public Map.Entry<MethodIdentifier, MethodDescriptor> findMethodEntry(String alias) {
+        for (Map.Entry<MethodIdentifier, MethodDescriptor> entry : methodDescriptors.entrySet())
+            if (alias.equals(entry.getValue().getAlias()))
+                return entry;
+        return null;
     }
 
     public void setMethodDescriptor(MethodIdentifier methodIdentifier, MethodDescriptor methodDescriptor) {

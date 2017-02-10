@@ -3,6 +3,8 @@ package org.zenframework.easyservices.http;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.StringWriter;
+import java.io.Writer;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -24,24 +26,38 @@ public class HttpServiceResponse implements ServiceResponse {
     }
 
     @Override
-    public OutputStream getErrorStream(Throwable e) {
-        return new ErrorOutputStream(errorMapper != null ? errorMapper.getStatus(e) : HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+    public OutputStream getErrorOutputStream(final Throwable e) {
+        return new ByteArrayOutputStream() {
+
+            @Override
+            public void close() throws IOException {
+                super.close();
+                response.sendError(getStatus(e), new String(toByteArray(), response.getCharacterEncoding()));
+            }
+
+        };
     }
 
-    private class ErrorOutputStream extends ByteArrayOutputStream {
+    @Override
+    public Writer getWriter() throws IOException {
+        return response.getWriter();
+    }
 
-        private final int status;
+    @Override
+    public Writer getErrorWriter(final Throwable e) throws IOException {
+        return new StringWriter() {
 
-        private ErrorOutputStream(int status) {
-            this.status = status;
-        }
+            @Override
+            public void close() throws IOException {
+                super.close();
+                response.sendError(getStatus(e), toString());
+            }
 
-        @Override
-        public void close() throws IOException {
-            super.close();
-            response.sendError(status, new String(toByteArray(), response.getCharacterEncoding()));
-        }
+        };
+    }
 
+    private int getStatus(Throwable e) {
+        return errorMapper != null ? errorMapper.getStatus(e) : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
     }
 
 }

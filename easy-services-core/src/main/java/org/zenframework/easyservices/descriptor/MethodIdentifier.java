@@ -6,14 +6,20 @@ import org.apache.commons.lang.ClassUtils;
 
 public class MethodIdentifier {
 
+    private static final String VOID = "void";
+
     private final String name;
     private final Class<?>[] parameterTypes;
     private final Class<?> returnType;
+    private final int hashCode;
+    private final String str;
 
     public MethodIdentifier(String name, Class<?>[] parameterTypes, Class<?> returnType) {
         this.name = name;
-        this.parameterTypes = ClassUtils.primitivesToWrappers(parameterTypes);
+        this.parameterTypes = parameterTypes;
         this.returnType = returnType;
+        this.hashCode = getHashCode(name, parameterTypes);
+        this.str = toString(name, parameterTypes, returnType);
     }
 
     public MethodIdentifier(Method method) {
@@ -34,10 +40,7 @@ public class MethodIdentifier {
 
     @Override
     public int hashCode() {
-        int hash = name.hashCode();
-        for (Class<?> argType : parameterTypes)
-            hash ^= argType.hashCode();
-        return hash;
+        return hashCode;
     }
 
     @Override
@@ -45,24 +48,12 @@ public class MethodIdentifier {
         if (!(obj instanceof MethodIdentifier))
             return false;
         MethodIdentifier mi = (MethodIdentifier) obj;
-        if (!name.equals(mi.name) || parameterTypes.length != mi.parameterTypes.length)
-            return false;
-        for (int i = 0; i < parameterTypes.length; i++)
-            if (!parameterTypes[i].equals(mi.parameterTypes[i]))
-                return false;
-        return true;
+        return str.equals(mi.toString());
     }
 
     @Override
     public String toString() {
-        StringBuilder str = new StringBuilder();
-        str.append(name).append('(');
-        for (Class<?> paramType : parameterTypes)
-            str.append(ClassUtils.primitiveToWrapper(paramType).getName()).append(',');
-        if (parameterTypes.length > 0)
-            str.setLength(str.length() - 1);
-        str.append("):").append(ClassUtils.primitiveToWrapper(returnType).getName());
-        return str.toString();
+        return str;
     }
 
     public static MethodIdentifier parse(String str) throws ClassNotFoundException {
@@ -74,8 +65,30 @@ public class MethodIdentifier {
         String params[] = endParams - beginParams > 1 ? str.substring(beginParams + 1, endParams).split("\\,") : new String[0];
         Class<?>[] paramTypes = new Class[params.length];
         for (int i = 0; i < params.length; i++)
-            paramTypes[i] = Class.forName(params[i]);
-        return new MethodIdentifier(name, paramTypes, Class.forName(str.substring(endParams + 2)));
+            paramTypes[i] = getClass(params[i]);
+        return new MethodIdentifier(name, paramTypes, getClass(str.substring(endParams + 2)));
+    }
+
+    private static Class<?> getClass(String name) throws ClassNotFoundException {
+        return VOID.equals(name) ? void.class : ClassUtils.getClass(name);
+    }
+
+    private static int getHashCode(String name, Class<?>[] parameterTypes) {
+        int hash = name.hashCode();
+        for (Class<?> argType : parameterTypes)
+            hash ^= argType.hashCode();
+        return hash;
+    }
+
+    private static String toString(String name, Class<?>[] parameterTypes, Class<?> returnType) {
+        StringBuilder str = new StringBuilder();
+        str.append(name).append('(');
+        for (Class<?> paramType : parameterTypes)
+            str.append(paramType.getName()).append(',');
+        if (parameterTypes.length > 0)
+            str.setLength(str.length() - 1);
+        str.append("):").append(returnType.getCanonicalName());
+        return str.toString();
     }
 
 }
