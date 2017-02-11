@@ -14,6 +14,7 @@ import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.json.gson.GsonUtil;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.stream.JsonReader;
 
@@ -38,18 +39,32 @@ public class JsonSerializer implements Serializer {
 
     @Override
     public <T> T deserialize(InputStream in, Class<T> objType, ValueDescriptor valueDescriptor) throws IOException, SerializationException {
-        return gson.fromJson(new InputStreamReader(in),
-                valueDescriptor != null ? GsonUtil.getParameterizedType(objType, valueDescriptor.getTypeParameters()) : objType);
+        try {
+            return gson.fromJson(new InputStreamReader(in),
+                    valueDescriptor != null ? GsonUtil.getParameterizedType(objType, valueDescriptor.getTypeParameters()) : objType);
+        } catch (JsonParseException e) {
+            throw new SerializationException(e);
+        }
     }
 
     @Override
     public Object[] deserialize(InputStream in, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws IOException, SerializationException {
+        if (objTypes.length != valueDescriptors.length)
+            throw new SerializationException(
+                    "objTypes.length == " + objTypes.length + " != " + valueDescriptors.length + " == valueDescriptors.length");
         Object[] result = new Object[objTypes.length];
         JsonReader reader = new JsonReader(new InputStreamReader(in));
         reader.beginArray();
-        for (int i = 0; reader.hasNext(); i++)
-            result[i] = gson.fromJson(reader,
-                    valueDescriptors[i] != null ? GsonUtil.getParameterizedType(objTypes[i], valueDescriptors[i].getTypeParameters()) : objTypes[i]);
+        for (int i = 0; reader.hasNext(); i++) {
+            if (i >= result.length)
+                throw new SerializationException("JSON array size > array of types size");
+            try {
+                result[i] = gson.fromJson(reader, valueDescriptors[i] != null
+                        ? GsonUtil.getParameterizedType(objTypes[i], valueDescriptors[i].getTypeParameters()) : objTypes[i]);
+            } catch (JsonParseException e) {
+                throw new SerializationException(e);
+            }
+        }
         reader.endArray();
         return result;
     }
