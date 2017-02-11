@@ -1,10 +1,13 @@
 package org.zenframework.easyservices.descriptor;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import org.zenframework.commons.string.StringUtil;
 
-public class MethodDescriptor {
+public class MethodDescriptor implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String alias = null;
     private ValueDescriptor returnDescriptor = null;

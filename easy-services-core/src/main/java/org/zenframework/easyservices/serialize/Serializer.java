@@ -6,7 +6,7 @@ import java.io.OutputStream;
 
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 
-public interface ByteSerializer {
+public interface Serializer {
 
     <T> T deserialize(InputStream in, Class<T> objType, ValueDescriptor valueDescriptor) throws IOException, SerializationException;
 
@@ -14,10 +14,10 @@ public interface ByteSerializer {
 
     void serialize(Object object, OutputStream out) throws IOException;
 
-    <T> T deserialize(byte[] data, Class<T> objType, ValueDescriptor valueDescriptor) throws SerializationException;
+    <T> T deserialize(byte[] data, Class<T> objType, ValueDescriptor valueDescriptor) throws IOException, SerializationException;
 
-    Object[] deserialize(byte[] data, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws SerializationException;
+    Object[] deserialize(byte[] data, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws IOException, SerializationException;
 
-    byte[] serialize(Object object);
+    byte[] serialize(Object object) throws IOException;
 
 }

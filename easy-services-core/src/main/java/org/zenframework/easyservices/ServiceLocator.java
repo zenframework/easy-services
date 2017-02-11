@@ -1,8 +1,12 @@
 package org.zenframework.easyservices;
 
+import java.io.Serializable;
+
 import org.apache.commons.lang.ObjectUtils;
 
-public class ServiceLocator {
+public class ServiceLocator implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final String baseUrl;
     private final String serviceName;

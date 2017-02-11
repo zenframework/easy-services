@@ -1,12 +1,15 @@
 package org.zenframework.easyservices.descriptor;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.zenframework.commons.string.StringUtil;
 
-public class ClassDescriptor {
+public class ClassDescriptor implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final Map<MethodIdentifier, MethodDescriptor> methodDescriptors = new HashMap<MethodIdentifier, MethodDescriptor>();
     private ValueDescriptor valueDescriptor;

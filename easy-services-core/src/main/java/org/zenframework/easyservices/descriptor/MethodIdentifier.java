@@ -1,10 +1,13 @@
 package org.zenframework.easyservices.descriptor;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 
 import org.apache.commons.lang.ClassUtils;
 
-public class MethodIdentifier {
+public class MethodIdentifier implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private static final String VOID = "void";
 

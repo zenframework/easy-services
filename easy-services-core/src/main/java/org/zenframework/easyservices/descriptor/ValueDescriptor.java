@@ -1,5 +1,6 @@
 package org.zenframework.easyservices.descriptor;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -7,7 +8,9 @@ import java.util.Set;
 
 import org.apache.commons.lang.ClassUtils;
 
-public class ValueDescriptor {
+public class ValueDescriptor implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final Set<Object> adapters = new HashSet<Object>();
     private Class<?>[] typeParameters = new Class<?>[0];

@@ -1,9 +1,9 @@
 package org.zenframework.easyservices.impl;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -16,7 +16,6 @@ import javax.naming.NamingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.commons.bean.PrettyStringBuilder;
-import org.zenframework.commons.bean.ServiceUtil;
 import org.zenframework.commons.cls.ClassInfo;
 import org.zenframework.commons.config.Config;
 import org.zenframework.commons.config.Configurable;
@@ -33,8 +32,9 @@ import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.MethodIdentifier;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.jndi.JNDIHelper;
-import org.zenframework.easyservices.serialize.CharSerializer;
+import org.zenframework.easyservices.serialize.Serialization;
 import org.zenframework.easyservices.serialize.SerializationException;
+import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
 public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
@@ -46,16 +46,14 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
     private static final String PARAM_CLASS_DESCRIPTOR_FACTORY = "classDescriptorFactory";
     private static final String PARAM_DEBUG = "debug";
 
-    private static final SerializerFactory DEFAULT_SERIALIZER_FACTORY = ServiceUtil.getService(SerializerFactory.class);
-
     private Context serviceRegistry = JNDIHelper.getDefaultContext();
     private ClassDescriptorFactory classDescriptorFactory = AnnotationClassDescriptorFactory.INSTANSE;
-    private SerializerFactory serializerFactory = DEFAULT_SERIALIZER_FACTORY;
+    private SerializerFactory serializerFactory = Serialization.getDefaultFactory();
     private boolean debug;
 
     @Override
     public void invoke(ServiceRequest request, ServiceResponse response) throws IOException {
-        CharSerializer serializer = serializerFactory.getCharSerializer();
+        Serializer serializer = serializerFactory.getSerializer();
         Object result = null;
         try {
             Object service = lookupSystemService(request.getServiceName());
@@ -76,7 +74,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             response.sendError(e);
             result = e;
         }
-        Writer out = response.getWriter();
+        OutputStream out = response.getOutputStream();
         try {
             serializer.serialize(result, out);
         } finally {
@@ -139,7 +137,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         return serviceInfo;
     }
 
-    protected Object invokeMethod(ServiceRequest request, Object service, CharSerializer serializer) throws Throwable {
+    protected Object invokeMethod(ServiceRequest request, Object service, Serializer serializer) throws Throwable {
 
         String methodName = request.getMethodName();
         ClassDescriptor classDescriptor = classDescriptorFactory.getClassDescriptor(service.getClass());
@@ -157,15 +155,15 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             method = service.getClass().getMethod(methodEntry.getKey().getName(), methodEntry.getKey().getParameterTypes());
             methodDescriptor = methodEntry.getValue();
             paramDescriptors = methodDescriptor.getParameterDescriptors();
-            if (request.isStringArgs())
+            if (request.isArgsByParameter())
                 args = serializer.deserialize(request.getArguments(), methodEntry.getKey().getParameterTypes(), paramDescriptors);
             else
-                args = serializer.deserialize(request.getReader(), methodEntry.getKey().getParameterTypes(), paramDescriptors);
+                args = serializer.deserialize(request.getInputStream(), methodEntry.getKey().getParameterTypes(), paramDescriptors);
             if (time != null)
                 time.printDifference(method);
         } else {
             // Try to find method by args
-            String argsStr = request.isStringArgs() ? request.getArguments() : read(request.getReader());
+            byte[] argsStr = request.isArgsByParameter() ? request.getArguments() : read(request.getInputStream());
             if (time != null)
                 time.printDifference(null);
             time = LOG.isDebugEnabled() ? new TimeChecker("FIND BY ARGS " + methodName, LOG) : null;
@@ -257,26 +255,13 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         return "/dynamic/" + obj.getClass().getCanonicalName() + '@' + System.identityHashCode(obj);
     }
 
-    @SuppressWarnings("unused")
-    private static String read(InputStream in) throws IOException {
+    private static byte[] read(InputStream in) throws IOException {
         try {
             byte[] buf = new byte[8192];
-            StringBuilder str = new StringBuilder();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
             for (int n = in.read(buf); n >= 0; n = in.read(buf))
-                str.append(new String(buf, 0, n, "UTF-8"));
-            return str.toString();
-        } finally {
-            in.close();
-        }
-    }
-
-    private static String read(Reader in) throws IOException {
-        try {
-            char[] buf = new char[4096];
-            StringBuilder str = new StringBuilder();
-            for (int n = in.read(buf); n >= 0; n = in.read(buf))
-                str.append(new String(buf, 0, n));
-            return str.toString();
+                out.write(buf, 0, n);
+            return out.toByteArray();
         } finally {
             in.close();
         }

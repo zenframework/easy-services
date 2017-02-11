@@ -2,7 +2,6 @@ package org.zenframework.easyservices;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 
 public interface ServiceRequest {
 
@@ -10,12 +9,10 @@ public interface ServiceRequest {
 
     public String getMethodName();
 
-    public boolean isStringArgs();
+    public boolean isArgsByParameter();
 
-    public String getArguments();
+    public byte[] getArguments();
 
     public InputStream getInputStream() throws IOException;
-
-    public Reader getReader() throws IOException;
 
 }

@@ -1,10 +1,8 @@
 package org.zenframework.easyservices.impl;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -20,7 +18,7 @@ import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
-import org.zenframework.easyservices.serialize.CharSerializer;
+import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
 import net.sf.cglib.proxy.MethodInterceptor;
@@ -52,7 +50,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         if (serviceLocator.isRelative())
             throw new ClientException("Service locator '" + serviceLocator + "' must be absolute");
 
-        CharSerializer serializer = serializerFactory.getCharSerializer();
+        Serializer serializer = serializerFactory.getSerializer();
         ClassDescriptor classDescriptor = serviceDescriptorFactory != null ? serviceDescriptorFactory.getClassDescriptor(serviceClass) : null;
         MethodDescriptor methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(method) : null;
         ValueDescriptor[] argDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[args.length];
@@ -76,7 +74,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         URLConnection connection = url.openConnection();
         connection.setDoOutput(true);
         connection.setDoInput(true);
-        Writer out = new OutputStreamWriter(connection.getOutputStream());
+        OutputStream out = connection.getOutputStream();
         try {
             //out.write("args=");
             serializer.serialize(args, out);
@@ -86,7 +84,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
 
         // Receive response
         try {
-            Reader in = new InputStreamReader(connection.getInputStream());
+            InputStream in = connection.getInputStream();
             Object result = null;
             ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
             if (returnDescriptor != null && returnDescriptor.isReference()) {
@@ -119,11 +117,11 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
     }
 
     // TODO must be extendable
-    private void tryHandleError(URLConnection connection, CharSerializer serializer) throws Throwable {
+    private void tryHandleError(URLConnection connection, Serializer serializer) throws Throwable {
         if (connection instanceof HttpURLConnection) {
             HttpURLConnection httpConnection = (HttpURLConnection) connection;
             if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK)
-                throw (Throwable) serializer.deserialize(new InputStreamReader(httpConnection.getErrorStream()), Throwable.class, null);
+                throw (Throwable) serializer.deserialize(httpConnection.getErrorStream(), Throwable.class, null);
         }
     }
 

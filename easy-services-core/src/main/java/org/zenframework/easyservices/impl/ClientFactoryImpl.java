@@ -1,19 +1,17 @@
 package org.zenframework.easyservices.impl;
 
-import org.zenframework.commons.bean.ServiceUtil;
 import org.zenframework.easyservices.ClientFactory;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.descriptor.AbstractClassDescriptorFactory;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
+import org.zenframework.easyservices.serialize.Serialization;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 
 public class ClientFactoryImpl implements ClientFactory {
 
-    private static final SerializerFactory DEFAULT_SERIALIZER_FACTORY = ServiceUtil.getService(SerializerFactory.class);
-
     private ClassDescriptorFactory classDescriptorFactory = new ClientClassDescriptorFactory();
-    private SerializerFactory serializerFactory = DEFAULT_SERIALIZER_FACTORY;
+    private SerializerFactory serializerFactory = Serialization.getDefaultFactory();
     private String baseUrl;
     private boolean debug;
 

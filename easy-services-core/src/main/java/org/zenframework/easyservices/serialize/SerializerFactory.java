@@ -2,11 +2,8 @@ package org.zenframework.easyservices.serialize;
 
 public interface SerializerFactory {
 
-    boolean isByteSerializationSupported();
+    String getFormat();
 
-    boolean isCharSerializationSupported();
+    Serializer getSerializer();
 
-    ByteSerializer getByteSerializer();
-
-    CharSerializer getCharSerializer();
 }

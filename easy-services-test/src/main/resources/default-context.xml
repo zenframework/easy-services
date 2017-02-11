@@ -14,7 +14,7 @@
     <bean id="jettyPort" class="java.lang.Integer">
         <constructor-arg value="10000" />
     </bean>
-    
+
     <bean id="server" class="org.zenframework.easyservices.test.HttpServer" scope="singleton">
         <property name="port" value="#{jettyPort}" />
         <property name="resourceFactory">

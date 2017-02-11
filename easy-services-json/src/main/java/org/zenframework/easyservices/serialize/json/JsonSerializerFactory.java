@@ -18,7 +18,7 @@ import org.zenframework.commons.cls.FieldInfo;
 import org.zenframework.commons.cls.MethodInfo;
 import org.zenframework.easyservices.ErrorDescription;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
-import org.zenframework.easyservices.serialize.ByteSerializer;
+import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.serialize.json.gson.ByteArrayTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ClassDescriptorTypeAdapter;
@@ -41,6 +41,8 @@ import com.google.gson.reflect.TypeToken;
 
 public class JsonSerializerFactory implements SerializerFactory {
 
+    public static final String FORMAT = "json";
+
     private static final Logger LOG = LoggerFactory.getLogger(JsonSerializerFactory.class);
 
     private final Collection<TypeAdapterFactory> typeAdapterFactories = getDefaultTypeAdapterFactories();
@@ -48,22 +50,23 @@ public class JsonSerializerFactory implements SerializerFactory {
     private boolean exposedOnly = false;
 
     @Override
+    public String getFormat() {
+        return FORMAT;
+    }
+
+    /*@Override
     public boolean isByteSerializationSupported() {
         return false;
-    }
+    }*/
 
-    @Override
+    /*@Override
     public boolean isCharSerializationSupported() {
         return true;
-    }
+    }*/
 
     @Override
-    public ByteSerializer getByteSerializer() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public JsonSerializer getCharSerializer() {
+    public Serializer getSerializer() {
+        //throw new UnsupportedOperationException();
         GsonBuilder builder = new GsonBuilder();
         if (exposedOnly)
             builder.excludeFieldsWithoutExposeAnnotation();
@@ -72,6 +75,17 @@ public class JsonSerializerFactory implements SerializerFactory {
             builder.registerTypeAdapterFactory(factory);
         return new JsonSerializer(builder.create());
     }
+
+    /*@Override
+    public JsonSerializer getCharSerializer() {
+        GsonBuilder builder = new GsonBuilder();
+        if (exposedOnly)
+            builder.excludeFieldsWithoutExposeAnnotation();
+        builder.registerTypeAdapterFactory(new SimpleTypeAdapterFactory());
+        for (TypeAdapterFactory factory : typeAdapterFactories)
+            builder.registerTypeAdapterFactory(factory);
+        return new JsonSerializer(builder.create());
+    }*/
 
     public void setTypeAdapterFactories(Collection<TypeAdapterFactory> typeAdapterFactories) {
         this.typeAdapterFactories.addAll(typeAdapterFactories);

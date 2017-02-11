@@ -2,7 +2,6 @@ package org.zenframework.easyservices.http;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -46,23 +45,18 @@ public class HttpServiceRequest implements ServiceRequest {
     }
 
     @Override
-    public boolean isStringArgs() {
-        return request.getMethod().equalsIgnoreCase("GET");
+    public boolean isArgsByParameter() {
+        return parameters.containsKey(PARAM_ARGUMENTS);
     }
 
     @Override
-    public String getArguments() {
-        return getParameter(PARAM_ARGUMENTS);
+    public byte[] getArguments() {
+        return getParameter(PARAM_ARGUMENTS).getBytes();
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
         return request.getInputStream();
-    }
-
-    @Override
-    public Reader getReader() throws IOException {
-        return request.getReader();
     }
 
     public URI getRequestURI() throws URISyntaxException, UnsupportedEncodingException {

@@ -5,12 +5,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.Test;
 import org.zenframework.easyservices.test.AbstractServiceTest;
 import org.zenframework.easyservices.test.simple.Addition;
 import org.zenframework.easyservices.test.simple.Function;
 import org.zenframework.easyservices.test.simple.Substraction;
 
 public class DynamicTest extends AbstractServiceTest {
+
+    public DynamicTest(String format) {
+        super(format);
+    }
 
     @Override
     public void setUp() throws Exception {
@@ -29,6 +34,7 @@ public class DynamicTest extends AbstractServiceTest {
         getServiceRegistry().unbind("/streams");
     }
 
+    @Test
     public void testDynamic() throws Exception {
         Calculator calc = getClient(Calculator.class, "/calc");
         Function add = calc.getFunction("add");
@@ -37,6 +43,7 @@ public class DynamicTest extends AbstractServiceTest {
         assertEquals(1, calc.call(sub, 3, 2));
     }
 
+    @Test
     public void testRemoteStreams() throws Exception {
         StreamFactory streams = getClient(StreamFactory.class, "/streams");
         InputStream in = streams.getInputStream();
@@ -44,6 +51,7 @@ public class DynamicTest extends AbstractServiceTest {
         copy(in, out);
     }
 
+    @Test
     public void testLocalStreams() throws Exception {
         StreamFactory streams = (StreamFactory) getServiceRegistry().lookup("/streams");
         InputStream in = streams.getInputStream();
