@@ -12,6 +12,7 @@ import java.util.Map;
 
 import javax.naming.Context;
 import javax.naming.NamingException;
+import javax.xml.crypto.NoSuchMechanismException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,7 @@ import org.zenframework.commons.cls.ClassInfo;
 import org.zenframework.commons.config.Config;
 import org.zenframework.commons.config.Configurable;
 import org.zenframework.commons.debug.TimeChecker;
+import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.ServiceInvoker;
 import org.zenframework.easyservices.ServiceLocator;
@@ -32,7 +34,6 @@ import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.MethodIdentifier;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.jndi.JNDIHelper;
-import org.zenframework.easyservices.serialize.Serialization;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
@@ -48,8 +49,9 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
     private Context serviceRegistry = JNDIHelper.getDefaultContext();
     private ClassDescriptorFactory classDescriptorFactory = AnnotationClassDescriptorFactory.INSTANSE;
-    private SerializerFactory serializerFactory = Serialization.getDefaultFactory();
-    private boolean debug;
+    private SerializerFactory serializerFactory = Environment.getSerializerFactory();
+    private boolean duplicateMethodNamesSafe = Environment.isDuplicateMethodNamesSafe();
+    private boolean debug = Environment.isDebug();
 
     @Override
     public void invoke(ServiceRequest request, ServiceResponse response) throws IOException {
@@ -143,8 +145,10 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         ClassDescriptor classDescriptor = classDescriptorFactory.getClassDescriptor(service.getClass());
 
         Method method = null;
+        MethodIdentifier methodId = null;
         MethodDescriptor methodDescriptor = null;
         ValueDescriptor[] paramDescriptors = null;
+        Class<?>[] paramTypes = null;
         Object args[] = null;
         Object result;
 
@@ -152,13 +156,35 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         TimeChecker time = LOG.isDebugEnabled() ? new TimeChecker("FIND BY ALIAS " + methodName, LOG) : null;
         Map.Entry<MethodIdentifier, MethodDescriptor> methodEntry = classDescriptor != null ? classDescriptor.findMethodEntry(methodName) : null;
         if (methodEntry != null) {
-            method = service.getClass().getMethod(methodEntry.getKey().getName(), methodEntry.getKey().getParameterTypes());
+            methodId = methodEntry.getKey();
             methodDescriptor = methodEntry.getValue();
             paramDescriptors = methodDescriptor.getParameterDescriptors();
+            paramTypes = methodId.getParameterTypes();
+            method = service.getClass().getMethod(methodId.getName(), paramTypes);
+        } else if (!duplicateMethodNamesSafe) {
+            // If not duplicate-method-names-safe, try to find method by name only
+            for (Method m : service.getClass().getMethods()) {
+                if (m.getName().equals(methodName)) {
+                    method = m;
+                    break;
+                }
+            }
+            if (method == null)
+                throw new NoSuchMechanismException(methodName);
+            paramTypes = method.getParameterTypes();
+            methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(method) : null;
+            paramDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[paramTypes.length];
+        }
+        if (method != null) {
+            for (int i = 0; i < paramTypes.length; i++) {
+                ValueDescriptor argDescriptor = paramDescriptors[i];
+                if (argDescriptor != null && argDescriptor.isReference())
+                    paramTypes[i] = ServiceLocator.class;
+            }
             if (request.isArgsByParameter())
-                args = serializer.deserialize(request.getArguments(), methodEntry.getKey().getParameterTypes(), paramDescriptors);
+                args = serializer.deserialize(request.getArguments(), paramTypes, paramDescriptors);
             else
-                args = serializer.deserialize(request.getInputStream(), methodEntry.getKey().getParameterTypes(), paramDescriptors);
+                args = serializer.deserialize(request.getInputStream(), paramTypes, paramDescriptors);
             if (time != null)
                 time.printDifference(method);
         } else {
@@ -170,16 +196,16 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             for (Method m : service.getClass().getMethods()) {
                 if (m.getName().equals(request.getMethodName())) {
                     try {
-                        Class<?>[] argTypes = m.getParameterTypes();
+                        paramTypes = m.getParameterTypes();
                         methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(m) : null;
                         paramDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors()
-                                : new ValueDescriptor[argTypes.length];
-                        for (int i = 0; i < argTypes.length; i++) {
+                                : new ValueDescriptor[paramTypes.length];
+                        for (int i = 0; i < paramTypes.length; i++) {
                             ValueDescriptor argDescriptor = paramDescriptors[i];
                             if (argDescriptor != null && argDescriptor.isReference())
-                                argTypes[i] = ServiceLocator.class;
+                                paramTypes[i] = ServiceLocator.class;
                         }
-                        args = serializer.deserialize(argsStr, argTypes, paramDescriptors);
+                        args = serializer.deserialize(argsStr, paramTypes, paramDescriptors);
                         method = m;
                         break;
                     } catch (SerializationException e) {

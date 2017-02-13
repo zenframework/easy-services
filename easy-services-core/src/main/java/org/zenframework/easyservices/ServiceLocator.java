@@ -69,7 +69,7 @@ public class ServiceLocator implements Serializable {
 
     @Override
     public String toString() {
-        return isAbsolute() ? serviceUrl : serviceName;
+        return serviceUrl != null ? serviceUrl : serviceName;
     }
 
 }

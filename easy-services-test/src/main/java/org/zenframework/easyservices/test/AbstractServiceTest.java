@@ -11,24 +11,26 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ClientFactory;
+import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.jndi.JNDIHelper;
-import org.zenframework.easyservices.serialize.Serialization;
 
 import junit.framework.TestCase;
 
 @RunWith(Parameterized.class)
 public abstract class AbstractServiceTest extends TestCase {
 
-    @Parameterized.Parameters
+    @Parameterized.Parameters(name = "{index} autoAliasing:{0} format:{1}")
     public static Collection<Object[]> formats() {
-        return Arrays.asList(new Object[][] { { "json" }, { "bin" } });
+        return Arrays.asList(new Object[][] { { true, "json" }, { true, "bin" }, { false, "json" }, { false, "bin" } });
     }
 
+    private final boolean autoAliasing;
     private final String format;
 
     private HttpServer server = TestContext.CONTEXT.getBean(HttpServer.class);
 
-    public AbstractServiceTest(String format) {
+    public AbstractServiceTest(boolean autoAliasing, String format) {
+        this.autoAliasing = autoAliasing;
         this.format = format;
     }
 
@@ -36,7 +38,9 @@ public abstract class AbstractServiceTest extends TestCase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        Serialization.setDefaultFormat(format);
+        Environment.setAutoAliasing(autoAliasing);
+        Environment.setDuplicateMethodNamesSafe(!autoAliasing);
+        Environment.setDefaultFormat(format);
         server.start();
     }
 

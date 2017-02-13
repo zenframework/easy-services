@@ -13,8 +13,8 @@ import org.zenframework.easyservices.test.simple.Substraction;
 
 public class DynamicTest extends AbstractServiceTest {
 
-    public DynamicTest(String format) {
-        super(format);
+    public DynamicTest(boolean autoAliasing, String format) {
+        super(autoAliasing, format);
     }
 
     @Override

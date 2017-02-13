@@ -7,11 +7,13 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.zenframework.easyservices.Environment;
+
 public abstract class AbstractClassDescriptorFactory implements ClassDescriptorFactory {
 
     protected final Map<String, ClassDescriptor> cache = Collections.synchronizedMap(new HashMap<String, ClassDescriptor>());
 
-    private boolean autoAliasing = true;
+    private boolean autoAliasing = Environment.isAutoAliasing();
 
     @Override
     public ClassDescriptor getClassDescriptor(Class<?> cls) {

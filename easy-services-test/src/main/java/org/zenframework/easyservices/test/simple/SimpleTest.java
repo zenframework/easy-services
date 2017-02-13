@@ -5,8 +5,8 @@ import org.zenframework.easyservices.test.AbstractServiceTest;
 
 public class SimpleTest extends AbstractServiceTest {
 
-    public SimpleTest(String format) {
-        super(format);
+    public SimpleTest(boolean autoAliasing, String format) {
+        super(autoAliasing, format);
     }
 
     @Override

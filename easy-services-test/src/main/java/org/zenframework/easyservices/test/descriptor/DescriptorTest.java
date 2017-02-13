@@ -8,8 +8,8 @@ import org.zenframework.easyservices.test.AbstractServiceTest;
 
 public class DescriptorTest extends AbstractServiceTest {
 
-    public DescriptorTest(String format) {
-        super(format);
+    public DescriptorTest(boolean autoAliasing, String format) {
+        super(autoAliasing, format);
     }
 
     @Override
