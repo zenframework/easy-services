@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.lang.ClassUtils;
+import org.zenframework.easyservices.ValueTransfer;
 
 public class ValueDescriptor implements Serializable {
 
@@ -14,7 +15,7 @@ public class ValueDescriptor implements Serializable {
 
     private final Set<Object> adapters = new HashSet<Object>();
     private Class<?>[] typeParameters = new Class<?>[0];
-    private boolean reference = false;
+    private ValueTransfer transfer = null;
 
     @SuppressWarnings("unchecked")
     public <T> T getAdapter(Class<T> cls) {
@@ -45,20 +46,20 @@ public class ValueDescriptor implements Serializable {
         this.adapters.addAll(adapters);
     }
 
-    public boolean isReference() {
-        return reference;
+    public ValueTransfer getTransfer() {
+        return transfer;
     }
 
-    public void setReference(boolean reference) {
-        this.reference = reference;
+    public void setTransfer(ValueTransfer transfer) {
+        this.transfer = transfer;
     }
 
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder();
         str.append('[');
-        if (reference)
-            str.append("ref ");
+        if (transfer != null && transfer != ValueTransfer.DEFAULT)
+            str.append("tr:").append(transfer);
         if (typeParameters != null && typeParameters.length > 0)
             str.append("tp:").append(ClassUtils.convertClassesToClassNames(Arrays.asList(typeParameters))).append(' ');
         if (!adapters.isEmpty())

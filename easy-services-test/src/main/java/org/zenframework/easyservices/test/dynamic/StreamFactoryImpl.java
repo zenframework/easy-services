@@ -1,47 +1,30 @@
 package org.zenframework.easyservices.test.dynamic;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 public class StreamFactoryImpl implements StreamFactory {
 
-    private final int inputStreamSize;
+    private final File sourceFile;
+    private final File targetFile;
 
-    public StreamFactoryImpl(int inputStreamSize) {
-        this.inputStreamSize = inputStreamSize;
+    public StreamFactoryImpl(File sourceFile, File targetFile) throws IOException {
+        this.sourceFile = sourceFile;
+        this.targetFile = targetFile;
     }
 
     @Override
-    public InputStream getInputStream() {
-        return new VoidInputStream(inputStreamSize);
+    public InputStream getInputStream() throws IOException {
+        return new FileInputStream(sourceFile);
     }
 
     @Override
-    public OutputStream getOuptputStream() {
-        return new VoidOutputStream();
-    }
-
-    private static class VoidInputStream extends InputStream {
-
-        private int size;
-
-        private VoidInputStream(int size) {
-            this.size = size;
-        }
-
-        @Override
-        public int read() throws IOException {
-            return size-- > 0 ? 0 : -1;
-        }
-
-    }
-
-    private static class VoidOutputStream extends OutputStream {
-
-        @Override
-        public void write(int b) throws IOException {}
-
+    public OutputStream getOuptputStream() throws IOException {
+        return new FileOutputStream(targetFile);
     }
 
 }

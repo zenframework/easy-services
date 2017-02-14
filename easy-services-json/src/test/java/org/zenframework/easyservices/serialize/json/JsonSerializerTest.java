@@ -28,7 +28,7 @@ public class JsonSerializerTest extends TestCase {
 
     public void testNullSerialization() throws Exception {
         Serializer serializer = new JsonSerializer(new Gson());
-        assertEquals("null".getBytes(), serializer.serialize((Object) null));
+        assertTrue(Arrays.equals("null".getBytes(), serializer.serialize((Object) null)));
         assertNull(serializer.deserialize("null".getBytes(), SimpleBean.class, null));
     }
 

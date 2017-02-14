@@ -13,7 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.commons.debug.TimeChecker;
 import org.zenframework.easyservices.ClientException;
+import org.zenframework.easyservices.ResponseObject;
 import org.zenframework.easyservices.ServiceLocator;
+import org.zenframework.easyservices.ValueTransfer;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
@@ -58,7 +60,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         // Find and replace proxy objects with references
         for (int i = 0; i < args.length; i++) {
             ValueDescriptor argDescriptor = argDescriptors[i];
-            if (argDescriptor != null && argDescriptor.isReference()) {
+            if (argDescriptor != null && argDescriptor.getTransfer() == ValueTransfer.REF) {
                 //ServiceInvocationHandler handler = (ServiceInvocationHandler) Proxy.getInvocationHandler(args[i]);
                 ServiceMethodInterceptor intercpetor = ClientProxy.getMethodInterceptor(args[i], ServiceMethodInterceptor.class);
                 args[i] = intercpetor.getServiceLocator();
@@ -83,29 +85,33 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         }
 
         // Receive response
+        ResponseObject responseObject = null;
         try {
             InputStream in = connection.getInputStream();
-            Object result = null;
             ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
-            if (returnDescriptor != null && returnDescriptor.isReference()) {
+            if (returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF) {
                 // If result is reference, replace with proxy object
-                ServiceLocator locator = (ServiceLocator) serializer.deserialize(in, ServiceLocator.class, returnDescriptor);
+                responseObject = serializer.deserialize(in, ServiceLocator.class, returnDescriptor, method.getParameterTypes(), argDescriptors);
+                ServiceLocator locator = (ServiceLocator) responseObject.getResult();
                 if (locator.isRelative())
                     locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
-                result = ClientProxy.getCGLibProxy(method.getReturnType(), locator, serviceDescriptorFactory, serializerFactory, debug);
+                responseObject
+                        .setResult(ClientProxy.getCGLibProxy(method.getReturnType(), locator, serviceDescriptorFactory, serializerFactory, debug));
             } else {
                 // Else return deserialized result
-                if (method.getReturnType() != void.class)
-                    result = serializer.deserialize(in, method.getReturnType(), returnDescriptor);
+                responseObject = serializer.deserialize(in, method.getReturnType(), returnDescriptor, method.getParameterTypes(), argDescriptors);
             }
             if (time != null)
-                time.printDifference(result);
-            return result;
+                time.printDifference(responseObject);
         } catch (IOException e) {
-            tryHandleError(connection, serializer);
+            tryHandleError(connection, serializer, method.getParameterTypes(), argDescriptors);
             throw e;
         }
 
+        if (responseObject.isSuccess())
+            return responseObject.getResult();
+        else
+            throw (Throwable) responseObject.getResult();
     }
 
     private boolean isMethodDebug(ClassDescriptor classDescriptor, MethodDescriptor methodDescriptor) {
@@ -117,11 +123,13 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
     }
 
     // TODO must be extendable
-    private void tryHandleError(URLConnection connection, Serializer serializer) throws Throwable {
+    private void tryHandleError(URLConnection connection, Serializer serializer, Class<?>[] paramTypes, ValueDescriptor[] paramDescriptors)
+            throws Throwable {
         if (connection instanceof HttpURLConnection) {
             HttpURLConnection httpConnection = (HttpURLConnection) connection;
             if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK)
-                throw (Throwable) serializer.deserialize(httpConnection.getErrorStream(), Throwable.class, null);
+                throw (Throwable) serializer.deserialize(httpConnection.getErrorStream(), Throwable.class, null, paramTypes, paramDescriptors)
+                        .getResult();
         }
     }
 

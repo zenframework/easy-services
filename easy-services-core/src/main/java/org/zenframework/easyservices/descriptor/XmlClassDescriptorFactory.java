@@ -16,6 +16,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.zenframework.easyservices.ValueTransfer;
 
 /**
  * Parses XML-based class descriptors
@@ -31,7 +32,7 @@ import org.xml.sax.SAXException;
  *     </class>
  *     <class name="org.example.service.Session">
  *         <value>
- *             <reference>true</reference>
+ *             <transfer>ref</transfer>
  *         </value>
  *     </class>
  * 
@@ -47,14 +48,14 @@ import org.xml.sax.SAXException;
  *         <method name="login" arg-types="java.lang.String,java.lang.String">
  *             <alias>loginUserPassword</alias>
  *             <return>
- *                 <reference>true</reference>
+ *                 <transfer>ref</transfer>
  *             </return>
  *         </method>
  *         <!-- returns reference to org.example.service.Session service -->
  *         <method name="login" arg-types="org.example.model.Token">
  *             <alias>loginToken</alias>
  *             <return>
- *                 <reference>true</reference>
+ *                 <transfer>ref</transfer>
  *             </return>
  *         </method>
  *         <!-- returns java.util.Map<java.lang.String, org.example.model.User> -->
@@ -84,7 +85,7 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
     public static final String ELEM_ARGUMENT = "argument";
     public static final String ELEM_ADAPTER = "adapter";
     public static final String ELEM_TYPE_PARAMETERS = "type-parameters";
-    public static final String ELEM_REFERENCE = "reference";
+    public static final String ELEM_TRANSFER = "transfer";
     public static final String ATTR_NAME = "name";
     public static final String ATTR_ARG_TYPES = "arg-types";
     public static final String ATTR_NUMBER = "number";
@@ -196,7 +197,7 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
         return classDescriptor;
     }
 
-    private MethodDescriptor getMethodDescriptor(Element methodElement, Class<?>[] argTypes, Class<?> returnType) throws SAXException {
+    private static MethodDescriptor getMethodDescriptor(Element methodElement, Class<?>[] argTypes, Class<?> returnType) throws SAXException {
         MethodDescriptor methodDescriptor = new MethodDescriptor(argTypes.length);
         Element aliasElement = getElement(methodElement, ELEM_ALIAS);
         if (aliasElement != null)
@@ -293,9 +294,9 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
         Element typeParametersElement = getElement(valueElement, ELEM_TYPE_PARAMETERS);
         if (typeParametersElement != null)
             valueDescriptor.setTypeParameters(getClasses(typeParametersElement.getTextContent()));
-        Element referenceElement = getElement(valueElement, ELEM_REFERENCE);
-        if (referenceElement != null)
-            valueDescriptor.setReference(Boolean.parseBoolean(referenceElement.getTextContent()));
+        Element transferElement = getElement(valueElement, ELEM_TRANSFER);
+        if (transferElement != null)
+            valueDescriptor.setTransfer(ValueTransfer.forName(transferElement.getTextContent()));
         return valueDescriptor;
     }
 

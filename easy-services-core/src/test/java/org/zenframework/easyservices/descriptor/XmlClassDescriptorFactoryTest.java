@@ -1,5 +1,7 @@
 package org.zenframework.easyservices.descriptor;
 
+import org.zenframework.easyservices.ValueTransfer;
+
 import junit.framework.TestCase;
 
 public class XmlClassDescriptorFactoryTest extends TestCase {
@@ -9,7 +11,7 @@ public class XmlClassDescriptorFactoryTest extends TestCase {
         System.out.println(factory.getClassDescriptor(ServiceFactory.class));
         System.out.println(factory.getClassDescriptor(Service.class));
         assertTrue(factory.getClassDescriptor(ServiceFactory.class).getMethodDescriptor(ServiceFactory.class.getMethod("getService", String.class))
-                .getReturnDescriptor().isReference());
+                .getReturnDescriptor().getTransfer() == ValueTransfer.REF);
     }
 
 }

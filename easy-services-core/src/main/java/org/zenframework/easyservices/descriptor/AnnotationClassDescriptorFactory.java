@@ -103,7 +103,7 @@ public class AnnotationClassDescriptorFactory extends AbstractClassDescriptorFac
             Class<?>[] adapterClasses = value.adapters();
             for (Class<?> cls : adapterClasses)
                 descriptor.addAdapter(cls.newInstance());
-            descriptor.setReference(value.reference());
+            descriptor.setTransfer(value.transfer());
             return descriptor;
         } catch (Exception e) {
             throw new IllegalArgumentException("Can't get value descriptor", e);

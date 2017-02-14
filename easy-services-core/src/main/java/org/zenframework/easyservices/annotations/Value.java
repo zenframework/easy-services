@@ -5,6 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.zenframework.easyservices.ValueTransfer;
+
 @Target(value = { ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER })
 @Retention(value = RetentionPolicy.RUNTIME)
 public @interface Value {
@@ -13,6 +15,6 @@ public @interface Value {
 
     Class<?>[] typeParameters() default {};
 
-    boolean reference() default false;
+    ValueTransfer transfer() default ValueTransfer.DEFAULT;
 
 }

@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.zenframework.easyservices.ValueTransfer;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.MethodIdentifier;
@@ -79,8 +80,8 @@ public class ClassDescriptorTypeAdapter extends TypeAdapter<ClassDescriptor> {
             out.nullValue();
         } else {
             out.beginObject();
-            if (value.isReference())
-                out.name("reference").value(true);
+            if (value.getTransfer() != null && value.getTransfer() != ValueTransfer.DEFAULT)
+                out.name("transfer").value(value.getTransfer().name().toLowerCase());
             if (!value.getAdapters().isEmpty()) {
                 out.name("adapters").beginArray();
                 for (Object adapter : value.getAdapters())
@@ -106,8 +107,8 @@ public class ClassDescriptorTypeAdapter extends TypeAdapter<ClassDescriptor> {
         in.beginObject();
         while (in.hasNext()) {
             String name = in.nextName();
-            if ("reference".equals(name)) {
-                value.setReference(in.nextBoolean());
+            if ("transfer".equals(name)) {
+                value.setTransfer(ValueTransfer.forName(in.nextString()));
             } else if ("adapters".equals(name)) {
                 in.beginArray();
                 while (in.hasNext()) {

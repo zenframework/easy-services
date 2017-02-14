@@ -2,7 +2,7 @@
 <classes>
     <class name="org.zenframework.easyservices.descriptor.Service">
         <value>
-            <reference>true</reference>
+            <transfer>ref</transfer>
         </value>
     </class>
 </classes>

@@ -11,7 +11,7 @@ public interface ServiceRequest {
 
     public boolean isArgsByParameter();
 
-    public byte[] getArguments();
+    public byte[] getArguments() throws IOException;
 
     public InputStream getInputStream() throws IOException;
 
