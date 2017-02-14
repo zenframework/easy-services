@@ -14,8 +14,15 @@ public class ValueDescriptor implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private final Set<Object> adapters = new HashSet<Object>();
-    private Class<?>[] typeParameters = new Class<?>[0];
     private ValueTransfer transfer = null;
+    private Class<?>[] typeParameters = new Class<?>[0];
+
+    public ValueDescriptor() {}
+
+    public ValueDescriptor(ValueTransfer transfer, Class<?>... typeParameters) {
+        this.transfer = transfer;
+        this.typeParameters = typeParameters;
+    }
 
     @SuppressWarnings("unchecked")
     public <T> T getAdapter(Class<T> cls) {

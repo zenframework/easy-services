@@ -9,9 +9,7 @@ public interface ServiceRequest {
 
     public String getMethodName();
 
-    public boolean isArgsByParameter();
-
-    public byte[] getArguments() throws IOException;
+    public void cacheInput() throws IOException;
 
     public InputStream getInputStream() throws IOException;
 

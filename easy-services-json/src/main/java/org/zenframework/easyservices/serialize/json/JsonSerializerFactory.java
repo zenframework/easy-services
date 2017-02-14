@@ -18,6 +18,7 @@ import org.zenframework.commons.cls.FieldInfo;
 import org.zenframework.commons.cls.MethodInfo;
 import org.zenframework.easyservices.ErrorDescription;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
+import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.serialize.json.gson.ByteArrayTypeAdapter;
@@ -54,18 +55,8 @@ public class JsonSerializerFactory implements SerializerFactory {
         return FORMAT;
     }
 
-    /*@Override
-    public boolean isByteSerializationSupported() {
-        return false;
-    }*/
-
-    /*@Override
-    public boolean isCharSerializationSupported() {
-        return true;
-    }*/
-
     @Override
-    public Serializer getSerializer() {
+    public Serializer getSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor) {
         //throw new UnsupportedOperationException();
         GsonBuilder builder = new GsonBuilder();
         if (exposedOnly)
@@ -73,7 +64,7 @@ public class JsonSerializerFactory implements SerializerFactory {
         builder.registerTypeAdapterFactory(new SimpleTypeAdapterFactory());
         for (TypeAdapterFactory factory : typeAdapterFactories)
             builder.registerTypeAdapterFactory(factory);
-        return new JsonSerializer(builder.create());
+        return new JsonSerializer(paramTypes, returnType, methodDescriptor, builder.create());
     }
 
     /*@Override

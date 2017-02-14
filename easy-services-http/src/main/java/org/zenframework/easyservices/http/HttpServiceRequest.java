@@ -1,5 +1,6 @@
 package org.zenframework.easyservices.http;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -12,9 +13,9 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.zenframework.commons.net.URIUtil;
-import org.zenframework.easyservices.ServiceRequest;
+import org.zenframework.easyservices.impl.AbstractServiceRequest;
 
-public class HttpServiceRequest implements ServiceRequest {
+public class HttpServiceRequest extends AbstractServiceRequest {
 
     private static final String PARAM_METHOD = "method";
     private static final String PARAM_ARGUMENTS = "args";
@@ -44,21 +45,6 @@ public class HttpServiceRequest implements ServiceRequest {
         return getParameter(PARAM_METHOD);
     }
 
-    @Override
-    public boolean isArgsByParameter() {
-        return parameters.containsKey(PARAM_ARGUMENTS);
-    }
-
-    @Override
-    public byte[] getArguments() {
-        return getParameter(PARAM_ARGUMENTS).getBytes();
-    }
-
-    @Override
-    public InputStream getInputStream() throws IOException {
-        return request.getInputStream();
-    }
-
     public URI getRequestURI() throws URISyntaxException, UnsupportedEncodingException {
         StringBuffer str = request.getRequestURL();
         if (request.getQueryString() != null)
@@ -69,6 +55,12 @@ public class HttpServiceRequest implements ServiceRequest {
     public String getParameter(String name) {
         List<String> values = parameters.get(name);
         return values != null && values.size() > 0 ? values.get(0) : null;
+    }
+
+    @Override
+    protected InputStream internalGetInputStream() throws IOException {
+        return parameters.containsKey(PARAM_ARGUMENTS) ? new ByteArrayInputStream(getParameter(PARAM_ARGUMENTS).getBytes())
+                : request.getInputStream();
     }
 
 }

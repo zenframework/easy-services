@@ -39,9 +39,14 @@ public class MethodDescriptor implements Serializable {
         return parameterDescriptors;
     }
 
+    public void setParameterDescriptors(ValueDescriptor[] paramDescriptors) {
+        for (int i = 0; i < parameterDescriptors.length; i++)
+            parameterDescriptors[i] = paramDescriptors != null ? paramDescriptors[i] : null;
+    }
+
     public void setParameterDescriptorsMap(Map<Integer, ValueDescriptor> paramDescriptorsMap) {
         for (int i = 0; i < parameterDescriptors.length; i++)
-            setParameterDescriptor(i, paramDescriptorsMap.get(i));
+            parameterDescriptors[i] = paramDescriptorsMap != null ? paramDescriptorsMap.get(i) : null;
     }
 
     public ValueDescriptor getParameterDescriptor(int arg) {

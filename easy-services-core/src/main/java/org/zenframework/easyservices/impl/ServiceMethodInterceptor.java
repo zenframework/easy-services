@@ -52,10 +52,12 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         if (serviceLocator.isRelative())
             throw new ClientException("Service locator '" + serviceLocator + "' must be absolute");
 
-        Serializer serializer = serializerFactory.getSerializer();
+        Class<?>[] paramTypes = method.getParameterTypes();
+        Class<?> returnType = method.getReturnType();
         ClassDescriptor classDescriptor = serviceDescriptorFactory != null ? serviceDescriptorFactory.getClassDescriptor(serviceClass) : null;
         MethodDescriptor methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(method) : null;
         ValueDescriptor[] argDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[args.length];
+        Serializer serializer = serializerFactory.getSerializer(paramTypes, returnType, methodDescriptor);
 
         // Find and replace proxy objects with references
         for (int i = 0; i < args.length; i++) {
@@ -91,7 +93,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
             ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
             if (returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF) {
                 // If result is reference, replace with proxy object
-                responseObject = serializer.deserialize(in, ServiceLocator.class, returnDescriptor, method.getParameterTypes(), argDescriptors);
+                responseObject = serializer.deserializeResponse(in, true);
                 ServiceLocator locator = (ServiceLocator) responseObject.getResult();
                 if (locator.isRelative())
                     locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
@@ -99,7 +101,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
                         .setResult(ClientProxy.getCGLibProxy(method.getReturnType(), locator, serviceDescriptorFactory, serializerFactory, debug));
             } else {
                 // Else return deserialized result
-                responseObject = serializer.deserialize(in, method.getReturnType(), returnDescriptor, method.getParameterTypes(), argDescriptors);
+                responseObject = serializer.deserializeResponse(in, true);
             }
             if (time != null)
                 time.printDifference(responseObject);
@@ -128,8 +130,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         if (connection instanceof HttpURLConnection) {
             HttpURLConnection httpConnection = (HttpURLConnection) connection;
             if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK)
-                throw (Throwable) serializer.deserialize(httpConnection.getErrorStream(), Throwable.class, null, paramTypes, paramDescriptors)
-                        .getResult();
+                throw (Throwable) serializer.deserializeResponse(httpConnection.getErrorStream(), false).getResult();
         }
     }
 

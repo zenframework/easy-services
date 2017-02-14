@@ -1,6 +1,5 @@
 package org.zenframework.easyservices.serialize.json;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -9,6 +8,9 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 
 import org.zenframework.easyservices.ResponseObject;
+import org.zenframework.easyservices.ServiceLocator;
+import org.zenframework.easyservices.ValueTransfer;
+import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
@@ -21,12 +23,16 @@ import com.google.gson.stream.JsonReader;
 
 public class JsonSerializer implements Serializer {
 
-    private static final byte[] NULL_STR = "null".getBytes();
-
     private final JsonParser parser = new JsonParser();
+    private final Class<?>[] paramTypes;
+    private final Class<?> returnType;
+    private final MethodDescriptor methodDescriptor;
     private final Gson gson;
 
-    public JsonSerializer(Gson gson) {
+    public JsonSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor, Gson gson) {
+        this.paramTypes = paramTypes;
+        this.returnType = returnType;
+        this.methodDescriptor = methodDescriptor;
         this.gson = gson;
     }
 
@@ -39,18 +45,24 @@ public class JsonSerializer implements Serializer {
     }
 
     @Override
-    public Object deserialize(InputStream in, Class<?> objType, ValueDescriptor valueDescriptor) throws IOException, SerializationException {
-        try {
-            return gson.fromJson(new InputStreamReader(in),
-                    valueDescriptor != null ? GsonUtil.getParameterizedType(objType, valueDescriptor.getTypeParameters()) : objType);
-        } catch (JsonParseException e) {
-            throw new SerializationException(e);
-        }
+    public Object deserializeResult(InputStream in) throws IOException, SerializationException {
+        return deserialize(new JsonReader(new InputStreamReader(in)), returnType,
+                methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null);
     }
 
     @Override
-    public ResponseObject deserialize(InputStream in, Class<?> returnType, ValueDescriptor returnDescriptor, Class<?>[] paramTypes,
-            ValueDescriptor[] paramDescirptors) throws IOException, SerializationException {
+    public Object[] deserializeParameters(InputStream in) throws IOException, SerializationException {
+        return deserialize(new JsonReader(new InputStreamReader(in)), paramTypes,
+                methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[paramTypes.length]);
+    }
+
+    @Override
+    public ResponseObject deserializeResponse(InputStream in, boolean success) throws IOException, SerializationException {
+        ValueDescriptor[] paramDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors()
+                : new ValueDescriptor[paramTypes.length];
+        ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
+        Class<?> returnType = !success ? Throwable.class
+                : returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF ? ServiceLocator.class : this.returnType;
         try {
             ResponseObject responseObject = new ResponseObject();
             JsonReader reader = new JsonReader(new InputStreamReader(in));
@@ -60,10 +72,9 @@ public class JsonSerializer implements Serializer {
                 if ("success".equals(name)) {
                     responseObject.setSuccess(reader.nextBoolean());
                 } else if ("result".equals(name)) {
-                    responseObject.setResult(gson.fromJson(reader,
-                            returnDescriptor != null ? GsonUtil.getParameterizedType(returnType, returnDescriptor.getTypeParameters()) : returnType));
+                    responseObject.setResult(deserialize(reader, returnType, returnDescriptor));
                 } else if ("parameters".equals(name)) {
-                    responseObject.setParameters(deserialize(reader, paramTypes, paramDescirptors));
+                    responseObject.setParameters(deserialize(reader, paramTypes, paramDescriptors));
                 } else {
                     throw new IOException("Unexpected name '" + name + "'");
                 }
@@ -76,44 +87,14 @@ public class JsonSerializer implements Serializer {
     }
 
     @Override
-    public Object[] deserialize(InputStream in, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws IOException, SerializationException {
-        return deserialize(new JsonReader(new InputStreamReader(in)), objTypes, valueDescriptors);
-    }
-
-    @Override
     public void serialize(Object object, OutputStream out) throws IOException {
         Writer writer = new OutputStreamWriter(out);
         gson.toJson(object, writer);
         writer.flush();
     }
 
-    @Override
-    public Object deserialize(byte[] data, Class<?> objType, ValueDescriptor valueDescriptor) throws IOException, SerializationException {
-        if (data == null || data.equals(NULL_STR))
-            return null;
-        return deserialize(new ByteArrayInputStream(data), objType, valueDescriptor);
-    }
-
-    @Override
-    public ResponseObject deserialize(byte[] data, Class<?> returnType, ValueDescriptor returnDescriptor, Class<?>[] paramTypes,
-            ValueDescriptor[] paramDescirptors) throws SerializationException, IOException {
-        if (data == null || data.equals(NULL_STR))
-            return null;
-        return deserialize(new ByteArrayInputStream(data), returnType, returnDescriptor, paramTypes, paramDescirptors);
-    }
-
-    @Override
-    public Object[] deserialize(byte[] data, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws SerializationException, IOException {
-        if (data == null || data.equals(NULL_STR))
-            return new Object[0];
-        return deserialize(new ByteArrayInputStream(data), objTypes, valueDescriptors);
-    }
-
-    @Override
-    public byte[] serialize(Object object) {
-        if (object == null)
-            return NULL_STR;
-        return gson.toJson(object).getBytes();
+    private Object deserialize(JsonReader in, Class<?> objType, ValueDescriptor valueDescriptor) throws IOException, SerializationException {
+        return gson.fromJson(in, valueDescriptor != null ? GsonUtil.getParameterizedType(objType, valueDescriptor.getTypeParameters()) : objType);
     }
 
     private Object[] deserialize(JsonReader in, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws IOException, SerializationException {
@@ -126,8 +107,7 @@ public class JsonSerializer implements Serializer {
             if (i >= result.length)
                 throw new SerializationException("JSON array size > array of types size");
             try {
-                result[i] = gson.fromJson(in, valueDescriptors[i] != null
-                        ? GsonUtil.getParameterizedType(objTypes[i], valueDescriptors[i].getTypeParameters()) : objTypes[i]);
+                result[i] = deserialize(in, objTypes[i], valueDescriptors[i]);
             } catch (JsonParseException e) {
                 throw new SerializationException(e);
             }
