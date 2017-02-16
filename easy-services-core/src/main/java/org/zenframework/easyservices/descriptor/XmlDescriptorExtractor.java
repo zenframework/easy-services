@@ -90,8 +90,6 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
 
     private final Map<Class<?>, ClassDescriptor> classes = new HashMap<Class<?>, ClassDescriptor>();
     private final Map<MethodIdentifier, MethodDescriptor> methods = new HashMap<MethodIdentifier, MethodDescriptor>();
-    //private final Map<Class<?>, ValueDescriptor> defaultValues = new HashMap<Class<?>, ValueDescriptor>();
-    //private final Map<Class<?>, Boolean> defaultDebug = new HashMap<Class<?>, Boolean>();
 
     public XmlDescriptorExtractor(String url) throws ParserConfigurationException, SAXException, IOException {
         this(new URL(url));
@@ -127,7 +125,6 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
                     Method method = cls.getMethod(methodName, paramTypes);
                     MethodIdentifier methodIdentifier = new MethodIdentifier(method);
                     MethodDescriptor methodDescriptor = getMethodDescriptor(methodElement, paramTypes, method.getReturnType());
-                    //classDescriptor.setMethodDescriptor(methodIdentifier, methodDescriptor);
                     methods.put(methodIdentifier, methodDescriptor);
                 } catch (NoSuchMethodException e) {
                     throw new SAXException(e);
@@ -135,28 +132,6 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
             }
             classes.put(cls, classDescriptor);
         }
-
-        // update method descriptors
-        /*for (ClassDescriptor classDescriptor : classes.values()) {
-            for (Map.Entry<MethodIdentifier, MethodDescriptor> entry : classDescriptor.getMethodDescriptors().entrySet()) {
-                MethodIdentifier methodIdentifier = entry.getKey();
-                MethodDescriptor methodDescriptor = entry.getValue();
-                if (methodDescriptor.getReturnDescriptor() == null) {
-                    ClassDescriptor returnClassDescriptor = classes.get(methodIdentifier.getReturnType());
-                    if (returnClassDescriptor != null)
-                        methodDescriptor.setReturnDescriptor(returnClassDescriptor.getValueDescriptor());
-                }
-                Class<?>[] paramTypes = methodIdentifier.getParameterTypes();
-                ValueDescriptor[] paramDescriptors = methodDescriptor.getParameterDescriptors();
-                for (int i = 0; i < paramDescriptors.length; i++) {
-                    if (paramDescriptors[i] == null) {
-                        ClassDescriptor paramClassDescriptor = classes.get(paramTypes[i]);
-                        if (paramClassDescriptor != null)
-                            paramDescriptors[i] = paramClassDescriptor.getValueDescriptor();
-                    }
-                }
-            }
-        }*/
 
     }
 
@@ -168,65 +143,7 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
     @Override
     public ClassDescriptor getClassDescriptor(Class<?> cls) {
         return classes.get(cls);
-        /*ClassDescriptor classDescriptor = classes.get(cls);
-        if (classDescriptor == null)
-            classDescriptor = new ClassDescriptor();
-        for (Method method : cls.getMethods()) {
-            Class<?>[] paramTypes = method.getParameterTypes();
-            MethodDescriptor methodDescriptor = classDescriptor.getMethodDescriptor(method);
-            if (methodDescriptor == null) {
-                methodDescriptor = new MethodDescriptor(paramTypes.length);
-                boolean useful = false;
-                if (methodDescriptor.getReturnDescriptor() == null) {
-                    ClassDescriptor returnClassDescriptor = classes.get(method.getReturnType());
-                    if (returnClassDescriptor != null && returnClassDescriptor.getValueDescriptor() != null) {
-                        methodDescriptor.setReturnDescriptor(returnClassDescriptor.getValueDescriptor());
-                        useful = true;
-                    }
-                }
-                ValueDescriptor[] paramDescriptors = methodDescriptor.getParameterDescriptors();
-                for (int i = 0; i < paramTypes.length; i++) {
-                    if (paramDescriptors[i] == null) {
-                        ClassDescriptor paramClassDescriptor = classes.get(paramTypes[i]);
-                        if (paramClassDescriptor != null && paramClassDescriptor.getValueDescriptor() != null) {
-                            methodDescriptor.setParameterDescriptor(i, paramClassDescriptor.getValueDescriptor());
-                            useful = useful || paramClassDescriptor.getValueDescriptor() != null;
-                        }
-                    }
-                }
-                if (useful)
-                    classDescriptor.setMethodDescriptor(new MethodIdentifier(method), methodDescriptor);
-            }
-        }
-        return classDescriptor;*/
     }
-
-    /*private ClassDescriptor getClassDescriptor(Element classElement, Class<?> cls) throws SAXException {
-        ClassDescriptor classDescriptor = new ClassDescriptor();
-        Element valueElement = getElement(classElement, ELEM_VALUE);
-        if (valueElement != null) {
-            ValueDescriptor valueDescriptor = getValueDescriptor(valueElement);
-            classDescriptor.setValueDescriptor(valueDescriptor);
-        }
-        Element debugElement = getElement(classElement, ELEM_DEBUG);
-        if (debugElement != null)
-            classDescriptor.setDebug(Boolean.parseBoolean(debugElement.getTextContent()));
-        Enumeration<Element> methodElements = getElements(classElement, ELEM_METHOD);
-        while (methodElements.hasMoreElements()) {
-            Element methodElement = methodElements.nextElement();
-            String methodName = getAttribute(methodElement, ATTR_NAME, true);
-            Class<?>[] paramTypes = getClasses(getAttribute(methodElement, ATTR_ARG_TYPES, false));
-            try {
-                Method method = cls.getMethod(methodName, paramTypes);
-                MethodIdentifier methodIdentifier = new MethodIdentifier(method);
-                MethodDescriptor methodDescriptor = getMethodDescriptor(methodElement, paramTypes, method.getReturnType());
-                classDescriptor.getMethodDescriptors().put(methodIdentifier, methodDescriptor);
-            } catch (NoSuchMethodException e) {
-                throw new SAXException(e);
-            }
-        }
-        return classDescriptor;
-    }*/
 
     private static MethodDescriptor getMethodDescriptor(Element methodElement, Class<?>[] argTypes, Class<?> returnType) throws SAXException {
         MethodDescriptor methodDescriptor = new MethodDescriptor(argTypes.length);

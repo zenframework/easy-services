@@ -19,21 +19,11 @@ public class AnnotationDescriptorExtractor implements DescriptorExtractor {
             Value[] paramValues = getParamAnnotations(method, Value.class, new Value[methodId.getParameterTypes().length]); //findArgsAnnotations(method, Value.class, new Value[paramTypes.length]);
             Value returnValue = method.getAnnotation(Value.class); //findMethodAnnotation(method, Value.class);
             Debug methodDebug = method.getAnnotation(Debug.class); //findMethodAnnotation(method, Debug.class);
-            //for (int i = 0; i < paramValues.length; i++)
-            //    if (paramValues[i] == null)
-            //        paramValues[i] = paramTypes[i].getAnnotation(Value.class);
-            //if (returnValue == null)
-            //    returnValue = method.getReturnType().getAnnotation(Value.class);
             return getMethodDescriptor(methodAlias, paramValues, returnValue, methodDebug);
         } catch (NoSuchMethodException e) {
             return null;
         }
     }
-
-    /*@Override
-    public ValueDescriptor getDefaultValueDescriptor(Class<?> cls) {
-        return getValueDescriptor(cls.getAnnotation(Value.class));
-    }*/
 
     @Override
     public ClassDescriptor getClassDescriptor(Class<?> cls) {
@@ -44,59 +34,8 @@ public class AnnotationDescriptorExtractor implements DescriptorExtractor {
             classDescriptor.setValueDescriptor(getValueDescriptor(value));
         if (clsDebug != null)
             classDescriptor.setDebug(clsDebug.value());
-        /*for (Method method : cls.getMethods()) {
-            Class<?>[] paramTypes = method.getParameterTypes();
-            Alias methodAlias = method.getAnnotation(Alias.class); //findMethodAnnotation(method, Alias.class);
-            Value[] paramValues = getParamAnnotations(method, Value.class, new Value[paramTypes.length]); //findArgsAnnotations(method, Value.class, new Value[paramTypes.length]);
-            Value returnValue = method.getAnnotation(Value.class); //findMethodAnnotation(method, Value.class);
-            Debug methodDebug = method.getAnnotation(Debug.class); //findMethodAnnotation(method, Debug.class);
-            //for (int i = 0; i < paramValues.length; i++)
-            //    if (paramValues[i] == null)
-            //        paramValues[i] = paramTypes[i].getAnnotation(Value.class);
-            //if (returnValue == null)
-            //    returnValue = method.getReturnType().getAnnotation(Value.class);
-            MethodDescriptor methodDescriptor = getMethodDescriptor(methodAlias, paramValues, returnValue, methodDebug);
-            if (methodDescriptor != null)
-                classDescriptor.setMethodDescriptor(new MethodIdentifier(method), methodDescriptor);
-        }*/
         return classDescriptor;
     }
-
-    /*private static <T extends Annotation> T findMethodAnnotation(Method method, Class<T> annotationClass) {
-        List<Class<?>> classes = new ArrayList<Class<?>>(Arrays.asList(method.getDeclaringClass().getInterfaces()));
-        classes.add(method.getDeclaringClass());
-        T annotation = null;
-        for (Class<?> cls : classes) {
-            try {
-                Method m = cls.getMethod(method.getName(), method.getParameterTypes());
-                T candidate = m.getAnnotation(annotationClass);
-                if (candidate != null)
-                    annotation = candidate;
-            } catch (NoSuchMethodException e) {}
-        }
-        return annotation;
-    }
-    
-    @SuppressWarnings("unchecked")
-    private static <T extends Annotation> T[] findArgsAnnotations(Method method, Class<T> annotationClass, T[] annotations) {
-        List<Class<?>> classes = new ArrayList<Class<?>>(Arrays.asList(method.getDeclaringClass().getInterfaces()));
-        classes.add(method.getDeclaringClass());
-        for (Class<?> cls : classes) {
-            try {
-                Method m = cls.getMethod(method.getName(), method.getParameterTypes());
-                Annotation[][] candidates = m.getParameterAnnotations();
-                for (int i = 0; i < annotations.length; i++) {
-                    for (Annotation candidate : candidates[i]) {
-                        if (annotationClass.isInstance(candidate)) {
-                            annotations[i] = (T) candidate;
-                            break;
-                        }
-                    }
-                }
-            } catch (NoSuchMethodException e) {}
-        }
-        return annotations;
-    }*/
 
     @SuppressWarnings("unchecked")
     private static <T> T[] getParamAnnotations(Method method, Class<?> annotationClass, T[] annotations) {
