@@ -18,6 +18,8 @@ import org.zenframework.commons.cls.FieldInfo;
 import org.zenframework.commons.cls.MethodInfo;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
+import org.zenframework.easyservices.descriptor.MethodIdentifier;
+import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.serialize.json.gson.ByteArrayTypeAdapter;
@@ -28,9 +30,12 @@ import org.zenframework.easyservices.serialize.json.gson.ClassTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.DateStringTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.FieldInfoTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.LocaleTypeAdapter;
+import org.zenframework.easyservices.serialize.json.gson.MethodDescriptorTypeAdapter;
+import org.zenframework.easyservices.serialize.json.gson.MethodIdentifierTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.MethodInfoTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ThrowableTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.URITypeAdapter;
+import org.zenframework.easyservices.serialize.json.gson.ValueDescriptorTypeAdapter;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -127,6 +132,9 @@ public class JsonSerializerFactory implements SerializerFactory {
         typeAdapters.put(ClassRef.class, new ClassRefTypeAdapter());
         typeAdapters.put(FieldInfo.class, new FieldInfoTypeAdapter());
         typeAdapters.put(MethodInfo.class, new MethodInfoTypeAdapter());
+        typeAdapters.put(ValueDescriptor.class, new ValueDescriptorTypeAdapter());
+        typeAdapters.put(MethodIdentifier.class, new MethodIdentifierTypeAdapter());
+        typeAdapters.put(MethodDescriptor.class, new MethodDescriptorTypeAdapter());
         typeAdapters.put(ClassDescriptor.class, new ClassDescriptorTypeAdapter());
         return typeAdapters;
     }

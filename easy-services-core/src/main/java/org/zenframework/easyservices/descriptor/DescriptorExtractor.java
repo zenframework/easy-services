@@ -1,9 +1,9 @@
 package org.zenframework.easyservices.descriptor;
 
-public interface ClassDescriptorFactory {
-
-    String NAME = "/classDescriptorFactory";
+public interface DescriptorExtractor {
 
     ClassDescriptor getClassDescriptor(Class<?> cls);
+
+    MethodDescriptor getMethodDescriptor(MethodIdentifier methodId);
 
 }

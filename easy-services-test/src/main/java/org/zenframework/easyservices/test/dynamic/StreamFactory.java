@@ -9,7 +9,6 @@ import org.zenframework.easyservices.annotations.Value;
 
 public interface StreamFactory {
 
-    @Value(transfer = ValueTransfer.REF)
     InputStream getInputStream() throws IOException;
 
     @Value(transfer = ValueTransfer.REF)

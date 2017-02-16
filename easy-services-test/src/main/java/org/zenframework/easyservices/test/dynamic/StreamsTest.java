@@ -64,9 +64,18 @@ public class StreamsTest extends AbstractServiceTest {
 
     private static File createTestFile(File file, int size) throws IOException {
         OutputStream out = new FileOutputStream(file);
+        byte[] buf = new byte[8192];
         try {
-            for (int i = 0; i < size; i++)
-                out.write(i % 256);
+            for (int i = 0; i < size / 8192; i++) {
+                for (int j = 0; j < 8192; j++)
+                    buf[j] = (byte) (j % 256);
+                out.write(buf);
+            }
+            if (size % 8192 > 0) {
+                for (int j = 0; j < size % 8192; j++)
+                    buf[j] = (byte) (j % 256);
+                out.write(buf, 0, size % 8192);
+            }
         } finally {
             out.close();
         }

@@ -26,9 +26,8 @@ import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.ServiceRequest;
 import org.zenframework.easyservices.ServiceResponse;
 import org.zenframework.easyservices.ValueTransfer;
-import org.zenframework.easyservices.descriptor.AnnotationClassDescriptorFactory;
-import org.zenframework.easyservices.descriptor.ClassDescriptor;
-import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
+import org.zenframework.easyservices.descriptor.DefaultDescriptorFactory;
+import org.zenframework.easyservices.descriptor.DescriptorFactory;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.MethodIdentifier;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
@@ -43,11 +42,11 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
     private static final String PARAM_SERVICE_REGISTRY = "serviceRegistry";
     private static final String PARAM_SERIALIZER_FACTORY = "serializerFactory";
-    private static final String PARAM_CLASS_DESCRIPTOR_FACTORY = "classDescriptorFactory";
+    private static final String PARAM_DESCRIPTOR_FACTORY = "descriptorFactory";
     private static final String PARAM_DEBUG = "debug";
 
     private Context serviceRegistry = JNDIHelper.getDefaultContext();
-    private ClassDescriptorFactory classDescriptorFactory = AnnotationClassDescriptorFactory.INSTANSE;
+    private DescriptorFactory descriptorFactory = new DefaultDescriptorFactory();
     private SerializerFactory serializerFactory = Environment.getSerializerFactory();
     private boolean duplicateMethodNamesSafe = Environment.isDuplicateMethodNamesSafe();
     private boolean debug = Environment.isDebug();
@@ -65,10 +64,10 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             String methodName = request.getMethodName();
             if (methodName == null) {
                 context = new InvocationContext(null, null, serializerFactory.getSerializer(null, Map.class, null), null);
-                responseObject.setResult(getServiceInfo(service));
+                getServiceInfo(service, responseObject);
             } else {
                 context = getInvocationContext(request, service.getClass());
-                responseObject.setResult(invokeMethod(request, service, context));
+                invokeMethod(request, service, context, responseObject);
             }
             responseObject.setSuccess(true);
         } catch (IOException e) {
@@ -98,14 +97,14 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         Config serviceRegistryConfig = config.getSubConfig(PARAM_SERVICE_REGISTRY);
         if (!serviceRegistryConfig.isEmpty())
             serviceRegistry = JNDIHelper.newDefaultContext(serviceRegistryConfig);
-        classDescriptorFactory = (ClassDescriptorFactory) config.getInstance(PARAM_CLASS_DESCRIPTOR_FACTORY, classDescriptorFactory);
+        descriptorFactory = (DescriptorFactory) config.getInstance(PARAM_DESCRIPTOR_FACTORY, descriptorFactory);
         serializerFactory = (SerializerFactory) config.getInstance(PARAM_SERIALIZER_FACTORY, serializerFactory);
         debug = config.getParam(PARAM_DEBUG, false);
     }
 
     @Override
     public void destroy(Config config) {
-        config.destroyInstances(classDescriptorFactory, serializerFactory);
+        config.destroyInstances(descriptorFactory, serializerFactory);
     }
 
     public void setServiceRegistry(Context serviceRegistry) {
@@ -116,16 +115,16 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         this.serializerFactory = serializerFactory;
     }
 
-    public void setClassDescriptorFactory(ClassDescriptorFactory classDescriptorFactory) {
-        this.classDescriptorFactory = classDescriptorFactory;
+    public void setDescriptorFactory(DescriptorFactory descriptorFactory) {
+        this.descriptorFactory = descriptorFactory;
     }
 
     public Context getServiceRegistry() {
         return serviceRegistry;
     }
 
-    public ClassDescriptorFactory getClassDescriptorFactory() {
-        return classDescriptorFactory;
+    public DescriptorFactory getClassDescriptorFactory() {
+        return descriptorFactory;
     }
 
     public SerializerFactory getSerializerFactory() {
@@ -140,15 +139,15 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         this.debug = debug;
     }
 
-    protected Map<String, Object> getServiceInfo(Object service) throws IOException {
+    protected void getServiceInfo(Object service, ResponseObject responseObject) throws IOException {
         ClassInfo classInfo = ClassInfo.getClassRef(service.getClass()).getClassInfo();
         Map<String, Object> serviceInfo = new HashMap<String, Object>();
         serviceInfo.put("className", classInfo.getName());
         serviceInfo.put("classes", ClassInfo.getClassInfos(service.getClass()));
-        return serviceInfo;
+        responseObject.setResult(serviceInfo);
     }
 
-    protected Object invokeMethod(ServiceRequest request, Object service, InvocationContext context) throws Throwable {
+    protected void invokeMethod(ServiceRequest request, Object service, InvocationContext context, ResponseObject responseObject) throws Throwable {
 
         String serviceName = request.getServiceName();
         String methodName = request.getMethodName();
@@ -160,8 +159,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         if (time != null)
             time.printDifference(context.method);
 
-        time = (debug || context.debug) && LOG.isDebugEnabled() ? new TimeChecker(new StringBuilder(1024).append(serviceName).append('.')
-                .append(methodName).append(new PrettyStringBuilder().toString(context.args)).toString(), LOG) : null;
+        time = (debug || context.methodDescriptor.getDebug()) && LOG.isDebugEnabled() ? new TimeChecker(new StringBuilder(1024).append(serviceName)
+                .append('.').append(methodName).append(new PrettyStringBuilder().toString(context.args)).toString(), LOG) : null;
 
         // Invoke method
         try {
@@ -190,13 +189,28 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             result = ServiceLocator.relative(name);
         }
 
-        return result;
+        Object[] outParams = new Object[context.args.length];
+        boolean empty = true;
+        if (context.methodDescriptor != null) {
+            for (int i = 0; i < context.args.length; i++) {
+                ValueDescriptor paramDescriptor = context.methodDescriptor.getParameterDescriptors()[i];
+                ValueTransfer transfer = paramDescriptor != null ? paramDescriptor.getTransfer() : null;
+                if (transfer == ValueTransfer.OUT || transfer == ValueTransfer.IN_OUT) {
+                    outParams[i] = context.args[i];
+                    empty = false;
+                }
+            }
+        }
+        if (!empty)
+            responseObject.setParameters(outParams);
+
+        responseObject.setResult(result);
 
     }
 
     protected Object lookupSystemService(String name) {
-        if (ClassDescriptorFactory.NAME.equals(name))
-            return classDescriptorFactory;
+        if (DescriptorFactory.NAME.equals(name))
+            return descriptorFactory;
         return null;
     }
 
@@ -205,65 +219,25 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
     }
 
     private InvocationContext getInvocationContext(ServiceRequest request, Class<?> serviceClass)
-            throws ServiceException, IOException, NoSuchMethodException, SecurityException {
-        ClassDescriptor classDescriptor = classDescriptorFactory.getClassDescriptor(serviceClass);
-        // Try to find method by alias
-        InvocationContext context = getInvocationContextByMethodAlias(request, serviceClass, classDescriptor);
-        if (context == null) {
-            if (!duplicateMethodNamesSafe) {
-                // Try to find method by name only
-                context = getInvocationContextByMethodName(request, serviceClass, classDescriptor);
-            } else {
-                // Try to find method by args
-                context = getInvocationContextByMethodArgs(request, serviceClass, classDescriptor);
-            }
-        }
-        if (context == null)
-            throw new ServiceException("Can't find method [" + request.getMethodName() + "] applicable for given args");
-        context.debug = context.methodDescriptor != null ? context.methodDescriptor.isDebug()
-                : classDescriptor != null ? classDescriptor.isDebug() : false;
-        return context;
-    }
-
-    private InvocationContext getInvocationContextByMethodAlias(ServiceRequest request, Class<?> serviceClass, ClassDescriptor classDescriptor)
-            throws IOException, NoSuchMethodException, SecurityException, ServiceException {
-        Map.Entry<MethodIdentifier, MethodDescriptor> methodEntry = classDescriptor != null ? classDescriptor.findMethodEntry(request.getMethodName())
-                : null;
-        if (methodEntry != null) {
-            MethodIdentifier methodId = methodEntry.getKey();
-            MethodDescriptor methodDescriptor = methodEntry.getValue();
-            Method method = serviceClass.getMethod(methodId.getName(), methodId.getParameterTypes());
-            return newInvocationContext(request, method, methodDescriptor);
-        }
-        return null;
-    }
-
-    private InvocationContext getInvocationContextByMethodName(ServiceRequest request, Class<?> serviceClass, ClassDescriptor classDescriptor)
-            throws IOException, ServiceException {
-        for (Method method : serviceClass.getMethods()) {
-            if (method.getName().equals(request.getMethodName())) {
-                MethodDescriptor methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(method) : null;
-                return newInvocationContext(request, method, methodDescriptor);
-            }
-        }
-        return null;
-    }
-
-    private InvocationContext getInvocationContextByMethodArgs(ServiceRequest request, Class<?> serviceClass, ClassDescriptor classDescriptor)
-            throws IOException, ServiceException {
-        request.cacheInput();
-        for (Method method : serviceClass.getMethods()) {
-            if (method.getName().equals(request.getMethodName())) {
+            throws IOException, ServiceException, NoSuchMethodException, SecurityException {
+        Map<MethodIdentifier, MethodDescriptor> methodDescriptors = descriptorFactory.getMethodDescriptors(serviceClass);
+        for (Map.Entry<MethodIdentifier, MethodDescriptor> entry : methodDescriptors.entrySet()) {
+            boolean nameEquals = request.getMethodName().equals(entry.getKey().getName());
+            boolean aliasEquals = request.getMethodName().equals(entry.getValue().getAlias());
+            if (nameEquals || aliasEquals) {
+                Method method = serviceClass.getMethod(entry.getKey().getName(), entry.getKey().getParameterTypes());
                 try {
-                    MethodDescriptor methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(method) : null;
-                    return newInvocationContext(request, method, methodDescriptor);
+                    return newInvocationContext(request, method, entry.getValue());
                 } catch (SerializationException e) {
-                    LOG.debug("Can't convert given args to method '" + request.getMethodName() + "' argument types "
-                            + Arrays.toString(method.getParameterTypes()));
+                    if (duplicateMethodNamesSafe && nameEquals)
+                        LOG.debug("Can't convert given args to method '" + request.getMethodName() + "' argument types "
+                                + Arrays.toString(method.getParameterTypes()));
+                    else
+                        throw e;
                 }
             }
         }
-        return null;
+        throw new ServiceException("Can't find method [" + request.getMethodName() + "] applicable for given args");
     }
 
     private InvocationContext newInvocationContext(ServiceRequest request, Method method, MethodDescriptor methodDescriptor)
@@ -305,7 +279,6 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         final MethodDescriptor methodDescriptor;
         final Serializer serializer;
         final Object args[];
-        boolean debug;
 
         InvocationContext(Method method, MethodDescriptor methodDescriptor, Serializer serializer, Object[] args)
                 throws IOException, ServiceException {

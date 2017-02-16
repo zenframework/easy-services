@@ -16,12 +16,13 @@ import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ResponseObject;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.ValueTransfer;
-import org.zenframework.easyservices.descriptor.ClassDescriptor;
-import org.zenframework.easyservices.descriptor.ClassDescriptorFactory;
+import org.zenframework.easyservices.descriptor.DescriptorFactory;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
+import org.zenframework.easyservices.descriptor.MethodIdentifier;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
+import org.zenframework.easyservices.update.ValueUpdater;
 
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
@@ -31,17 +32,17 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
     private static final Logger LOG = LoggerFactory.getLogger(ServiceMethodInterceptor.class);
 
     private final ServiceLocator serviceLocator;
-    private final Class<?> serviceClass;
-    private final ClassDescriptorFactory serviceDescriptorFactory;
+    private final DescriptorFactory descriptorFactory;
     private final SerializerFactory serializerFactory;
+    private final ValueUpdater updater;
     private final boolean debug;
 
-    public ServiceMethodInterceptor(ServiceLocator serviceLocator, Class<?> serviceClass, ClassDescriptorFactory serviceDescriptorFactory,
-            SerializerFactory serializerFactory, boolean debug) {
+    public ServiceMethodInterceptor(ServiceLocator serviceLocator, DescriptorFactory descriptorFactory, SerializerFactory serializerFactory,
+            ValueUpdater updater, boolean debug) {
         this.serviceLocator = serviceLocator;
-        this.serviceClass = serviceClass;
-        this.serviceDescriptorFactory = serviceDescriptorFactory;
+        this.descriptorFactory = descriptorFactory;
         this.serializerFactory = serializerFactory;
+        this.updater = updater;
         this.debug = debug;
     }
 
@@ -54,14 +55,16 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
 
         Class<?>[] paramTypes = method.getParameterTypes();
         Class<?> returnType = method.getReturnType();
-        ClassDescriptor classDescriptor = serviceDescriptorFactory != null ? serviceDescriptorFactory.getClassDescriptor(serviceClass) : null;
-        MethodDescriptor methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(method) : null;
-        ValueDescriptor[] argDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[args.length];
+        MethodIdentifier methodId = new MethodIdentifier(method);
+        MethodDescriptor methodDescriptor = descriptorFactory != null ? descriptorFactory.getMethodDescriptor(methodId)
+                : new MethodDescriptor(args.length);
+        ValueDescriptor[] paramDescriptors = methodDescriptor.getParameterDescriptors();
+        ValueDescriptor returnDescriptor = methodDescriptor.getReturnDescriptor();
         Serializer serializer = serializerFactory.getSerializer(paramTypes, returnType, methodDescriptor);
 
         // Find and replace proxy objects with references
         for (int i = 0; i < args.length; i++) {
-            ValueDescriptor argDescriptor = argDescriptors[i];
+            ValueDescriptor argDescriptor = paramDescriptors[i];
             if (argDescriptor != null && argDescriptor.getTransfer() == ValueTransfer.REF) {
                 //ServiceInvocationHandler handler = (ServiceInvocationHandler) Proxy.getInvocationHandler(args[i]);
                 ServiceMethodInterceptor intercpetor = ClientProxy.getMethodInterceptor(args[i], ServiceMethodInterceptor.class);
@@ -70,7 +73,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         }
 
         TimeChecker time = null;
-        if ((debug || isMethodDebug(classDescriptor, methodDescriptor)) && LOG.isDebugEnabled())
+        if ((debug || methodDescriptor.getDebug()) && LOG.isDebugEnabled())
             time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + ' ' + getMethodName(method, methodDescriptor), LOG);
 
         // Call service
@@ -90,7 +93,6 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         ResponseObject responseObject = null;
         try {
             InputStream in = connection.getInputStream();
-            ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
             if (returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF) {
                 // If result is reference, replace with proxy object
                 responseObject = serializer.deserializeResponse(in, true);
@@ -98,15 +100,22 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
                 if (locator.isRelative())
                     locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
                 responseObject
-                        .setResult(ClientProxy.getCGLibProxy(method.getReturnType(), locator, serviceDescriptorFactory, serializerFactory, debug));
+                        .setResult(ClientProxy.getCGLibProxy(method.getReturnType(), locator, descriptorFactory, serializerFactory, updater, debug));
             } else {
                 // Else return deserialized result
                 responseObject = serializer.deserializeResponse(in, true);
             }
+            // Update OUT parameters
+            for (int i = 0; i < paramDescriptors.length; i++) {
+                ValueDescriptor paramDescriptor = paramDescriptors[i];
+                ValueTransfer transfer = paramDescriptor != null ? paramDescriptor.getTransfer() : null;
+                if (transfer == ValueTransfer.OUT || transfer == ValueTransfer.IN_OUT)
+                    updater.update(args[i], responseObject.getParameters()[i]);
+            }
             if (time != null)
                 time.printDifference(responseObject);
         } catch (IOException e) {
-            tryHandleError(connection, serializer, method.getParameterTypes(), argDescriptors);
+            tryHandleError(connection, serializer, method.getParameterTypes(), paramDescriptors);
             throw e;
         }
 
@@ -114,10 +123,6 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
             return responseObject.getResult();
         else
             throw (Throwable) responseObject.getResult();
-    }
-
-    private boolean isMethodDebug(ClassDescriptor classDescriptor, MethodDescriptor methodDescriptor) {
-        return methodDescriptor != null ? methodDescriptor.isDebug() : classDescriptor != null ? classDescriptor.isDebug() : false;
     }
 
     public ServiceLocator getServiceLocator() {

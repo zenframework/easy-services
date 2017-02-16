@@ -13,7 +13,7 @@ public class MethodDescriptor implements Serializable {
     private ValueDescriptor returnDescriptor = null;
     private final ValueDescriptor[] parameterDescriptors;
     private boolean emptyParameterDescriptors = true;
-    private boolean debug = false;
+    private Boolean debug = false;
 
     public MethodDescriptor(int argsCount) {
         this.parameterDescriptors = new ValueDescriptor[argsCount];
@@ -41,12 +41,12 @@ public class MethodDescriptor implements Serializable {
 
     public void setParameterDescriptors(ValueDescriptor[] paramDescriptors) {
         for (int i = 0; i < parameterDescriptors.length; i++)
-            parameterDescriptors[i] = paramDescriptors != null ? paramDescriptors[i] : null;
+            setParameterDescriptor(i, paramDescriptors != null ? paramDescriptors[i] : null);
     }
 
     public void setParameterDescriptorsMap(Map<Integer, ValueDescriptor> paramDescriptorsMap) {
         for (int i = 0; i < parameterDescriptors.length; i++)
-            parameterDescriptors[i] = paramDescriptorsMap != null ? paramDescriptorsMap.get(i) : null;
+            setParameterDescriptor(i, paramDescriptorsMap != null ? paramDescriptorsMap.get(i) : null);
     }
 
     public ValueDescriptor getParameterDescriptor(int arg) {
@@ -59,11 +59,11 @@ public class MethodDescriptor implements Serializable {
             emptyParameterDescriptors = false;
     }
 
-    public boolean isDebug() {
+    public Boolean getDebug() {
         return debug;
     }
 
-    public void setDebug(boolean debug) {
+    public void setDebug(Boolean debug) {
         this.debug = debug;
     }
 
@@ -74,21 +74,19 @@ public class MethodDescriptor implements Serializable {
 
     public String toString(int indent) {
         StringBuilder str = new StringBuilder();
-        str.append('[');
         if (alias != null)
-            StringUtil.newLine(str, indent + 1).append("alias : ").append(alias);
+            StringUtil.indent(str, indent, false).append("alias : ").append(alias);
         if (returnDescriptor != null)
-            StringUtil.newLine(str, indent + 1).append("return : ").append(returnDescriptor);
+            StringUtil.indent(str, indent, str.length() > 0).append("return : ").append(returnDescriptor);
         if (!emptyParameterDescriptors) {
-            StringUtil.newLine(str, indent + 1).append("parameters : [");
+            StringUtil.indent(str, indent, str.length() > 0).append("parameters :");
             for (int i = 0; i < parameterDescriptors.length; i++) {
                 if (parameterDescriptors[i] != null)
-                    StringUtil.newLine(str, indent + 2).append(i).append(" : ").append(parameterDescriptors[i]);
+                    StringUtil.indent(str, indent + 1, true).append(i).append(" : ").append(parameterDescriptors[i]);
             }
+
         }
-        if (str.length() > 1)
-            StringUtil.newLine(str, indent);
-        return str.append(']').toString();
+        return str.toString();
     }
 
 }

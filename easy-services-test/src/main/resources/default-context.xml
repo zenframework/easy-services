@@ -15,13 +15,29 @@
         <constructor-arg value="10000" />
     </bean>
 
+    <bean id="serviceInvoker" class="org.zenframework.easyservices.impl.ServiceInvokerImpl" scope="singleton">
+        <property name="descriptorFactory">
+            <bean class="org.zenframework.easyservices.descriptor.DefaultDescriptorFactory">
+                <property name="extractors">
+                    <list>
+                        <bean class="org.zenframework.easyservices.descriptor.XmlDescriptorExtractor">
+                            <constructor-arg value="classpath://descriptor.xml" />
+                        </bean>
+                    </list>
+                </property>
+            </bean>
+        </property>
+    </bean>
+
     <bean id="server" class="org.zenframework.easyservices.test.HttpServer" scope="singleton">
         <property name="port" value="#{jettyPort}" />
         <property name="resourceFactory">
             <bean class="org.zenframework.commons.resource.ClasspathResourceFactory" />
         </property>
         <property name="serviceHttpRequestHandler">
-            <bean class="org.zenframework.easyservices.http.ServiceHttpRequestHandler" />
+            <bean class="org.zenframework.easyservices.http.ServiceHttpRequestHandler">
+                <property name="serviceInvoker" ref="serviceInvoker" />
+            </bean>
         </property>
     </bean>
 

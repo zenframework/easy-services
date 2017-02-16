@@ -66,7 +66,7 @@ public class ValueDescriptor implements Serializable {
         StringBuilder str = new StringBuilder();
         str.append('[');
         if (transfer != null && transfer != ValueTransfer.DEFAULT)
-            str.append("tr:").append(transfer);
+            str.append("tr:").append(transfer).append(' ');
         if (typeParameters != null && typeParameters.length > 0)
             str.append("tp:").append(ClassUtils.convertClassesToClassNames(Arrays.asList(typeParameters))).append(' ');
         if (!adapters.isEmpty())

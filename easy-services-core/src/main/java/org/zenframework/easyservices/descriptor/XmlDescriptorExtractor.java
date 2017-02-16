@@ -3,7 +3,6 @@ package org.zenframework.easyservices.descriptor;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +11,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.lang.ClassUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -71,9 +71,7 @@ import org.zenframework.easyservices.ValueTransfer;
  * @author Oleg S. Lekshin
  *
  */
-public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
-
-    private static final Map<String, Class<?>> PRIMITIVES = getPrimitives();
+public class XmlDescriptorExtractor implements DescriptorExtractor {
 
     public static final String ELEM_CLASSES = "classes";
     public static final String ELEM_CLASS = "class";
@@ -82,7 +80,7 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
     public static final String ELEM_ALIAS = "alias";
     public static final String ELEM_DEBUG = "debug";
     public static final String ELEM_RETURN = "return";
-    public static final String ELEM_ARGUMENT = "argument";
+    public static final String ELEM_ARGUMENT = "arg";
     public static final String ELEM_ADAPTER = "adapter";
     public static final String ELEM_TYPE_PARAMETERS = "type-parameters";
     public static final String ELEM_TRANSFER = "transfer";
@@ -91,12 +89,15 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
     public static final String ATTR_NUMBER = "number";
 
     private final Map<Class<?>, ClassDescriptor> classes = new HashMap<Class<?>, ClassDescriptor>();
+    private final Map<MethodIdentifier, MethodDescriptor> methods = new HashMap<MethodIdentifier, MethodDescriptor>();
+    //private final Map<Class<?>, ValueDescriptor> defaultValues = new HashMap<Class<?>, ValueDescriptor>();
+    //private final Map<Class<?>, Boolean> defaultDebug = new HashMap<Class<?>, Boolean>();
 
-    public XmlClassDescriptorFactory(String url) throws ParserConfigurationException, SAXException, IOException {
+    public XmlDescriptorExtractor(String url) throws ParserConfigurationException, SAXException, IOException {
         this(new URL(url));
     }
 
-    public XmlClassDescriptorFactory(URL url) throws ParserConfigurationException, SAXException, IOException {
+    public XmlDescriptorExtractor(URL url) throws ParserConfigurationException, SAXException, IOException {
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -108,11 +109,35 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
         while (classElements.hasMoreElements()) {
             Element classElement = classElements.nextElement();
             Class<?> cls = getClass(getAttribute(classElement, ATTR_NAME, true));
-            classes.put(cls, getClassDescriptor(classElement, cls));
+            ClassDescriptor classDescriptor = new ClassDescriptor();
+            Element valueElement = getElement(classElement, ELEM_VALUE);
+            if (valueElement != null) {
+                ValueDescriptor valueDescriptor = getValueDescriptor(valueElement);
+                classDescriptor.setValueDescriptor(valueDescriptor);
+            }
+            Element debugElement = getElement(classElement, ELEM_DEBUG);
+            if (debugElement != null)
+                classDescriptor.setDebug(Boolean.parseBoolean(debugElement.getTextContent()));
+            Enumeration<Element> methodElements = getElements(classElement, ELEM_METHOD);
+            while (methodElements.hasMoreElements()) {
+                Element methodElement = methodElements.nextElement();
+                String methodName = getAttribute(methodElement, ATTR_NAME, true);
+                Class<?>[] paramTypes = getClasses(getAttribute(methodElement, ATTR_ARG_TYPES, false));
+                try {
+                    Method method = cls.getMethod(methodName, paramTypes);
+                    MethodIdentifier methodIdentifier = new MethodIdentifier(method);
+                    MethodDescriptor methodDescriptor = getMethodDescriptor(methodElement, paramTypes, method.getReturnType());
+                    //classDescriptor.setMethodDescriptor(methodIdentifier, methodDescriptor);
+                    methods.put(methodIdentifier, methodDescriptor);
+                } catch (NoSuchMethodException e) {
+                    throw new SAXException(e);
+                }
+            }
+            classes.put(cls, classDescriptor);
         }
 
         // update method descriptors
-        for (ClassDescriptor classDescriptor : classes.values()) {
+        /*for (ClassDescriptor classDescriptor : classes.values()) {
             for (Map.Entry<MethodIdentifier, MethodDescriptor> entry : classDescriptor.getMethodDescriptors().entrySet()) {
                 MethodIdentifier methodIdentifier = entry.getKey();
                 MethodDescriptor methodDescriptor = entry.getValue();
@@ -131,13 +156,19 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
                     }
                 }
             }
-        }
+        }*/
 
     }
 
     @Override
-    protected ClassDescriptor extractClassDescriptor(Class<?> cls) {
-        ClassDescriptor classDescriptor = classes.get(cls);
+    public MethodDescriptor getMethodDescriptor(MethodIdentifier methodId) {
+        return methods.get(methodId);
+    }
+
+    @Override
+    public ClassDescriptor getClassDescriptor(Class<?> cls) {
+        return classes.get(cls);
+        /*ClassDescriptor classDescriptor = classes.get(cls);
         if (classDescriptor == null)
             classDescriptor = new ClassDescriptor();
         for (Method method : cls.getMethods()) {
@@ -167,10 +198,10 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
                     classDescriptor.setMethodDescriptor(new MethodIdentifier(method), methodDescriptor);
             }
         }
-        return classDescriptor;
+        return classDescriptor;*/
     }
 
-    private ClassDescriptor getClassDescriptor(Element classElement, Class<?> cls) throws SAXException {
+    /*private ClassDescriptor getClassDescriptor(Element classElement, Class<?> cls) throws SAXException {
         ClassDescriptor classDescriptor = new ClassDescriptor();
         Element valueElement = getElement(classElement, ELEM_VALUE);
         if (valueElement != null) {
@@ -195,7 +226,7 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
             }
         }
         return classDescriptor;
-    }
+    }*/
 
     private static MethodDescriptor getMethodDescriptor(Element methodElement, Class<?>[] argTypes, Class<?> returnType) throws SAXException {
         MethodDescriptor methodDescriptor = new MethodDescriptor(argTypes.length);
@@ -253,13 +284,8 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
     }
 
     private static Class<?> getClass(String value) throws SAXException {
-        Class<?> cls = null;
-        value = value.trim();
         try {
-            cls = PRIMITIVES.get(value);
-            if (cls == null)
-                cls = Class.forName(value);
-            return cls;
+            return ClassUtils.getClass(value);
         } catch (ClassNotFoundException e) {
             throw new SAXException(e);
         }
@@ -273,13 +299,6 @@ public class XmlClassDescriptorFactory extends AbstractClassDescriptorFactory {
         for (int i = 0; i < classNames.length; i++)
             classes[i] = getClass(classNames[i]);
         return classes;
-    }
-
-    private static Map<String, Class<?>> getPrimitives() {
-        Map<String, Class<?>> primitives = new HashMap<String, Class<?>>();
-        for (Class<?> cls : Arrays.asList(byte.class, short.class, int.class, long.class, float.class, double.class, boolean.class, char.class))
-            primitives.put(cls.getName(), cls);
-        return primitives;
     }
 
     private static ValueDescriptor getValueDescriptor(Element valueElement) throws SAXException {
