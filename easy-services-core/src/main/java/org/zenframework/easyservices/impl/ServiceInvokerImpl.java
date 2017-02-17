@@ -15,10 +15,6 @@ import javax.naming.NamingException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.commons.cls.ClassInfo;
-import org.zenframework.commons.config.Config;
-import org.zenframework.commons.config.Configurable;
-import org.zenframework.commons.debug.TimeChecker;
 import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.ResponseObject;
 import org.zenframework.easyservices.ServiceException;
@@ -36,6 +32,10 @@ import org.zenframework.easyservices.jndi.JNDIHelper;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
+import org.zenframework.easyservices.util.cls.ClassInfo;
+import org.zenframework.easyservices.util.config.Config;
+import org.zenframework.easyservices.util.config.Configurable;
+import org.zenframework.easyservices.util.debug.TimeChecker;
 
 public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 

@@ -4,7 +4,6 @@ import javax.naming.Context;
 
 import org.junit.After;
 import org.junit.Before;
-import org.zenframework.commons.resource.ClasspathResourceFactory;
 import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ClientFactory;
 import org.zenframework.easyservices.descriptor.DefaultDescriptorFactory;
@@ -13,6 +12,7 @@ import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
 import org.zenframework.easyservices.impl.ClientFactoryImpl;
 import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 import org.zenframework.easyservices.jndi.JNDIHelper;
+import org.zenframework.easyservices.util.resource.ClasspathResourceFactory;
 
 import junit.framework.TestCase;
 

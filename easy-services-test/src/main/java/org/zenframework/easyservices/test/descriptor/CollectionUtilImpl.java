@@ -8,7 +8,7 @@ import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.Transformer;
-import org.zenframework.commons.string.StringUtil;
+import org.zenframework.easyservices.util.string.StringUtil;
 
 public class CollectionUtilImpl implements CollectionUtil {
 

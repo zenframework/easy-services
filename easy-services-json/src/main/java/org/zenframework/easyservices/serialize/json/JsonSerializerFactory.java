@@ -12,10 +12,6 @@ import java.util.ServiceLoader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.commons.cls.ClassInfo;
-import org.zenframework.commons.cls.ClassRef;
-import org.zenframework.commons.cls.FieldInfo;
-import org.zenframework.commons.cls.MethodInfo;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.MethodIdentifier;
@@ -36,6 +32,10 @@ import org.zenframework.easyservices.serialize.json.gson.MethodInfoTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ThrowableTypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.URITypeAdapter;
 import org.zenframework.easyservices.serialize.json.gson.ValueDescriptorTypeAdapter;
+import org.zenframework.easyservices.util.cls.ClassInfo;
+import org.zenframework.easyservices.util.cls.ClassRef;
+import org.zenframework.easyservices.util.cls.FieldInfo;
+import org.zenframework.easyservices.util.cls.MethodInfo;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

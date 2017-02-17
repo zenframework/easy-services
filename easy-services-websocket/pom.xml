@@ -15,6 +15,7 @@
 
     <properties>
         <bundle.namespace>org.zenframework.easyservices.websocket</bundle.namespace>
+        <tomcat.version>[7.0,)</tomcat.version>
     </properties>
 
     <dependencies>
@@ -22,11 +23,6 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>easy-services-core</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zenframework.commons</groupId>
-            <artifactId>zfw-commons-lang</artifactId>
-            <version>${zfw.commons.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>

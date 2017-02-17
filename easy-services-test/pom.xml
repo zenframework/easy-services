@@ -14,10 +14,10 @@
     </parent>
 
     <properties>
+        <commons.collections.version>4.1</commons.collections.version>
         <jetty.version>9.2.20.v20161216</jetty.version>
         <servlet.api.version>3.0.1</servlet.api.version>
         <spring.version>4.2.4.RELEASE</spring.version>
-        <commons.collections.version>4.1</commons.collections.version>
         <log4j.version>1.2.17</log4j.version>
         <slf4j.version>1.7.21</slf4j.version>
     </properties>
@@ -29,13 +29,11 @@
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
             <version>${spring.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-collections4</artifactId>
@@ -45,12 +43,17 @@
         <!-- Easy-Services modules -->
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>easy-services-http</artifactId>
+            <artifactId>easy-services-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>easy-services-json</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>easy-services-js</artifactId>
             <version>${project.version}</version>
         </dependency>
         

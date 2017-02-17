@@ -11,7 +11,6 @@ import java.net.URLConnection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.commons.debug.TimeChecker;
 import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ResponseObject;
 import org.zenframework.easyservices.ServiceLocator;
@@ -23,6 +22,7 @@ import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.update.ValueUpdater;
+import org.zenframework.easyservices.util.debug.TimeChecker;
 
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;

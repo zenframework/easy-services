@@ -9,9 +9,9 @@ import javax.naming.spi.NamingManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.commons.config.Config;
-import org.zenframework.commons.config.ConfigException;
 import org.zenframework.easyservices.jndi.impl.InitialContextFactoryImpl;
+import org.zenframework.easyservices.util.config.Config;
+import org.zenframework.easyservices.util.config.ConfigException;
 
 public class JNDIHelper {
 

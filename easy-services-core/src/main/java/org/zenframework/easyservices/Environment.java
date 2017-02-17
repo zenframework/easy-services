@@ -4,10 +4,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.zenframework.commons.bean.ServiceUtil;
-import org.zenframework.commons.config.Config;
-import org.zenframework.commons.config.MapConfig;
 import org.zenframework.easyservices.serialize.SerializerFactory;
+import org.zenframework.easyservices.util.bean.ServiceUtil;
+import org.zenframework.easyservices.util.config.Config;
+import org.zenframework.easyservices.util.config.MapConfig;
 
 public class Environment {
 

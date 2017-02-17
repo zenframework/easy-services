@@ -3,7 +3,7 @@ package org.zenframework.easyservices.descriptor;
 import java.io.Serializable;
 import java.util.Map;
 
-import org.zenframework.commons.string.StringUtil;
+import org.zenframework.easyservices.util.string.StringUtil;
 
 public class MethodDescriptor implements Serializable {
 
