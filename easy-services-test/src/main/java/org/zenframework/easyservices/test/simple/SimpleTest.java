@@ -1,12 +1,24 @@
 package org.zenframework.easyservices.test.simple;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.test.AbstractServiceTest;
 
+@RunWith(Parameterized.class)
 public class SimpleTest extends AbstractServiceTest {
 
-    public SimpleTest(boolean autoAliasing, String format) {
-        super(autoAliasing, format);
+    @Parameterized.Parameters(name = "{index} format:{0}")
+    public static Collection<Object[]> formats() {
+        return Arrays.asList(new Object[][] { { "json" }, { "bin" } });
+    }
+
+    public SimpleTest(String format) {
+        Environment.setDefaultFormat(format);
     }
 
     @Override
@@ -38,7 +50,7 @@ public class SimpleTest extends AbstractServiceTest {
             getClient(Echo.class, "/echo").throwException(new SimpleException("exception"));
         } catch (Exception e) {
             e.printStackTrace();
-            assertTrue(e instanceof SimpleException);
+            assertTrue(e.getClass() + ": " + e.getMessage(), e instanceof SimpleException);
             assertEquals("exception", e.getMessage());
         }
     }

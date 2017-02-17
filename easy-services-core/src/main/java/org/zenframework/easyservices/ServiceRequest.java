@@ -9,6 +9,8 @@ public interface ServiceRequest {
 
     public String getMethodName();
 
+    public boolean isOutParametersMode();
+
     public void cacheInput() throws IOException;
 
     public InputStream getInputStream() throws IOException;

@@ -1,15 +1,27 @@
 package org.zenframework.easyservices.test.dynamic;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.test.AbstractServiceTest;
 import org.zenframework.easyservices.test.simple.Addition;
 import org.zenframework.easyservices.test.simple.Function;
 import org.zenframework.easyservices.test.simple.Substraction;
 
+@RunWith(Parameterized.class)
 public class DynamicTest extends AbstractServiceTest {
 
-    public DynamicTest(boolean autoAliasing, String format) {
-        super(autoAliasing, format);
+    @Parameterized.Parameters(name = "{index} format:{0}")
+    public static Collection<Object[]> formats() {
+        return Arrays.asList(new Object[][] { { "json" }, { "bin" } });
+    }
+
+    public DynamicTest(String format) {
+        Environment.setDefaultFormat(format);
     }
 
     @Override

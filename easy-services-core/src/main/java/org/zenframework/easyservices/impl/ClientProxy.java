@@ -16,9 +16,9 @@ public class ClientProxy {
     private ClientProxy() {}
 
     public static <T> T getCGLibProxy(Class<T> serviceClass, ServiceLocator serviceLocator, DescriptorFactory classDescriptorFactory,
-            SerializerFactory serializerFactory, ValueUpdater updater, boolean debug) {
+            SerializerFactory serializerFactory, boolean outParametersMode, ValueUpdater updater, boolean debug) {
         return (T) Enhancer.create(serviceClass,
-                new ServiceMethodInterceptor(serviceLocator, classDescriptorFactory, serializerFactory, updater, debug));
+                new ServiceMethodInterceptor(serviceLocator, classDescriptorFactory, serializerFactory, outParametersMode, updater, debug));
     }
 
     public static <T extends MethodInterceptor> T getMethodInterceptor(Object proxy, Class<T> interceptorClass) {

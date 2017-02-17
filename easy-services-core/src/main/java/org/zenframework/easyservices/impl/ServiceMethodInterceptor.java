@@ -34,14 +34,16 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
     private final ServiceLocator serviceLocator;
     private final DescriptorFactory descriptorFactory;
     private final SerializerFactory serializerFactory;
+    private final boolean outParametersMode;
     private final ValueUpdater updater;
     private final boolean debug;
 
     public ServiceMethodInterceptor(ServiceLocator serviceLocator, DescriptorFactory descriptorFactory, SerializerFactory serializerFactory,
-            ValueUpdater updater, boolean debug) {
+            boolean outParametersMode, ValueUpdater updater, boolean debug) {
         this.serviceLocator = serviceLocator;
         this.descriptorFactory = descriptorFactory;
         this.serializerFactory = serializerFactory;
+        this.outParametersMode = outParametersMode;
         this.updater = updater;
         this.debug = debug;
     }
@@ -91,19 +93,24 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
 
         // Receive response
         ResponseObject responseObject = null;
+        InputStream in = null;
         try {
-            InputStream in = connection.getInputStream();
+            in = connection.getInputStream();
+            if (outParametersMode) {
+                responseObject = serializer.deserializeResponse(in, true);
+            } else {
+                responseObject = new ResponseObject();
+                if (returnType != void.class)
+                    responseObject.setResult(serializer.deserializeResult(in, true));
+                responseObject.setSuccess(true);
+            }
             if (returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF) {
                 // If result is reference, replace with proxy object
-                responseObject = serializer.deserializeResponse(in, true);
                 ServiceLocator locator = (ServiceLocator) responseObject.getResult();
                 if (locator.isRelative())
                     locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
-                responseObject
-                        .setResult(ClientProxy.getCGLibProxy(method.getReturnType(), locator, descriptorFactory, serializerFactory, updater, debug));
-            } else {
-                // Else return deserialized result
-                responseObject = serializer.deserializeResponse(in, true);
+                responseObject.setResult(ClientProxy.getCGLibProxy(method.getReturnType(), locator, descriptorFactory, serializerFactory,
+                        outParametersMode, updater, debug));
             }
             // Update OUT parameters
             for (int i = 0; i < paramDescriptors.length; i++) {
@@ -117,6 +124,9 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         } catch (IOException e) {
             tryHandleError(connection, serializer, method.getParameterTypes(), paramDescriptors);
             throw e;
+        } finally {
+            if (in != null)
+                in.close();
         }
 
         if (responseObject.isSuccess())
@@ -134,13 +144,21 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
             throws Throwable {
         if (connection instanceof HttpURLConnection) {
             HttpURLConnection httpConnection = (HttpURLConnection) connection;
-            if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK)
-                throw (Throwable) serializer.deserializeResponse(httpConnection.getErrorStream(), false).getResult();
+            if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                InputStream in = httpConnection.getErrorStream();
+                Throwable e = (Throwable) (outParametersMode ? serializer.deserializeResponse(in, false).getResult()
+                        : serializer.deserializeResult(in, false));
+                throw e;
+            }
         }
     }
 
-    private static URL getServiceURL(ServiceLocator serviceLocator, String methodName) throws MalformedURLException {
-        return new URL(serviceLocator.getServiceUrl() + "?method=" + methodName);
+    private URL getServiceURL(ServiceLocator serviceLocator, String methodName) throws MalformedURLException {
+        StringBuilder str = new StringBuilder();
+        str.append(serviceLocator.getServiceUrl()).append("?method=").append(methodName);
+        if (outParametersMode)
+            str.append("&outParameters=true");
+        return new URL(str.toString());
     }
 
     private static String getMethodName(Method method, MethodDescriptor methodDescriptor) {

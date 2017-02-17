@@ -6,9 +6,9 @@ public class ResponseObject implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private boolean success;
-    private Object result;
-    private Object[] parameters;
+    private boolean success = true;
+    private Object result = null;
+    private Object[] parameters = null;
 
     public boolean isSuccess() {
         return success;

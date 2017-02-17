@@ -1,10 +1,14 @@
 package org.zenframework.easyservices.descriptor;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
 import org.zenframework.easyservices.Environment;
 
 public class DefaultDescriptorFactory extends CachingDescriptorFactory {
@@ -12,6 +16,13 @@ public class DefaultDescriptorFactory extends CachingDescriptorFactory {
     private final List<DescriptorExtractor> extractors = new ArrayList<DescriptorExtractor>(getDefaultExtractors());
 
     private boolean autoAliasing = Environment.isAutoAliasing();
+
+    public DefaultDescriptorFactory() {}
+
+    public DefaultDescriptorFactory(String... urls) throws ParserConfigurationException, SAXException, IOException {
+        for (String url : urls)
+            addXmlDescriptorExtractor(url);
+    }
 
     public void setAutoAliasing(boolean autoAliasing) {
         this.autoAliasing = autoAliasing;
@@ -25,6 +36,10 @@ public class DefaultDescriptorFactory extends CachingDescriptorFactory {
 
     public List<DescriptorExtractor> getExtractors() {
         return extractors;
+    }
+
+    public void addXmlDescriptorExtractor(String url) throws ParserConfigurationException, SAXException, IOException {
+        extractors.add(new XmlDescriptorExtractor(url));
     }
 
     protected List<DescriptorExtractor> getDefaultExtractors() {

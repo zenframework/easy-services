@@ -16,6 +16,7 @@ public class Environment {
     public static final String PROP_DEBUG = "debug";
     public static final String PROP_AUTO_ALIASING = "autoAliasing";
     public static final String PROP_DUPLICATE_METHOD_NAMES_SAFE = "duplicateMethodNamesSafe";
+    public static final String PROP_OUT_PARAMETERS_MODE = "outParametersMode";
     public static final String PROP_SERIALIZATION_FORMAT = "serialize.format";
 
     private static final Config CONFIG = new MapConfig(System.getProperties()).getSubConfig(PROPERTIES_PREFIX);
@@ -24,6 +25,7 @@ public class Environment {
     private static final boolean DEFAULT_DEBUG = false;
     private static final boolean DEFAULT_AUTO_ALIASING = true;
     private static final boolean DEFAULT_DUPLICATE_METHOD_NAMES_SAFE = false;
+    private static final boolean DEFAULT_OUT_PARAMETERS_MODE = true;
 
     private Environment() {}
 
@@ -51,6 +53,14 @@ public class Environment {
         CONFIG.setParam(PROP_DUPLICATE_METHOD_NAMES_SAFE, duplicateMethodNamesSafe);
     }
 
+    public static boolean isOutParametersMode() {
+        return CONFIG.getParam(PROP_OUT_PARAMETERS_MODE, DEFAULT_OUT_PARAMETERS_MODE);
+    }
+
+    public static void setOutParametersMode(boolean outParametersMode) {
+        CONFIG.setParam(PROP_OUT_PARAMETERS_MODE, outParametersMode);
+    }
+
     public static String getSerializationFormat() {
         return CONFIG.getParam(PROP_SERIALIZATION_FORMAT, (String) null);
     }
@@ -61,7 +71,9 @@ public class Environment {
 
     public static SerializerFactory getSerializerFactory() {
         SerializerFactory factory = SERIALIZER_FACTORIES.get(getSerializationFormat());
-        if (factory == null && SERIALIZER_FACTORIES.size() > 0)
+        if (factory != null)
+            return factory;
+        if (SERIALIZER_FACTORIES.size() > 0)
             return SERIALIZER_FACTORIES.values().iterator().next();
         return null;
     }

@@ -1,8 +1,12 @@
 package org.zenframework.easyservices.test.descriptor;
 
+import java.io.Serializable;
+
 import org.apache.commons.lang.StringUtils;
 
-public class SimpleBean {
+public class SimpleBean implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String name;
     private int value;

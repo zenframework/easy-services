@@ -1,46 +1,40 @@
 package org.zenframework.easyservices.test;
 
-import java.util.Arrays;
-import java.util.Collection;
-
 import javax.naming.Context;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.zenframework.commons.resource.ClasspathResourceFactory;
 import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ClientFactory;
-import org.zenframework.easyservices.Environment;
+import org.zenframework.easyservices.descriptor.DefaultDescriptorFactory;
+import org.zenframework.easyservices.descriptor.DescriptorFactory;
+import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
+import org.zenframework.easyservices.impl.ClientFactoryImpl;
+import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 import org.zenframework.easyservices.jndi.JNDIHelper;
 
 import junit.framework.TestCase;
 
-@RunWith(Parameterized.class)
 public abstract class AbstractServiceTest extends TestCase {
 
-    @Parameterized.Parameters(name = "{index} autoAliasing:{0} format:{1}")
-    public static Collection<Object[]> formats() {
-        return Arrays.asList(new Object[][] { { true, "json" }, { true, "bin" }, { false, "json" }, { false, "bin" } });
-    }
-
-    private final boolean autoAliasing;
-    private final String format;
-
-    private HttpServer server = TestContext.CONTEXT.getBean(HttpServer.class);
-
-    public AbstractServiceTest(boolean autoAliasing, String format) {
-        this.autoAliasing = autoAliasing;
-        this.format = format;
-    }
+    private final Context serviceRegistry = JNDIHelper.getDefaultContext();
+    private ClientFactory clientFactory;
+    private HttpServer server;
 
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        Environment.setAutoAliasing(autoAliasing);
-        Environment.setDuplicateMethodNamesSafe(!autoAliasing);
-        Environment.setDefaultFormat(format);
+        DescriptorFactory descriptorFactory = new DefaultDescriptorFactory("classpath://descriptor.xml");
+        ServiceInvokerImpl serviceInvoker = new ServiceInvokerImpl();
+        serviceInvoker.setDescriptorFactory(descriptorFactory);
+        ServiceHttpRequestHandler requestHandler = new ServiceHttpRequestHandler();
+        requestHandler.setServiceInvoker(serviceInvoker);
+        clientFactory = new ClientFactoryImpl("http://localhost:" + TestContext.JETTY_PORT + "/services");
+        server = new HttpServer(TestContext.JETTY_PORT);
+        server.setResourceFactory(new ClasspathResourceFactory());
+        server.setServiceHttpRequestHandler(requestHandler);
         server.start();
     }
 
@@ -51,12 +45,12 @@ public abstract class AbstractServiceTest extends TestCase {
         super.tearDown();
     }
 
-    protected static <T> T getClient(Class<T> serviceClass, String serviceName) throws ClientException {
-        return TestContext.CONTEXT.getBean(ClientFactory.class).getClient(serviceClass, serviceName);
+    protected <T> T getClient(Class<T> serviceClass, String serviceName) throws ClientException {
+        return clientFactory.getClient(serviceClass, serviceName);
     }
 
-    protected static Context getServiceRegistry() {
-        return JNDIHelper.getDefaultContext();
+    protected Context getServiceRegistry() {
+        return serviceRegistry;
     }
 
 }

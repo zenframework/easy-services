@@ -19,6 +19,7 @@ public class HttpServiceRequest extends AbstractServiceRequest {
 
     private static final String PARAM_METHOD = "method";
     private static final String PARAM_ARGUMENTS = "args";
+    private static final String PARAM_OUT_PARAMETERS_MODE = "outParameters";
 
     private final HttpServletRequest request;
     private final String servicesPath;
@@ -43,6 +44,12 @@ public class HttpServiceRequest extends AbstractServiceRequest {
     @Override
     public String getMethodName() {
         return getParameter(PARAM_METHOD);
+    }
+
+    @Override
+    public boolean isOutParametersMode() {
+        String outParams = getParameter(PARAM_OUT_PARAMETERS_MODE);
+        return outParams != null && Boolean.parseBoolean(outParams);
     }
 
     public URI getRequestURI() throws URISyntaxException, UnsupportedEncodingException {

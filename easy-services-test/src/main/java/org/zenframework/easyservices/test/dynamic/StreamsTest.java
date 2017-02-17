@@ -6,18 +6,31 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.Collection;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.test.AbstractServiceTest;
 
+@RunWith(Parameterized.class)
 public class StreamsTest extends AbstractServiceTest {
+
+    @Parameterized.Parameters(name = "{index} autoAliasing:{0} format:{1}")
+    public static Collection<Object[]> formats() {
+        return Arrays.asList(new Object[][] { { true, "json" }, { true, "bin" }, { false, "json" }, { false, "bin" } });
+    }
 
     private File sourceFile;
     private File targetFile;
 
     public StreamsTest(boolean autoAliasing, String format) {
-        super(autoAliasing, format);
+        Environment.setAutoAliasing(autoAliasing);
+        Environment.setDuplicateMethodNamesSafe(!autoAliasing);
+        Environment.setDefaultFormat(format);
     }
 
     @Override

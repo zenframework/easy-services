@@ -17,11 +17,15 @@ import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
 
 public class HttpServer {
 
-    private int port;
+    private final int port;
     private ServiceHttpRequestHandler serviceHttpRequestHandler;
     private ResourceFactory resourceFactory;
 
     private Server server;
+
+    public HttpServer(int port) {
+        this.port = port;
+    }
 
     public void start() throws Exception {
         server = new Server(port);
@@ -52,10 +56,6 @@ public class HttpServer {
 
     public void stop() throws Exception {
         server.stop();
-    }
-
-    public void setPort(int port) {
-        this.port = port;
     }
 
     public void setServiceHttpRequestHandler(ServiceHttpRequestHandler httpServiceRequestHandler) {

@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.reflect.Type;
 
 import org.zenframework.easyservices.ResponseObject;
 import org.zenframework.easyservices.ServiceLocator;
@@ -45,14 +46,14 @@ public class JsonSerializer implements Serializer {
     }
 
     @Override
-    public Object deserializeResult(InputStream in) throws IOException, SerializationException {
-        return deserialize(new JsonReader(new InputStreamReader(in)), returnType,
-                methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null);
+    public Object deserializeResult(InputStream in, boolean success) throws IOException, SerializationException {
+        return deserialize(new JsonReader(new InputStreamReader(in)), success, returnType,
+                success && methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null);
     }
 
     @Override
     public Object[] deserializeParameters(InputStream in) throws IOException, SerializationException {
-        return deserialize(new JsonReader(new InputStreamReader(in)), paramTypes,
+        return deserialize(new JsonReader(new InputStreamReader(in)), true, paramTypes,
                 methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[paramTypes.length]);
     }
 
@@ -61,8 +62,6 @@ public class JsonSerializer implements Serializer {
         ValueDescriptor[] paramDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors()
                 : new ValueDescriptor[paramTypes.length];
         ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
-        Class<?> returnType = !success ? Throwable.class
-                : returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF ? ServiceLocator.class : this.returnType;
         try {
             ResponseObject responseObject = new ResponseObject();
             JsonReader reader = new JsonReader(new InputStreamReader(in));
@@ -72,9 +71,9 @@ public class JsonSerializer implements Serializer {
                 if ("success".equals(name)) {
                     responseObject.setSuccess(reader.nextBoolean());
                 } else if ("result".equals(name)) {
-                    responseObject.setResult(deserialize(reader, returnType, returnDescriptor));
+                    responseObject.setResult(deserialize(reader, success, returnType, returnDescriptor));
                 } else if ("parameters".equals(name)) {
-                    responseObject.setParameters(deserialize(reader, paramTypes, paramDescriptors));
+                    responseObject.setParameters(deserialize(reader, success, paramTypes, paramDescriptors));
                 } else {
                     throw new IOException("Unexpected name '" + name + "'");
                 }
@@ -93,26 +92,35 @@ public class JsonSerializer implements Serializer {
         writer.flush();
     }
 
-    private Object deserialize(JsonReader in, Class<?> objType, ValueDescriptor valueDescriptor) throws IOException, SerializationException {
-        return gson.fromJson(in, valueDescriptor != null ? GsonUtil.getParameterizedType(objType, valueDescriptor.getTypeParameters()) : objType);
+    private Object deserialize(JsonReader in, boolean success, Class<?> objType, ValueDescriptor valueDescriptor)
+            throws IOException, SerializationException {
+        Type type = !success ? Throwable.class
+                : valueDescriptor == null ? objType
+                        : valueDescriptor.getTransfer() == ValueTransfer.REF ? ServiceLocator.class
+                                : GsonUtil.getParameterizedType(objType, valueDescriptor.getTypeParameters());
+        return gson.fromJson(in, type);
     }
 
-    private Object[] deserialize(JsonReader in, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors) throws IOException, SerializationException {
+    private Object[] deserialize(JsonReader in, boolean success, Class<?>[] objTypes, ValueDescriptor[] valueDescriptors)
+            throws IOException, SerializationException {
         if (objTypes.length != valueDescriptors.length)
             throw new SerializationException(
                     "objTypes.length == " + objTypes.length + " != " + valueDescriptors.length + " == valueDescriptors.length");
         Object[] result = new Object[objTypes.length];
         in.beginArray();
-        for (int i = 0; in.hasNext(); i++) {
-            if (i >= result.length)
+        int count;
+        for (count = 0; in.hasNext(); count++) {
+            if (count >= result.length)
                 throw new SerializationException("JSON array size > array of types size");
             try {
-                result[i] = deserialize(in, objTypes[i], valueDescriptors[i]);
+                result[count] = deserialize(in, success, objTypes[count], valueDescriptors[count]);
             } catch (JsonParseException e) {
                 throw new SerializationException(e);
             }
         }
         in.endArray();
+        if (count != objTypes.length)
+            throw new SerializationException("result.length == " + count + " != " + objTypes.length + " == objTypes.length");
         return result;
     }
 

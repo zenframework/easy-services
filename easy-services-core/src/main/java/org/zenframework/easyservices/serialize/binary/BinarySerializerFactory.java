@@ -8,8 +8,6 @@ public class BinarySerializerFactory implements SerializerFactory {
 
     public static final String FORMAT = "bin";
 
-    private static final BinarySerializer SERIALIZER = new BinarySerializer();
-
     @Override
     public String getFormat() {
         return FORMAT;
@@ -17,7 +15,7 @@ public class BinarySerializerFactory implements SerializerFactory {
 
     @Override
     public Serializer getSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor) {
-        return SERIALIZER;
+        return new BinarySerializer(paramTypes);
     }
 
 }

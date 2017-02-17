@@ -15,21 +15,21 @@ public class ClientFactoryImpl implements ClientFactory {
 
     private DescriptorFactory descriptorFactory = new ClientDescriptorFactory();
     private SerializerFactory serializerFactory = Environment.getSerializerFactory();
+    private boolean outParametersMode = Environment.isOutParametersMode();
     private ValueUpdater updater = new ValueUpdaterImpl();
     private boolean debug = Environment.isDebug();
     private String baseUrl;
 
     public ClientFactoryImpl() {}
 
-    public ClientFactoryImpl(String baseUrl, SerializerFactory serializerFactory) {
+    public ClientFactoryImpl(String baseUrl) {
         this.baseUrl = baseUrl;
-        this.serializerFactory = serializerFactory;
     }
 
     @Override
     public <T> T getClient(Class<T> serviceClass, String serviceName) {
         return ClientProxy.getCGLibProxy(serviceClass, ServiceLocator.qualified(baseUrl, serviceName), descriptorFactory, serializerFactory,
-                updater, debug);
+                outParametersMode, updater, debug);
     }
 
     public void setBaseUrl(String baseUrl) {
@@ -46,6 +46,38 @@ public class ClientFactoryImpl implements ClientFactory {
 
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+
+    public boolean isOutParametersSupport() {
+        return outParametersMode;
+    }
+
+    public void setOutParametersSupport(boolean outParametersSupport) {
+        this.outParametersMode = outParametersSupport;
+    }
+
+    public ValueUpdater getUpdater() {
+        return updater;
+    }
+
+    public void setUpdater(ValueUpdater updater) {
+        this.updater = updater;
+    }
+
+    public DescriptorFactory getDescriptorFactory() {
+        return descriptorFactory;
+    }
+
+    public SerializerFactory getSerializerFactory() {
+        return serializerFactory;
+    }
+
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public String getBaseUrl() {
+        return baseUrl;
     }
 
     private class ClientDescriptorFactory extends CachingDescriptorFactory {
@@ -65,7 +97,7 @@ public class ClientFactoryImpl implements ClientFactory {
         private synchronized DescriptorFactory getRemoteFactory() {
             if (remoteDescriptorFactory == null)
                 remoteDescriptorFactory = ClientProxy.getCGLibProxy(DescriptorFactory.class,
-                        ServiceLocator.qualified(baseUrl, DescriptorFactory.NAME), null, serializerFactory, updater, debug);
+                        ServiceLocator.qualified(baseUrl, DescriptorFactory.NAME), null, serializerFactory, outParametersMode, updater, debug);
             return remoteDescriptorFactory;
         }
 

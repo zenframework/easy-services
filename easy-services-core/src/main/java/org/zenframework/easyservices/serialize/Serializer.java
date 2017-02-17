@@ -10,7 +10,7 @@ public interface Serializer {
 
     Object[] deserializeParameters(InputStream in) throws IOException, SerializationException;
 
-    Object deserializeResult(InputStream in) throws IOException, SerializationException;
+    Object deserializeResult(InputStream in, boolean success) throws IOException, SerializationException;
 
     ResponseObject deserializeResponse(InputStream in, boolean success) throws IOException, SerializationException;
 

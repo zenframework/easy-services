@@ -1,15 +1,25 @@
 package org.zenframework.easyservices.test.descriptor;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.test.AbstractServiceTest;
 
+@RunWith(Parameterized.class)
 public class DescriptorTest extends AbstractServiceTest {
 
-    public DescriptorTest(boolean autoAliasing, String format) {
-        super(autoAliasing, format);
+    @Parameterized.Parameters(name = "{index} format:{0}")
+    public static Collection<Object[]> formats() {
+        return Arrays.asList(new Object[][] { { "json" }, { "bin" } });
+    }
+
+    public DescriptorTest(String format) {
+        Environment.setDefaultFormat(format);
     }
 
     @Override

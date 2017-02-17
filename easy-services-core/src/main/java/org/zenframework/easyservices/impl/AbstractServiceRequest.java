@@ -13,6 +13,8 @@ public abstract class AbstractServiceRequest implements ServiceRequest {
 
     @Override
     public void cacheInput() throws IOException {
+        if (cachedData != null)
+            return;
         InputStream in = internalGetInputStream();
         try {
             byte[] buf = new byte[8192];
@@ -27,9 +29,7 @@ public abstract class AbstractServiceRequest implements ServiceRequest {
 
     @Override
     public InputStream getInputStream() throws IOException {
-        if (cachedData != null)
-            new ByteArrayInputStream(cachedData);
-        return internalGetInputStream();
+        return cachedData != null ? new ByteArrayInputStream(cachedData) : internalGetInputStream();
     }
 
     abstract protected InputStream internalGetInputStream() throws IOException;
