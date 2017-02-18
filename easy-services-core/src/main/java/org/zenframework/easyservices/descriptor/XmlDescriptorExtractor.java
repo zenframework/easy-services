@@ -1,7 +1,7 @@
 package org.zenframework.easyservices.descriptor;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -9,9 +9,10 @@ import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.lang.ClassUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -73,6 +74,8 @@ import org.zenframework.easyservices.ValueTransfer;
  */
 public class XmlDescriptorExtractor implements DescriptorExtractor {
 
+    private static final Logger LOG = LoggerFactory.getLogger(XmlDescriptorExtractor.class);
+
     public static final String ELEM_CLASSES = "classes";
     public static final String ELEM_CLASS = "class";
     public static final String ELEM_VALUE = "value";
@@ -91,46 +94,58 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
     private final Map<Class<?>, ClassDescriptor> classes = new HashMap<Class<?>, ClassDescriptor>();
     private final Map<MethodIdentifier, MethodDescriptor> methods = new HashMap<MethodIdentifier, MethodDescriptor>();
 
-    public XmlDescriptorExtractor(String url) throws ParserConfigurationException, SAXException, IOException {
-        this(new URL(url));
+    public XmlDescriptorExtractor(String... urls) {
+        this(getUrls(urls));
     }
 
-    public XmlDescriptorExtractor(URL url) throws ParserConfigurationException, SAXException, IOException {
+    public XmlDescriptorExtractor(URL... urls) {
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document doc = builder.parse(url.openStream());
-        Element rootElement = doc.getDocumentElement();
+        try {
 
-        // read xml
-        Enumeration<Element> classElements = getElements(rootElement, ELEM_CLASS);
-        while (classElements.hasMoreElements()) {
-            Element classElement = classElements.nextElement();
-            Class<?> cls = getClass(getAttribute(classElement, ATTR_NAME, true));
-            ClassDescriptor classDescriptor = new ClassDescriptor();
-            Element valueElement = getElement(classElement, ELEM_VALUE);
-            if (valueElement != null) {
-                ValueDescriptor valueDescriptor = getValueDescriptor(valueElement);
-                classDescriptor.setValueDescriptor(valueDescriptor);
-            }
-            Element debugElement = getElement(classElement, ELEM_DEBUG);
-            if (debugElement != null)
-                classDescriptor.setDebug(Boolean.parseBoolean(debugElement.getTextContent()));
-            Enumeration<Element> methodElements = getElements(classElement, ELEM_METHOD);
-            while (methodElements.hasMoreElements()) {
-                Element methodElement = methodElements.nextElement();
-                String methodName = getAttribute(methodElement, ATTR_NAME, true);
-                Class<?>[] paramTypes = getClasses(getAttribute(methodElement, ATTR_ARG_TYPES, false));
-                try {
-                    Method method = cls.getMethod(methodName, paramTypes);
-                    MethodIdentifier methodIdentifier = new MethodIdentifier(method);
-                    MethodDescriptor methodDescriptor = getMethodDescriptor(methodElement, paramTypes, method.getReturnType());
-                    methods.put(methodIdentifier, methodDescriptor);
-                } catch (NoSuchMethodException e) {
-                    throw new SAXException(e);
+            for (URL url : urls) {
+
+                DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+                DocumentBuilder builder = factory.newDocumentBuilder();
+                Document doc = builder.parse(url.openStream());
+                Element rootElement = doc.getDocumentElement();
+
+                // read xml
+                Enumeration<Element> classElements = getElements(rootElement, ELEM_CLASS);
+                while (classElements.hasMoreElements()) {
+                    Element classElement = classElements.nextElement();
+                    Class<?> cls = getClass(getAttribute(classElement, ATTR_NAME, true));
+                    ClassDescriptor classDescriptor = new ClassDescriptor();
+                    Element valueElement = getElement(classElement, ELEM_VALUE);
+                    if (valueElement != null) {
+                        ValueDescriptor valueDescriptor = getValueDescriptor(valueElement);
+                        classDescriptor.setValueDescriptor(valueDescriptor);
+                    }
+                    Element debugElement = getElement(classElement, ELEM_DEBUG);
+                    if (debugElement != null)
+                        classDescriptor.setDebug(Boolean.parseBoolean(debugElement.getTextContent()));
+                    Enumeration<Element> methodElements = getElements(classElement, ELEM_METHOD);
+                    while (methodElements.hasMoreElements()) {
+                        Element methodElement = methodElements.nextElement();
+                        String methodName = getAttribute(methodElement, ATTR_NAME, true);
+                        Class<?>[] paramTypes = getClasses(getAttribute(methodElement, ATTR_ARG_TYPES, false));
+                        try {
+                            Method method = cls.getMethod(methodName, paramTypes);
+                            MethodIdentifier methodIdentifier = new MethodIdentifier(method);
+                            MethodDescriptor methodDescriptor = getMethodDescriptor(methodElement, paramTypes, method.getReturnType());
+                            methods.put(methodIdentifier, DescriptorUtil.merge(methods.get(methodIdentifier), methodDescriptor));
+                        } catch (NoSuchMethodException e) {
+                            throw new SAXException(e);
+                        }
+                    }
+                    classes.put(cls, DescriptorUtil.merge(classes.get(cls), classDescriptor));
                 }
+
+                LOG.info("Load " + url + " Ok");
+
             }
-            classes.put(cls, classDescriptor);
+
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
         }
 
     }
@@ -234,6 +249,17 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
         if (transferElement != null)
             valueDescriptor.setTransfer(ValueTransfer.forName(transferElement.getTextContent()));
         return valueDescriptor;
+    }
+
+    private static URL[] getUrls(String... urls) {
+        URL[] result = new URL[urls.length];
+        try {
+            for (int i = 0; i < urls.length; i++)
+                result[i] = new URL(urls[i]);
+            return result;
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
 }
