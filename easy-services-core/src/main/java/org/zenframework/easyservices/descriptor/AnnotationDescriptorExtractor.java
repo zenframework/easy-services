@@ -15,10 +15,10 @@ public class AnnotationDescriptorExtractor implements DescriptorExtractor {
     public MethodDescriptor getMethodDescriptor(MethodIdentifier methodId) {
         try {
             Method method = methodId.getMethodClass().getMethod(methodId.getName(), methodId.getParameterTypes());
-            Alias methodAlias = method.getAnnotation(Alias.class); //findMethodAnnotation(method, Alias.class);
-            Value[] paramValues = getParamAnnotations(method, Value.class, new Value[methodId.getParameterTypes().length]); //findArgsAnnotations(method, Value.class, new Value[paramTypes.length]);
-            Value returnValue = method.getAnnotation(Value.class); //findMethodAnnotation(method, Value.class);
-            Debug methodDebug = method.getAnnotation(Debug.class); //findMethodAnnotation(method, Debug.class);
+            Alias methodAlias = method.getAnnotation(Alias.class);
+            Value[] paramValues = getParamAnnotations(method, Value.class, new Value[methodId.getParameterTypes().length]);
+            Value returnValue = method.getAnnotation(Value.class);
+            Debug methodDebug = method.getAnnotation(Debug.class);
             return getMethodDescriptor(methodAlias, paramValues, returnValue, methodDebug);
         } catch (NoSuchMethodException e) {
             return null;
