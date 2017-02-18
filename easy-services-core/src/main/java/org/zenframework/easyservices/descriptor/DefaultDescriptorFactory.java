@@ -1,28 +1,19 @@
 package org.zenframework.easyservices.descriptor;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.xml.sax.SAXException;
 import org.zenframework.easyservices.Environment;
 
 public class DefaultDescriptorFactory extends CachingDescriptorFactory {
 
+    private static final String XML_DESCRIPTOR_PATH = "META-INF/easy-services/descriptor.xml";
+
     private final List<DescriptorExtractor> extractors = new ArrayList<DescriptorExtractor>(getDefaultExtractors());
 
     private boolean autoAliasing = Environment.isAutoAliasing();
-
-    public DefaultDescriptorFactory() {}
-
-    public DefaultDescriptorFactory(String... urls) throws ParserConfigurationException, SAXException, IOException {
-        for (String url : urls)
-            addXmlDescriptorExtractor(url);
-    }
 
     public void setAutoAliasing(boolean autoAliasing) {
         this.autoAliasing = autoAliasing;
@@ -38,12 +29,12 @@ public class DefaultDescriptorFactory extends CachingDescriptorFactory {
         return extractors;
     }
 
-    public void addXmlDescriptorExtractor(String url) throws ParserConfigurationException, SAXException, IOException {
+    public void addXmlDescriptorExtractor(String url) {
         extractors.add(new XmlDescriptorExtractor(url));
     }
 
     protected List<DescriptorExtractor> getDefaultExtractors() {
-        return Arrays.<DescriptorExtractor> asList(AnnotationDescriptorExtractor.INSTANCE);
+        return Arrays.<DescriptorExtractor> asList(AnnotationDescriptorExtractor.INSTANCE, new ClasspathXmlDescriptorExtractor(XML_DESCRIPTOR_PATH));
     }
 
     protected String getDefaultAlias(MethodIdentifier methodId) {
@@ -63,7 +54,7 @@ public class DefaultDescriptorFactory extends CachingDescriptorFactory {
         ClassDescriptor classDescriptor = new ClassDescriptor();
         for (Class<?> c : classes)
             for (DescriptorExtractor extractor : extractors)
-                classDescriptor = update(classDescriptor, extractor.getClassDescriptor(c));
+                classDescriptor = DescriptorUtil.merge(classDescriptor, extractor.getClassDescriptor(c));
         return classDescriptor;
     }
 
@@ -73,7 +64,7 @@ public class DefaultDescriptorFactory extends CachingDescriptorFactory {
         MethodDescriptor methodDescriptor = getDefaultMethodDescriptor(methodId);
         for (Class<?> c : classes)
             for (DescriptorExtractor extractor : extractors)
-                methodDescriptor = update(methodDescriptor, extractor
+                methodDescriptor = DescriptorUtil.merge(methodDescriptor, extractor
                         .getMethodDescriptor(new MethodIdentifier(c, methodId.getName(), methodId.getParameterTypes(), methodId.getReturnType())));
         if (autoAliasing) {
             int count = 0;
@@ -96,39 +87,6 @@ public class DefaultDescriptorFactory extends CachingDescriptorFactory {
             methodDescriptor.setParameterDescriptor(i, getClassDescriptor(methodId.getParameterTypes()[i]).getValueDescriptor());
         methodDescriptor.setDebug(getClassDescriptor(methodId.getMethodClass()).getDebug());
         return methodDescriptor;
-    }
-
-    private static ClassDescriptor update(ClassDescriptor oldValue, ClassDescriptor newValue) {
-        if (oldValue == null)
-            return newValue;
-        if (newValue != null) {
-            ValueDescriptor valueDescriptor = newValue.getValueDescriptor();
-            if (valueDescriptor != null)
-                oldValue.setValueDescriptor(valueDescriptor);
-            Boolean debug = newValue.getDebug();
-            if (debug != null)
-                oldValue.setDebug(debug);
-        }
-        return oldValue;
-    }
-
-    private static MethodDescriptor update(MethodDescriptor oldValue, MethodDescriptor newValue) {
-        if (oldValue == null)
-            return newValue;
-        if (newValue != null) {
-            String alias = newValue.getAlias();
-            if (alias != null)
-                oldValue.setAlias(alias);
-            ValueDescriptor returnDescriptor = newValue.getReturnDescriptor();
-            if (returnDescriptor != null)
-                oldValue.setReturnDescriptor(returnDescriptor);
-            for (int i = 0; i < newValue.getParameterDescriptors().length; i++) {
-                ValueDescriptor paramDescriptor = newValue.getParameterDescriptors()[i];
-                if (paramDescriptor != null)
-                    oldValue.setParameterDescriptor(i, paramDescriptor);
-            }
-        }
-        return oldValue;
     }
 
 }

@@ -34,6 +34,39 @@ public class DescriptorUtil {
         return list;
     }
 
+    public static ClassDescriptor merge(ClassDescriptor oldValue, ClassDescriptor newValue) {
+        if (oldValue == null)
+            return newValue;
+        if (newValue != null) {
+            ValueDescriptor valueDescriptor = newValue.getValueDescriptor();
+            if (valueDescriptor != null)
+                oldValue.setValueDescriptor(valueDescriptor);
+            Boolean debug = newValue.getDebug();
+            if (debug != null)
+                oldValue.setDebug(debug);
+        }
+        return oldValue;
+    }
+
+    public static MethodDescriptor merge(MethodDescriptor oldValue, MethodDescriptor newValue) {
+        if (oldValue == null)
+            return newValue;
+        if (newValue != null) {
+            String alias = newValue.getAlias();
+            if (alias != null)
+                oldValue.setAlias(alias);
+            ValueDescriptor returnDescriptor = newValue.getReturnDescriptor();
+            if (returnDescriptor != null)
+                oldValue.setReturnDescriptor(returnDescriptor);
+            for (int i = 0; i < newValue.getParameterDescriptors().length; i++) {
+                ValueDescriptor paramDescriptor = newValue.getParameterDescriptors()[i];
+                if (paramDescriptor != null)
+                    oldValue.setParameterDescriptor(i, paramDescriptor);
+            }
+        }
+        return oldValue;
+    }
+
     private static <T> void topologicalSort(List<T> list, Comparator<T> comparator) {
         List<T> out = new ArrayList<T>(list.size());
         while (!list.isEmpty()) {

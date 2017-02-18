@@ -9,7 +9,7 @@ import junit.framework.TestCase;
 public class XmlDescriptorExtractorTest extends TestCase {
 
     public void testXmlClassDescriptorFactory() throws Exception {
-        XmlDescriptorExtractor factory = new XmlDescriptorExtractor("classpath://descriptor.xml");
+        XmlDescriptorExtractor factory = new XmlDescriptorExtractor("classpath://META-INF/easy-services/descriptor.xml");
         System.out.println(factory.getClassDescriptor(ServiceFactory.class));
         System.out.println(factory.getClassDescriptor(InputStream.class));
         assertEquals(ValueTransfer.REF, factory.getClassDescriptor(InputStream.class).getValueDescriptor().getTransfer());
