@@ -9,13 +9,28 @@ public class BinarySerializerFactory implements SerializerFactory {
     public static final String FORMAT = "bin";
 
     @Override
+    public boolean isTextBased() {
+        return false;
+    }
+
+    @Override
+    public boolean isTypeSafe() {
+        return true;
+    }
+
+    @Override
     public String getFormat() {
         return FORMAT;
     }
 
     @Override
     public Serializer getSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor) {
-        return new BinarySerializer(paramTypes);
+        return BinarySerializer.INSTANCE;
+    }
+
+    @Override
+    public Serializer getTypeSafeSerializer() {
+        return BinarySerializer.INSTANCE;
     }
 
 }

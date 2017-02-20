@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 import org.apache.commons.lang.ObjectUtils;
 
-public class ServiceLocator implements Serializable {
+public final class ServiceLocator implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

@@ -3,8 +3,6 @@ package org.zenframework.easyservices.descriptor;
 import java.io.Serializable;
 import java.util.Map;
 
-import org.zenframework.easyservices.util.string.StringUtil;
-
 public class MethodDescriptor implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -67,25 +65,30 @@ public class MethodDescriptor implements Serializable {
         this.debug = debug;
     }
 
-    @Override
-    public String toString() {
-        return toString(0);
+    public boolean isEmpty() {
+        return alias == null && returnDescriptor == null && emptyParameterDescriptors;
     }
 
-    public String toString(int indent) {
+    @Override
+    public String toString() {
         StringBuilder str = new StringBuilder();
+        str.append('[');
         if (alias != null)
-            StringUtil.indent(str, indent, false).append("alias : ").append(alias);
-        if (returnDescriptor != null)
-            StringUtil.indent(str, indent, str.length() > 0).append("return : ").append(returnDescriptor);
+            str.append("alias: ").append(alias).append(", ");
         if (!emptyParameterDescriptors) {
-            StringUtil.indent(str, indent, str.length() > 0).append("parameters :");
+            str.append("params: [");
             for (int i = 0; i < parameterDescriptors.length; i++) {
-                if (parameterDescriptors[i] != null)
-                    StringUtil.indent(str, indent + 1, true).append(i).append(" : ").append(parameterDescriptors[i]);
+                str.append(parameterDescriptors[i] != null ? parameterDescriptors[i] : "-");
+                if (i < parameterDescriptors.length - 1)
+                    str.append(", ");
             }
-
+            str.append("], ");
         }
+        if (returnDescriptor != null)
+            str.append("return: ").append(returnDescriptor).append(", ");
+        if (str.length() > 1)
+            str.setLength(str.length() - 2);
+        str.append(']');
         return str.toString();
     }
 

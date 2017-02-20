@@ -8,4 +8,6 @@ public interface DescriptorFactory extends DescriptorExtractor {
 
     Map<MethodIdentifier, MethodDescriptor> getMethodDescriptors(Class<?> cls);
 
+    Map.Entry<MethodIdentifier, MethodDescriptor> getMethodEntry(Class<?> cls, String alias);
+
 }

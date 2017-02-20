@@ -68,7 +68,6 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         for (int i = 0; i < args.length; i++) {
             ValueDescriptor argDescriptor = paramDescriptors[i];
             if (argDescriptor != null && argDescriptor.getTransfer() == ValueTransfer.REF) {
-                //ServiceInvocationHandler handler = (ServiceInvocationHandler) Proxy.getInvocationHandler(args[i]);
                 ServiceMethodInterceptor intercpetor = ClientProxy.getMethodInterceptor(args[i], ServiceMethodInterceptor.class);
                 args[i] = intercpetor.getServiceLocator();
             }

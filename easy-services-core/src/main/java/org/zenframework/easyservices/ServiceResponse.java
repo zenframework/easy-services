@@ -2,14 +2,24 @@ package org.zenframework.easyservices;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Writer;
+import java.util.concurrent.atomic.AtomicLong;
 
-public interface ServiceResponse {
+public abstract class ServiceResponse {
 
-    OutputStream getOutputStream() throws IOException;
+    private static final AtomicLong COUNTER = new AtomicLong();
 
-    Writer getWriter() throws IOException;
+    private final long id;
 
-    void sendError(Throwable e);
+    public ServiceResponse() {
+        id = COUNTER.incrementAndGet();
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    abstract public OutputStream getOutputStream() throws IOException;
+
+    abstract public void sendError(Throwable e);
 
 }

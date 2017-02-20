@@ -19,24 +19,31 @@ import org.zenframework.easyservices.test.AbstractServiceTest;
 @RunWith(Parameterized.class)
 public class StreamsTest extends AbstractServiceTest {
 
-    @Parameterized.Parameters(name = "{index} autoAliasing:{0} format:{1}")
+    private static final int SIZE_K = 1024;
+
+    @Parameterized.Parameters(name = "{index} autoAliasing: {0}, format: {1}, size: {2}K")
     public static Collection<Object[]> formats() {
-        return Arrays.asList(new Object[][] { { true, "json" }, { true, "bin" }, { false, "json" }, { false, "bin" } });
+        return Arrays
+                .asList(new Object[][] { { true, "json", SIZE_K }, { true, "bin", SIZE_K }, { false, "json", SIZE_K }, { false, "bin", SIZE_K } });
     }
+
+    private final int size;
 
     private File sourceFile;
     private File targetFile;
 
-    public StreamsTest(boolean autoAliasing, String format) {
+    public StreamsTest(boolean autoAliasing, String format, int size) {
         Environment.setAutoAliasing(autoAliasing);
         Environment.setDuplicateMethodNamesSafe(!autoAliasing);
         Environment.setDefaultFormat(format);
+        Environment.setOutParametersMode(true);
+        this.size = size * 1024;
     }
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        sourceFile = createTestFile(File.createTempFile("easy-services-streams-test", ".in"), 1024 * 1024);
+        sourceFile = createTestFile(File.createTempFile("easy-services-streams-test", ".in"), size);
         targetFile = File.createTempFile("easy-services-streams-test", ".out");
         getServiceRegistry().bind("/streams", new StreamFactoryImpl(sourceFile, targetFile));
     }

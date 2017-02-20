@@ -13,6 +13,7 @@ import java.util.Map;
 import javax.naming.Context;
 import javax.naming.NamingException;
 
+import org.apache.commons.lang.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.Environment;
@@ -57,23 +58,28 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
         ResponseObject responseObject = new ResponseObject();
         InvocationContext context = null;
-        String methodName = request.getMethodName();
-        boolean outParametersMode = request.isOutParametersMode();
 
         if (debug && LOG.isDebugEnabled()) {
-            request.cacheInput();
-            LOG.debug("CALL " + request.getServiceName() + '.' + methodName + ' ' + read(request.getInputStream()));
+            String requestStr;
+            if (serializerFactory.isTextBased()) {
+                request.cacheInput();
+                requestStr = read(request.getInputStream());
+            } else {
+                requestStr = "[bin]";
+            }
+            LOG.debug("REQUEST " + request + ' ' + requestStr);
         }
 
         try {
             Object service = lookupService(request);
-            if (methodName == null) {
+            request.setServiceClass(service.getClass());
+            if (request.getMethodName() == null) {
                 context = new InvocationContext(null, null, serializerFactory.getSerializer(null, Map.class, null), null);
                 responseObject.setResult(getServiceInfo(request, service));
             } else {
-                context = getInvocationContext(request, service.getClass());
+                context = getInvocationContext(request);
                 responseObject.setResult(invokeMethod(request, service, context));
-                if (outParametersMode)
+                if (request.isOutParametersMode())
                     responseObject.setParameters(getOutParameters(context));
             }
         } catch (IOException e) {
@@ -81,9 +87,9 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         } catch (Throwable e) {
             if (e instanceof InvocationTargetException) {
                 e = ((InvocationTargetException) e).getTargetException();
-                LOG.info("Error invoking " + request.getServiceName() + '.' + request.getMethodName() + ' ' + context, e);
+                LOG.info(request + (context != null ? '[' + context.toString() + ']' : "") + " invocation error" + context, e);
             } else {
-                LOG.error("Error invoking " + request.getServiceName() + '.' + request.getMethodName() + ' ' + context, e);
+                LOG.error(request + (context != null ? '[' + context.toString() + ']' : "") + " service error", e);
             }
             responseObject.setResult(e);
             responseObject.setSuccess(false);
@@ -92,7 +98,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         OutputStream out = response.getOutputStream();
         try {
             Serializer serializer = context != null ? context.serializer : serializerFactory.getSerializer(null, Map.class, null);
-            serializer.serialize(outParametersMode ? responseObject : responseObject.getResult(), out);
+            serializer.serialize(request.isOutParametersMode() ? responseObject : responseObject.getResult(), out);
         } finally {
             out.close();
         }
@@ -105,7 +111,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             serviceRegistry = JNDIHelper.newDefaultContext(serviceRegistryConfig);
         descriptorFactory = (DescriptorFactory) config.getInstance(PARAM_DESCRIPTOR_FACTORY, descriptorFactory);
         serializerFactory = (SerializerFactory) config.getInstance(PARAM_SERIALIZER_FACTORY, serializerFactory);
-        debug = config.getParam(PARAM_DEBUG, false);
+        debug = config.getParam(PARAM_DEBUG, debug);
     }
 
     @Override
@@ -169,11 +175,11 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
     }
 
     protected Object invokeMethod(ServiceRequest request, Object service, InvocationContext context) throws Throwable {
-        TimeChecker time = (debug || context.methodDescriptor.getDebug()) && LOG.isDebugEnabled()
-                ? new TimeChecker("INVOKE " + request.getServiceName() + '.' + request.getMethodName(), LOG) : null;
+        TimeChecker time = (debug || context.methodDescriptor != null && context.methodDescriptor.getDebug()) && LOG.isDebugEnabled()
+                ? new TimeChecker(request + " INVOKE ", LOG) : null;
         Object result = context.method.invoke(service, context.params);
         // If method must return reference, bind result to service register and set result to service locator
-        ValueDescriptor returnDescriptor = context.methodDescriptor.getReturnDescriptor();
+        ValueDescriptor returnDescriptor = context.methodDescriptor != null ? context.methodDescriptor.getReturnDescriptor() : null;
         if (returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF) {
             String name = getName(result);
             try {
@@ -207,55 +213,96 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         return "/dynamic/" + obj.getClass().getCanonicalName() + '@' + System.identityHashCode(obj);
     }
 
-    private InvocationContext getInvocationContext(ServiceRequest request, Class<?> serviceClass)
-            throws IOException, ServiceException, NoSuchMethodException, SecurityException {
-        TimeChecker time = debug && LOG.isDebugEnabled()
-                ? new TimeChecker("GET CONTEXT " + request.getServiceName() + "." + request.getMethodName(), LOG) : null;
-        Map<MethodIdentifier, MethodDescriptor> methodDescriptors = descriptorFactory.getMethodDescriptors(serviceClass);
-        for (Map.Entry<MethodIdentifier, MethodDescriptor> entry : methodDescriptors.entrySet()) {
-            boolean nameEquals = request.getMethodName().equals(entry.getKey().getName());
-            boolean aliasEquals = request.getMethodName().equals(entry.getValue().getAlias());
-            if (nameEquals || aliasEquals) {
-                Method method = serviceClass.getMethod(entry.getKey().getName(), entry.getKey().getParameterTypes());
-                try {
-                    if (duplicateMethodNamesSafe && !aliasEquals)
-                        request.cacheInput();
-                    InvocationContext context = newInvocationContext(request, method, entry.getValue());
-                    if (time != null)
-                        time.printDifference(context);
-                    return context;
-                } catch (SerializationException e) {
-                    if (duplicateMethodNamesSafe && !aliasEquals)
-                        LOG.debug("Can't convert given args to method '" + request.getMethodName() + "' argument types "
-                                + Arrays.toString(method.getParameterTypes()));
-                    else
-                        throw e;
+    private InvocationContext getInvocationContext(ServiceRequest request) throws IOException, ServiceException {
+        if (serializerFactory.isTypeSafe()) {
+            // If serializer factory is type-safe, simply deserialize parameters & get method by name/alias and its parameter types
+            TimeChecker time = debug && LOG.isDebugEnabled() ? new TimeChecker(request + " GET CONTEXT (type-safe)", LOG) : null;
+            InvocationContext context = newInvocationContext(request);
+            if (time != null)
+                time.printDifference(context);
+            return context;
+        } else {
+            // Else first find appropriate method, then deserialize 
+            Map<MethodIdentifier, MethodDescriptor> methodDescriptors = descriptorFactory.getMethodDescriptors(request.getServiceClass());
+            for (Map.Entry<MethodIdentifier, MethodDescriptor> entry : methodDescriptors.entrySet()) {
+                boolean nameEquals = entry.getValue().getAlias() == null && request.getMethodName().equals(entry.getKey().getName());
+                boolean aliasEquals = request.getMethodName().equals(entry.getValue().getAlias());
+                if (nameEquals || aliasEquals) {
+                    Method method = getMethod(request.getServiceClass(), entry.getKey().getName(), entry.getKey().getParameterTypes());
+                    try {
+                        if (duplicateMethodNamesSafe && !aliasEquals)
+                            request.cacheInput();
+                        TimeChecker time = debug && LOG.isDebugEnabled()
+                                ? new TimeChecker(
+                                        request + " GET CONTEXT (non-type-safe)\n\tmethod:     " + method + "\n\tmethodId:   " + entry.getKey()
+                                                + (!entry.getValue().isEmpty() ? "\n\tdescriptor: " + entry.getValue().toString() : "") + '\n',
+                                        LOG)
+                                : null;
+                        InvocationContext context = newInvocationContext(request, method, entry.getValue());
+                        if (time != null)
+                            time.printDifference(context);
+                        return context;
+                    } catch (SerializationException e) {
+                        if (duplicateMethodNamesSafe && !aliasEquals)
+                            LOG.debug(request + ": can't convert given args to method argument types " + Arrays.toString(method.getParameterTypes()));
+                        else
+                            throw e;
+                    }
                 }
             }
         }
         throw new ServiceException("Can't find method [" + request.getMethodName() + "] applicable for given args");
     }
 
+    private InvocationContext newInvocationContext(ServiceRequest request) throws IOException, ServiceException {
+        Serializer serializer = serializerFactory.getTypeSafeSerializer();
+        Object[] params = serializer.deserializeParameters(request.getInputStream());
+        Map.Entry<MethodIdentifier, MethodDescriptor> entry = descriptorFactory.getMethodEntry(request.getServiceClass(), request.getMethodName());
+        MethodDescriptor methodDescriptor = entry != null ? entry.getValue() : null;
+        Method method = null;
+        findAndReplaceRefs(params);
+        if (entry != null) {
+            method = getMethod(request.getServiceClass(), entry.getKey().getName(), entry.getKey().getParameterTypes());
+        } else {
+            Map<MethodIdentifier, MethodDescriptor> methodDescriptors = descriptorFactory.getMethodDescriptors(request.getServiceClass());
+            for (Map.Entry<MethodIdentifier, MethodDescriptor> e : methodDescriptors.entrySet()) {
+                boolean nameEquals = e.getValue().getAlias() == null && request.getMethodName().equals(e.getKey().getName());
+                boolean aliasEquals = request.getMethodName().equals(e.getValue().getAlias());
+                Class<?>[] paramTypes = e.getKey().getParameterTypes();
+                if ((nameEquals || aliasEquals) && params.length == paramTypes.length && instancesOf(params, e.getKey().getParameterTypes())) {
+                    method = getMethod(request.getServiceClass(), request.getMethodName(), paramTypes);
+                    methodDescriptor = e.getValue();
+                }
+            }
+        }
+        if (method == null)
+            throw new ServiceException("Can't find method [" + request.getMethodName() + "] applicable for given args");
+        return new InvocationContext(method, methodDescriptor, serializer, params);
+    }
+
     private InvocationContext newInvocationContext(ServiceRequest request, Method method, MethodDescriptor methodDescriptor)
             throws IOException, ServiceException {
         Class<?>[] paramTypes = method.getParameterTypes();
         Class<?> returnType = method.getReturnType();
-        ValueDescriptor[] paramDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors()
-                : new ValueDescriptor[paramTypes.length];
-        for (int i = 0; i < paramTypes.length; i++) {
-            ValueDescriptor paramDescriptor = paramDescriptors[i];
-            if (paramDescriptor != null && paramDescriptor.getTransfer() == ValueTransfer.REF)
-                paramTypes[i] = ServiceLocator.class;
+        if (methodDescriptor != null) {
+            for (int i = 0; i < paramTypes.length; i++) {
+                ValueDescriptor paramDescriptor = methodDescriptor.getParameterDescriptor(i);
+                if (paramDescriptor != null && paramDescriptor.getTransfer() == ValueTransfer.REF)
+                    paramTypes[i] = ServiceLocator.class;
+            }
         }
         ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
         if (returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF)
             returnType = ServiceLocator.class;
         Serializer serializer = serializerFactory.getSerializer(paramTypes, returnType, methodDescriptor);
         Object[] params = serializer.deserializeParameters(request.getInputStream());
-        // Find and replace references
+        findAndReplaceRefs(params);
+        return new InvocationContext(method, methodDescriptor, serializer, params);
+    }
+
+    private void findAndReplaceRefs(Object[] params) throws ServiceException {
         for (int i = 0; i < params.length; i++) {
-            ValueDescriptor paramDescriptor = paramDescriptors[i];
-            if (paramDescriptor != null && paramDescriptor.getTransfer() == ValueTransfer.REF) {
+            if (params[i] instanceof ServiceLocator) {
                 ServiceLocator locator = (ServiceLocator) params[i];
                 if (locator.isAbsolute())
                     throw new ServiceException("Can't get dynamic service by absolute service locator '" + locator + "'");
@@ -266,7 +313,6 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
                 }
             }
         }
-        return new InvocationContext(method, methodDescriptor, serializer, params);
     }
 
     private static Object[] getOutParameters(InvocationContext context) {
@@ -297,6 +343,21 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         }
     }
 
+    private static boolean instancesOf(Object[] params, Class<?>[] classes) {
+        for (int i = 0; i < params.length; i++)
+            if (!classes[i].isInstance(params[i]) && ClassUtils.wrapperToPrimitive(params[i].getClass()) != classes[i])
+                return false;
+        return true;
+    }
+
+    private static Method getMethod(Class<?> cls, String name, Class<?>[] paramTypes) throws ServiceException {
+        try {
+            return cls.getMethod(name, paramTypes);
+        } catch (NoSuchMethodException | SecurityException e) {
+            throw new ServiceException(e);
+        }
+    }
+
     private static class InvocationContext {
 
         final Method method;
@@ -317,9 +378,9 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             StringBuilder str = new StringBuilder();
             str.append(method);
             if (methodDescriptor != null) {
-                String mdStr = methodDescriptor.toString(1);
+                String mdStr = methodDescriptor.toString();
                 if (mdStr.length() > 0)
-                    str.append(", descriptor [\n").append(mdStr).append("\n]");
+                    str.append(", descriptor ").append(mdStr);
             }
             str.append(", serializer: ").append(serializer).append(", parameters: ").append(Arrays.toString(params));
             return str.toString();

@@ -12,10 +12,10 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.zenframework.easyservices.impl.AbstractServiceRequest;
+import org.zenframework.easyservices.ServiceRequest;
 import org.zenframework.easyservices.util.net.URIUtil;
 
-public class HttpServiceRequest extends AbstractServiceRequest {
+public class HttpServiceRequest extends ServiceRequest {
 
     private static final String PARAM_METHOD = "method";
     private static final String PARAM_ARGUMENTS = "args";

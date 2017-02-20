@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.util.bean.ServiceUtil;
 import org.zenframework.easyservices.util.config.Config;
@@ -11,21 +13,37 @@ import org.zenframework.easyservices.util.config.MapConfig;
 
 public class Environment {
 
+    private static final Logger LOG = LoggerFactory.getLogger(Environment.class);
+
     public static final String PROPERTIES_PREFIX = "easyservices";
 
     public static final String PROP_DEBUG = "debug";
     public static final String PROP_AUTO_ALIASING = "autoAliasing";
     public static final String PROP_DUPLICATE_METHOD_NAMES_SAFE = "duplicateMethodNamesSafe";
     public static final String PROP_OUT_PARAMETERS_MODE = "outParametersMode";
-    public static final String PROP_SERIALIZATION_FORMAT = "serialize.format";
+    public static final String PROP_SERIALIZATION_FORMAT = "serializationFormat";
 
     private static final Config CONFIG = new MapConfig(System.getProperties()).getSubConfig(PROPERTIES_PREFIX);
     private static final Map<String, SerializerFactory> SERIALIZER_FACTORIES = initFactories();
 
-    private static final boolean DEFAULT_DEBUG = false;
-    private static final boolean DEFAULT_AUTO_ALIASING = true;
-    private static final boolean DEFAULT_DUPLICATE_METHOD_NAMES_SAFE = false;
-    private static final boolean DEFAULT_OUT_PARAMETERS_MODE = true;
+    private static final boolean DEFAULT_DEBUG = true;
+    private static final boolean DEFAULT_AUTO_ALIASING = false;
+    private static final boolean DEFAULT_DUPLICATE_METHOD_NAMES_SAFE = true;
+    private static final boolean DEFAULT_OUT_PARAMETERS_MODE = false;
+
+    private static final String PREFERRED_SERIALIZATION_FORMAT = "json";
+
+    static {
+        LOG.info("CONFIG: " + CONFIG.toString(true));
+        StringBuffer str = new StringBuffer();
+        str.append("DEFAULTS:");
+        str.append("\n\t- debug:                    ").append(isDebug());
+        str.append("\n\t- autoAliasing:             ").append(isAutoAliasing());
+        str.append("\n\t- duplicateMethodNamesSafe: ").append(isDuplicateMethodNamesSafe());
+        str.append("\n\t- outParametersMode:        ").append(isOutParametersMode());
+        str.append("\n\t- serializationFormat:      ").append(getSerializationFormat());
+        LOG.info(str.toString());
+    }
 
     private Environment() {}
 
@@ -62,7 +80,12 @@ public class Environment {
     }
 
     public static String getSerializationFormat() {
-        return CONFIG.getParam(PROP_SERIALIZATION_FORMAT, (String) null);
+        String format = CONFIG.getParam(PROP_SERIALIZATION_FORMAT, (String) null);
+        if (format != null && SERIALIZER_FACTORIES.containsKey(format))
+            return format;
+        if (SERIALIZER_FACTORIES.containsKey(PREFERRED_SERIALIZATION_FORMAT))
+            return PREFERRED_SERIALIZATION_FORMAT;
+        return SERIALIZER_FACTORIES.keySet().iterator().next();
     }
 
     public static void setDefaultFormat(String format) {
@@ -70,12 +93,7 @@ public class Environment {
     }
 
     public static SerializerFactory getSerializerFactory() {
-        SerializerFactory factory = SERIALIZER_FACTORIES.get(getSerializationFormat());
-        if (factory != null)
-            return factory;
-        if (SERIALIZER_FACTORIES.size() > 0)
-            return SERIALIZER_FACTORIES.values().iterator().next();
-        return null;
+        return SERIALIZER_FACTORIES.get(getSerializationFormat());
     }
 
     public static Map<String, SerializerFactory> getSerializationFactories() {

@@ -12,20 +12,13 @@ import org.zenframework.easyservices.serialize.Serializer;
 
 public class BinarySerializer implements Serializer {
 
-    private final Class<?>[] paramTypes;
-
-    public BinarySerializer(Class<?>[] paramTypes) {
-        this.paramTypes = paramTypes;
-    }
+    public static final BinarySerializer INSTANCE = new BinarySerializer();
 
     @Override
     public Object[] deserializeParameters(InputStream in) throws IOException, SerializationException {
         ObjectInputStream obj = new ObjectInputStream(in);
         try {
-            Object[] result = (Object[]) obj.readObject();
-            if (result.length != paramTypes.length)
-                throw new SerializationException("result.length == " + result.length + " != " + paramTypes.length + " == paramTypes.length");
-            return result;
+            return (Object[]) obj.readObject();
         } catch (ClassNotFoundException e) {
             throw new SerializationException(e);
         }

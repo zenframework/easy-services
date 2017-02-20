@@ -2,13 +2,12 @@ package org.zenframework.easyservices.http;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.Writer;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.zenframework.easyservices.ServiceResponse;
 
-public class HttpServiceResponse implements ServiceResponse {
+public class HttpServiceResponse extends ServiceResponse {
 
     private final HttpServletResponse response;
     private final ErrorMapper errorMapper;
@@ -21,11 +20,6 @@ public class HttpServiceResponse implements ServiceResponse {
     @Override
     public OutputStream getOutputStream() throws IOException {
         return response.getOutputStream();
-    }
-
-    @Override
-    public Writer getWriter() throws IOException {
-        return response.getWriter();
     }
 
     @Override

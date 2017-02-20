@@ -28,6 +28,16 @@ public class JsonSerializerFactory implements SerializerFactory {
     private boolean exposedOnly = false;
 
     @Override
+    public boolean isTextBased() {
+        return true;
+    }
+
+    @Override
+    public boolean isTypeSafe() {
+        return false;
+    }
+
+    @Override
     public String getFormat() {
         return FORMAT;
     }
@@ -41,6 +51,11 @@ public class JsonSerializerFactory implements SerializerFactory {
         for (TypeAdapterFactory factory : typeAdapterFactories)
             builder.registerTypeAdapterFactory(factory);
         return new JsonSerializer(paramTypes, returnType, methodDescriptor, builder.create());
+    }
+
+    @Override
+    public Serializer getTypeSafeSerializer() {
+        throw new UnsupportedOperationException();
     }
 
     public void setTypeAdapterFactories(Collection<TypeAdapterFactory> typeAdapterFactories) {

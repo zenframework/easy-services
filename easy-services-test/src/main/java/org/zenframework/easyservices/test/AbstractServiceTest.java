@@ -6,11 +6,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ClientFactory;
-import org.zenframework.easyservices.descriptor.DefaultDescriptorFactory;
-import org.zenframework.easyservices.descriptor.DescriptorFactory;
 import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
 import org.zenframework.easyservices.impl.ClientFactoryImpl;
-import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 import org.zenframework.easyservices.jndi.JNDIHelper;
 import org.zenframework.easyservices.util.resource.ClasspathResourceFactory;
 
@@ -26,15 +23,10 @@ public abstract class AbstractServiceTest extends TestCase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        DescriptorFactory descriptorFactory = new DefaultDescriptorFactory("classpath://descriptor.xml");
-        ServiceInvokerImpl serviceInvoker = new ServiceInvokerImpl();
-        serviceInvoker.setDescriptorFactory(descriptorFactory);
-        ServiceHttpRequestHandler requestHandler = new ServiceHttpRequestHandler();
-        requestHandler.setServiceInvoker(serviceInvoker);
         clientFactory = new ClientFactoryImpl("http://localhost:" + TestContext.JETTY_PORT + "/services");
         server = new HttpServer(TestContext.JETTY_PORT);
         server.setResourceFactory(new ClasspathResourceFactory());
-        server.setServiceHttpRequestHandler(requestHandler);
+        server.setServiceHttpRequestHandler(new ServiceHttpRequestHandler());
         server.start();
     }
 

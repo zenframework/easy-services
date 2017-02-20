@@ -119,7 +119,7 @@ public abstract class AbstractConfig implements Config {
     public String toString(boolean prettyPrint) {
         List<String> names = getNames();
         Collections.sort(names);
-        StringBuilder str = new StringBuilder("CONFIGURATION {");
+        StringBuilder str = new StringBuilder("{");
         for (String name : names)
             str.append(prettyPrint ? "\n\t" : str.charAt(str.length() - 1) == '{' ? " " : ", ").append(name).append(" = ").append(getParam(name));
         str.append(prettyPrint && !names.isEmpty() ? '\n' : ' ').append('}');
