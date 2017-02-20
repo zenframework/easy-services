@@ -10,13 +10,14 @@ import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.MethodIdentifier;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.update.ValueUpdater;
+import org.zenframework.easyservices.update.ValueUpdaterImpl;
 
 public class ClientFactoryImpl implements ClientFactory {
 
     private DescriptorFactory descriptorFactory = new ClientDescriptorFactory();
     private SerializerFactory serializerFactory = Environment.getSerializerFactory();
     private boolean outParametersMode = Environment.isOutParametersMode();
-    private ValueUpdater updater = new ValueUpdaterImpl();
+    private ValueUpdater updater = ValueUpdaterImpl.INSTANCE;
     private boolean debug = Environment.isDebug();
     private String baseUrl;
 

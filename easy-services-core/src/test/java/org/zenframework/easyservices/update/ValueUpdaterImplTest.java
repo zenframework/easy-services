@@ -3,8 +3,6 @@ package org.zenframework.easyservices.update;
 import java.util.Arrays;
 import java.util.Random;
 
-import org.zenframework.easyservices.impl.ValueUpdaterImpl;
-
 import junit.framework.TestCase;
 
 public class ValueUpdaterImplTest extends TestCase {
