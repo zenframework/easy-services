@@ -2,7 +2,7 @@ package org.zenframework.easyservices;
 
 public enum ValueTransfer {
 
-    DEFAULT, IN, OUT, IN_OUT, REF;
+    DEFAULT, OUT, REF;
 
     public static ValueTransfer forName(String name) {
         for (ValueTransfer value : values())

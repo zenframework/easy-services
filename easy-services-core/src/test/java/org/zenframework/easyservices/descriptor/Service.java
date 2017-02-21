@@ -1,9 +1,8 @@
 package org.zenframework.easyservices.descriptor;
 
-import org.zenframework.easyservices.ValueTransfer;
-import org.zenframework.easyservices.annotations.Value;
+import org.zenframework.easyservices.annotations.Ref;
 
-@Value(transfer = ValueTransfer.REF)
+@Ref
 public interface Service {
 
     void call();

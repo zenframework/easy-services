@@ -26,11 +26,6 @@ import org.zenframework.easyservices.ValueTransfer;
  * <classes>
  *
  *     <!-- Default value descriptors can be defined in class/value tag ... -->
- *     <class name="org.example.model.User">
- *         <value>
- *             <adapter>org.example.adapter.UserAdapter</adapter>
- *         </value>
- *     </class>
  *     <class name="org.example.service.Session">
  *         <value>
  *             <transfer>ref</transfer>
@@ -39,28 +34,22 @@ import org.zenframework.easyservices.ValueTransfer;
  * 
  *     <!-- ... or value descriptors can be defined in class/method tag ... -->
  *     <class name="org.example.service.UserManager">
- *         <!-- returns void -->
- *         <method name="register" arg-types="org.example.model.User">
- *             <arg number="0">
- *                 <adapter>org.example.adapter.UserAdapter</adapter>
- *             </arg>
- *         </method>
  *         <!-- returns reference to org.example.service.Session service -->
- *         <method name="login" arg-types="java.lang.String,java.lang.String">
+ *         <method name="login" param-types="java.lang.String,java.lang.String">
  *             <alias>loginUserPassword</alias>
  *             <return>
  *                 <transfer>ref</transfer>
  *             </return>
  *         </method>
  *         <!-- returns reference to org.example.service.Session service -->
- *         <method name="login" arg-types="org.example.model.Token">
+ *         <method name="login" param-types="org.example.model.Token">
  *             <alias>loginToken</alias>
  *             <return>
  *                 <transfer>ref</transfer>
  *             </return>
  *         </method>
  *         <!-- returns java.util.Map<java.lang.String, org.example.model.User> -->
- *         <method name="getUsers" arg-types="">
+ *         <method name="getUsers" param-types="">
  *             <return>
  *                 <type-parameters>java.lang.String, org.example.model.User</type-parameters>
  *             </return>
@@ -83,15 +72,15 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
     public static final String ELEM_ALIAS = "alias";
     public static final String ELEM_DEBUG = "debug";
     public static final String ELEM_RETURN = "return";
-    public static final String ELEM_ARGUMENT = "arg";
-    public static final String ELEM_ADAPTER = "adapter";
+    public static final String ELEM_PARAMETER = "param";
     public static final String ELEM_TYPE_PARAMETERS = "type-parameters";
     public static final String ELEM_TRANSFER = "transfer";
+    public static final String ELEM_CLOSE = "close";
     public static final String ATTR_NAME = "name";
-    public static final String ATTR_ARG_TYPES = "arg-types";
+    public static final String ATTR_PARAM_TYPES = "param-types";
     public static final String ATTR_NUMBER = "number";
 
-    private final Map<Class<?>, ClassDescriptor> classes = new HashMap<Class<?>, ClassDescriptor>();
+    private final Map<Class<?>, ClassDefaults> classes = new HashMap<Class<?>, ClassDefaults>();
     private final Map<MethodIdentifier, MethodDescriptor> methods = new HashMap<MethodIdentifier, MethodDescriptor>();
 
     public XmlDescriptorExtractor(String... urls) {
@@ -114,20 +103,20 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
                 while (classElements.hasMoreElements()) {
                     Element classElement = classElements.nextElement();
                     Class<?> cls = getClass(getAttribute(classElement, ATTR_NAME, true));
-                    ClassDescriptor classDescriptor = new ClassDescriptor();
+                    ClassDefaults classDefaults = new ClassDefaults();
                     Element valueElement = getElement(classElement, ELEM_VALUE);
                     if (valueElement != null) {
                         ValueDescriptor valueDescriptor = getValueDescriptor(valueElement);
-                        classDescriptor.setValueDescriptor(valueDescriptor);
+                        classDefaults.setValueDescriptor(valueDescriptor);
                     }
                     Element debugElement = getElement(classElement, ELEM_DEBUG);
                     if (debugElement != null)
-                        classDescriptor.setDebug(Boolean.parseBoolean(debugElement.getTextContent()));
+                        classDefaults.setDebug(Boolean.parseBoolean(debugElement.getTextContent()));
                     Enumeration<Element> methodElements = getElements(classElement, ELEM_METHOD);
                     while (methodElements.hasMoreElements()) {
                         Element methodElement = methodElements.nextElement();
                         String methodName = getAttribute(methodElement, ATTR_NAME, true);
-                        Class<?>[] paramTypes = getClasses(getAttribute(methodElement, ATTR_ARG_TYPES, false));
+                        Class<?>[] paramTypes = getClasses(getAttribute(methodElement, ATTR_PARAM_TYPES, false));
                         try {
                             Method method = cls.getMethod(methodName, paramTypes);
                             MethodIdentifier methodIdentifier = new MethodIdentifier(method);
@@ -137,7 +126,7 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
                             throw new SAXException(e);
                         }
                     }
-                    classes.put(cls, DescriptorUtil.merge(classes.get(cls), classDescriptor));
+                    classes.put(cls, DescriptorUtil.merge(classes.get(cls), classDefaults));
                 }
 
                 LOG.info("Load " + url + " Ok");
@@ -151,12 +140,12 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
     }
 
     @Override
-    public MethodDescriptor getMethodDescriptor(MethodIdentifier methodId) {
+    public MethodDescriptor extractMethodDescriptor(MethodIdentifier methodId) {
         return methods.get(methodId);
     }
 
     @Override
-    public ClassDescriptor getClassDescriptor(Class<?> cls) {
+    public ClassDefaults extractClassDefaults(Class<?> cls) {
         return classes.get(cls);
     }
 
@@ -173,11 +162,11 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
         Element debugElement = getElement(methodElement, ELEM_DEBUG);
         if (debugElement != null)
             methodDescriptor.setDebug(Boolean.parseBoolean(debugElement.getTextContent()));
-        Enumeration<Element> argElements = getElements(methodElement, ELEM_ARGUMENT);
-        while (argElements.hasMoreElements()) {
-            Element argElement = argElements.nextElement();
-            ValueDescriptor argDescriptor = getValueDescriptor(argElement);
-            methodDescriptor.setParameterDescriptor(Integer.parseInt(getAttribute(argElement, ATTR_NUMBER, true)), argDescriptor);
+        Enumeration<Element> paramElements = getElements(methodElement, ELEM_PARAMETER);
+        while (paramElements.hasMoreElements()) {
+            Element paramElement = paramElements.nextElement();
+            ParamDescriptor argDescriptor = getParamDescriptor(paramElement);
+            methodDescriptor.setParameterDescriptor(Integer.parseInt(getAttribute(paramElement, ATTR_NUMBER, true)), argDescriptor);
         }
         return methodDescriptor;
     }
@@ -235,13 +224,6 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
 
     private static ValueDescriptor getValueDescriptor(Element valueElement) throws SAXException {
         ValueDescriptor valueDescriptor = new ValueDescriptor();
-        Enumeration<Element> adapterElements = getElements(valueElement, ELEM_ADAPTER);
-        try {
-            while (adapterElements.hasMoreElements())
-                valueDescriptor.addAdapter(Class.forName(adapterElements.nextElement().getTextContent()).newInstance());
-        } catch (Exception e) {
-            throw new SAXException(e);
-        }
         Element typeParametersElement = getElement(valueElement, ELEM_TYPE_PARAMETERS);
         if (typeParametersElement != null)
             valueDescriptor.setTypeParameters(getClasses(typeParametersElement.getTextContent()));
@@ -249,6 +231,20 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
         if (transferElement != null)
             valueDescriptor.setTransfer(ValueTransfer.forName(transferElement.getTextContent()));
         return valueDescriptor;
+    }
+
+    private static ParamDescriptor getParamDescriptor(Element valueElement) throws SAXException {
+        ParamDescriptor paramDescriptor = new ParamDescriptor();
+        Element typeParametersElement = getElement(valueElement, ELEM_TYPE_PARAMETERS);
+        if (typeParametersElement != null)
+            paramDescriptor.setTypeParameters(getClasses(typeParametersElement.getTextContent()));
+        Element transferElement = getElement(valueElement, ELEM_TRANSFER);
+        if (transferElement != null)
+            paramDescriptor.setTransfer(ValueTransfer.forName(transferElement.getTextContent()));
+        Element closeElement = getElement(valueElement, ELEM_CLOSE);
+        if (closeElement != null)
+            paramDescriptor.setClose(Boolean.parseBoolean(closeElement.getTextContent()));
+        return paramDescriptor;
     }
 
     private static URL[] getUrls(String... urls) {

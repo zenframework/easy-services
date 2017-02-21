@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
+import org.zenframework.easyservices.descriptor.ParamDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 
 import com.google.gson.TypeAdapter;
@@ -14,14 +15,18 @@ import com.google.gson.stream.JsonWriter;
 
 public class MethodDescriptorTypeAdapter extends TypeAdapter<MethodDescriptor> {
 
+    public static final MethodDescriptorTypeAdapter INSTANCE = new MethodDescriptorTypeAdapter();
+
     @Override
     public void write(JsonWriter out, MethodDescriptor value) throws IOException {
         if (value == null) {
             out.nullValue();
         } else {
             out.beginObject();
-            if (value.getDebug())
+            if (value.isDebug())
                 out.name("debug").value(true);
+            if (value.isClose())
+                out.name("close").value(true);
             if (value.getAlias() != null)
                 out.name("alias").value(value.getAlias());
             out.name("parameters").beginArray();
@@ -42,22 +47,25 @@ public class MethodDescriptorTypeAdapter extends TypeAdapter<MethodDescriptor> {
             in.nextNull();
             return null;
         }
-        boolean debug = false;
+        Boolean debug = null;
+        Boolean close = null;
         String alias = null;
-        Map<Integer, ValueDescriptor> paramDescriptors = new HashMap<Integer, ValueDescriptor>();
+        Map<Integer, ParamDescriptor> paramDescriptors = new HashMap<Integer, ParamDescriptor>();
         ValueDescriptor returnDescriptor = null;
         in.beginObject();
         while (in.hasNext()) {
             String name = in.nextName();
             if ("debug".equals(name)) {
                 debug = in.nextBoolean();
+            } else if ("close".equals(name)) {
+                close = in.nextBoolean();
             } else if ("alias".equals(name)) {
                 alias = in.nextString();
             } else if ("parameters".equals(name)) {
                 in.beginArray();
                 int i = 0;
                 while (in.hasNext())
-                    paramDescriptors.put(i++, ValueDescriptorTypeAdapter.INSTANCE.read(in));
+                    paramDescriptors.put(i++, ParamDescriptorTypeAdapter.INSTANCE.read(in));
                 in.endArray();
             } else if ("return".equals(name)) {
                 returnDescriptor = ValueDescriptorTypeAdapter.INSTANCE.read(in);
@@ -68,6 +76,7 @@ public class MethodDescriptorTypeAdapter extends TypeAdapter<MethodDescriptor> {
         in.endObject();
         MethodDescriptor value = new MethodDescriptor(paramDescriptors.size());
         value.setDebug(debug);
+        value.setClose(close);
         value.setAlias(alias);
         value.setParameterDescriptorsMap(paramDescriptors);
         value.setReturnDescriptor(returnDescriptor);

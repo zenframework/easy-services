@@ -4,15 +4,15 @@
         <value>
             <transfer>ref</transfer>
         </value>
-        <method name="read" arg-types="byte[]">
-            <arg number="0">
+        <method name="read" param-types="byte[]">
+            <param number="0">
                 <transfer>out</transfer>
-            </arg>
+            </param>
         </method>
-        <method name="read" arg-types="byte[],int,int">
-            <arg number="0">
+        <method name="read" param-types="byte[],int,int">
+            <param number="0">
                 <transfer>out</transfer>
-            </arg>
+            </param>
         </method>
     </class>
 </classes>

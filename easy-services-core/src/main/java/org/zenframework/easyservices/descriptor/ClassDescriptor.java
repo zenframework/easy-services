@@ -1,28 +1,37 @@
 package org.zenframework.easyservices.descriptor;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ClassDescriptor implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private ValueDescriptor valueDescriptor = null;
-    private Boolean debug = false;
+    private final Map<MethodIdentifier, MethodDescriptor> methodDescriptors = new HashMap<MethodIdentifier, MethodDescriptor>();
 
-    public ValueDescriptor getValueDescriptor() {
-        return valueDescriptor;
+    public Map<MethodIdentifier, MethodDescriptor> getMethodDescriptors() {
+        return methodDescriptors;
     }
 
-    public void setValueDescriptor(ValueDescriptor valueDescriptor) {
-        this.valueDescriptor = valueDescriptor;
+    public void setMethodDescriptors(Map<MethodIdentifier, MethodDescriptor> methodDescriptors) {
+        this.methodDescriptors.clear();
+        this.methodDescriptors.putAll(methodDescriptors);
     }
 
-    public Boolean getDebug() {
-        return debug;
+    public MethodDescriptor getMethodDescriptor(MethodIdentifier methodId) {
+        return methodDescriptors.get(methodId);
     }
 
-    public void setDebug(Boolean debug) {
-        this.debug = debug;
+    public void setMethodDescriptor(MethodIdentifier methodId, MethodDescriptor methodDescriptor) {
+        methodDescriptors.put(methodId, methodDescriptor);
+    }
+
+    public Map.Entry<MethodIdentifier, MethodDescriptor> findMethodEntry(String alias) {
+        for (Map.Entry<MethodIdentifier, MethodDescriptor> entry : methodDescriptors.entrySet())
+            if (alias != null && alias.equals(entry.getValue().getAlias()))
+                return entry;
+        return null;
     }
 
 }

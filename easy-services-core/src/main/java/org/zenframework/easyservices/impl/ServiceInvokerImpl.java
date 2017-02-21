@@ -24,10 +24,12 @@ import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.ServiceRequest;
 import org.zenframework.easyservices.ServiceResponse;
 import org.zenframework.easyservices.ValueTransfer;
+import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.DefaultDescriptorFactory;
 import org.zenframework.easyservices.descriptor.DescriptorFactory;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.MethodIdentifier;
+import org.zenframework.easyservices.descriptor.ParamDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.jndi.JNDIHelper;
 import org.zenframework.easyservices.serialize.SerializationException;
@@ -214,17 +216,17 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
     }
 
     private InvocationContext getInvocationContext(ServiceRequest request) throws IOException, ServiceException {
+        ClassDescriptor classDescriptor = descriptorFactory.getClassDescriptor(request.getServiceClass());
         if (serializerFactory.isTypeSafe()) {
             // If serializer factory is type-safe, simply deserialize parameters & get method by name/alias and its parameter types
             TimeChecker time = debug && LOG.isDebugEnabled() ? new TimeChecker(request + " GET CONTEXT (type-safe)", LOG) : null;
-            InvocationContext context = newInvocationContext(request);
+            InvocationContext context = newInvocationContext(request, classDescriptor);
             if (time != null)
                 time.printDifference(context);
             return context;
         } else {
             // Else first find appropriate method, then deserialize 
-            Map<MethodIdentifier, MethodDescriptor> methodDescriptors = descriptorFactory.getMethodDescriptors(request.getServiceClass());
-            for (Map.Entry<MethodIdentifier, MethodDescriptor> entry : methodDescriptors.entrySet()) {
+            for (Map.Entry<MethodIdentifier, MethodDescriptor> entry : classDescriptor.getMethodDescriptors().entrySet()) {
                 boolean nameEquals = entry.getValue().getAlias() == null && request.getMethodName().equals(entry.getKey().getName());
                 boolean aliasEquals = request.getMethodName().equals(entry.getValue().getAlias());
                 if (nameEquals || aliasEquals) {
@@ -254,18 +256,17 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         throw new ServiceException("Can't find method [" + request.getMethodName() + "] applicable for given args");
     }
 
-    private InvocationContext newInvocationContext(ServiceRequest request) throws IOException, ServiceException {
+    private InvocationContext newInvocationContext(ServiceRequest request, ClassDescriptor classDescriptor) throws IOException, ServiceException {
         Serializer serializer = serializerFactory.getTypeSafeSerializer();
         Object[] params = serializer.deserializeParameters(request.getInputStream());
-        Map.Entry<MethodIdentifier, MethodDescriptor> entry = descriptorFactory.getMethodEntry(request.getServiceClass(), request.getMethodName());
+        Map.Entry<MethodIdentifier, MethodDescriptor> entry = classDescriptor.findMethodEntry(request.getMethodName());
         MethodDescriptor methodDescriptor = entry != null ? entry.getValue() : null;
         Method method = null;
         findAndReplaceRefs(params);
         if (entry != null) {
             method = getMethod(request.getServiceClass(), entry.getKey().getName(), entry.getKey().getParameterTypes());
         } else {
-            Map<MethodIdentifier, MethodDescriptor> methodDescriptors = descriptorFactory.getMethodDescriptors(request.getServiceClass());
-            for (Map.Entry<MethodIdentifier, MethodDescriptor> e : methodDescriptors.entrySet()) {
+            for (Map.Entry<MethodIdentifier, MethodDescriptor> e : classDescriptor.getMethodDescriptors().entrySet()) {
                 boolean nameEquals = e.getValue().getAlias() == null && request.getMethodName().equals(e.getKey().getName());
                 boolean aliasEquals = request.getMethodName().equals(e.getValue().getAlias());
                 Class<?>[] paramTypes = e.getKey().getParameterTypes();
@@ -320,9 +321,9 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         boolean empty = true;
         if (context.methodDescriptor != null) {
             for (int i = 0; i < context.params.length; i++) {
-                ValueDescriptor paramDescriptor = context.methodDescriptor.getParameterDescriptors()[i];
+                ParamDescriptor paramDescriptor = context.methodDescriptor.getParameterDescriptors()[i];
                 ValueTransfer transfer = paramDescriptor != null ? paramDescriptor.getTransfer() : null;
-                if (transfer == ValueTransfer.OUT || transfer == ValueTransfer.IN_OUT) {
+                if (transfer == ValueTransfer.OUT) {
                     outParams[i] = context.params[i];
                     empty = false;
                 }

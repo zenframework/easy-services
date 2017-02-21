@@ -15,9 +15,11 @@ import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ResponseObject;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.ValueTransfer;
+import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.DescriptorFactory;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.MethodIdentifier;
+import org.zenframework.easyservices.descriptor.ParamDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
@@ -58,16 +60,17 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         Class<?>[] paramTypes = method.getParameterTypes();
         Class<?> returnType = method.getReturnType();
         MethodIdentifier methodId = new MethodIdentifier(method);
-        MethodDescriptor methodDescriptor = descriptorFactory != null ? descriptorFactory.getMethodDescriptor(methodId)
+        ClassDescriptor classDescriptor = descriptorFactory != null ? descriptorFactory.getClassDescriptor(method.getDeclaringClass()) : null;
+        MethodDescriptor methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(methodId)
                 : new MethodDescriptor(args.length);
-        ValueDescriptor[] paramDescriptors = methodDescriptor.getParameterDescriptors();
+        ParamDescriptor[] paramDescriptors = methodDescriptor.getParameterDescriptors();
         ValueDescriptor returnDescriptor = methodDescriptor.getReturnDescriptor();
         Serializer serializer = serializerFactory.getSerializer(paramTypes, returnType, methodDescriptor);
 
         // Find and replace proxy objects with references
         for (int i = 0; i < args.length; i++) {
-            ValueDescriptor argDescriptor = paramDescriptors[i];
-            if (argDescriptor != null && argDescriptor.getTransfer() == ValueTransfer.REF) {
+            ParamDescriptor paramDescriptor = paramDescriptors[i];
+            if (paramDescriptor != null && paramDescriptor.getTransfer() == ValueTransfer.REF) {
                 ServiceMethodInterceptor intercpetor = ClientProxy.getMethodInterceptor(args[i], ServiceMethodInterceptor.class);
                 args[i] = intercpetor.getServiceLocator();
             }
@@ -113,9 +116,9 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
             }
             // Update OUT parameters
             for (int i = 0; i < paramDescriptors.length; i++) {
-                ValueDescriptor paramDescriptor = paramDescriptors[i];
+                ParamDescriptor paramDescriptor = paramDescriptors[i];
                 ValueTransfer transfer = paramDescriptor != null ? paramDescriptor.getTransfer() : null;
-                if (transfer == ValueTransfer.OUT || transfer == ValueTransfer.IN_OUT)
+                if (transfer == ValueTransfer.OUT)
                     updater.update(args[i], responseObject.getParameters()[i]);
             }
             if (time != null)

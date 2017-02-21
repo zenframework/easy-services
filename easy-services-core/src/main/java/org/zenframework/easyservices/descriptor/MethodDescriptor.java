@@ -8,13 +8,14 @@ public class MethodDescriptor implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String alias = null;
+    private Boolean close = null;
     private ValueDescriptor returnDescriptor = null;
-    private final ValueDescriptor[] parameterDescriptors;
+    private final ParamDescriptor[] parameterDescriptors;
     private boolean emptyParameterDescriptors = true;
-    private Boolean debug = false;
+    private Boolean debug = null;
 
     public MethodDescriptor(int argsCount) {
-        this.parameterDescriptors = new ValueDescriptor[argsCount];
+        this.parameterDescriptors = new ParamDescriptor[argsCount];
     }
 
     public String getAlias() {
@@ -25,6 +26,18 @@ public class MethodDescriptor implements Serializable {
         this.alias = alias;
     }
 
+    public boolean isClose() {
+        return close != null && close;
+    }
+
+    public Boolean getClose() {
+        return close;
+    }
+
+    public void setClose(Boolean close) {
+        this.close = close;
+    }
+
     public ValueDescriptor getReturnDescriptor() {
         return returnDescriptor;
     }
@@ -33,28 +46,32 @@ public class MethodDescriptor implements Serializable {
         this.returnDescriptor = returnDescriptor;
     }
 
-    public ValueDescriptor[] getParameterDescriptors() {
+    public ParamDescriptor[] getParameterDescriptors() {
         return parameterDescriptors;
     }
 
-    public void setParameterDescriptors(ValueDescriptor[] paramDescriptors) {
+    public void setParameterDescriptors(ParamDescriptor[] paramDescriptors) {
         for (int i = 0; i < parameterDescriptors.length; i++)
             setParameterDescriptor(i, paramDescriptors != null ? paramDescriptors[i] : null);
     }
 
-    public void setParameterDescriptorsMap(Map<Integer, ValueDescriptor> paramDescriptorsMap) {
+    public void setParameterDescriptorsMap(Map<Integer, ParamDescriptor> paramDescriptorsMap) {
         for (int i = 0; i < parameterDescriptors.length; i++)
             setParameterDescriptor(i, paramDescriptorsMap != null ? paramDescriptorsMap.get(i) : null);
     }
 
-    public ValueDescriptor getParameterDescriptor(int arg) {
+    public ParamDescriptor getParameterDescriptor(int arg) {
         return parameterDescriptors[arg];
     }
 
-    public void setParameterDescriptor(int arg, ValueDescriptor paramDescriptor) {
+    public void setParameterDescriptor(int arg, ParamDescriptor paramDescriptor) {
         parameterDescriptors[arg] = paramDescriptor;
         if (paramDescriptor != null)
             emptyParameterDescriptors = false;
+    }
+
+    public boolean isDebug() {
+        return debug != null && debug;
     }
 
     public Boolean getDebug() {

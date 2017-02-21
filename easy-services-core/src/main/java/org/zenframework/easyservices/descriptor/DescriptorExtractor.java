@@ -2,8 +2,8 @@ package org.zenframework.easyservices.descriptor;
 
 public interface DescriptorExtractor {
 
-    ClassDescriptor getClassDescriptor(Class<?> cls);
+    ClassDefaults extractClassDefaults(Class<?> cls);
 
-    MethodDescriptor getMethodDescriptor(MethodIdentifier methodId);
+    MethodDescriptor extractMethodDescriptor(MethodIdentifier methodId);
 
 }

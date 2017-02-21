@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.lang.ClassUtils;
+import org.zenframework.easyservices.ValueTransfer;
 
 public class DescriptorUtil {
 
@@ -34,16 +35,13 @@ public class DescriptorUtil {
         return list;
     }
 
-    public static ClassDescriptor merge(ClassDescriptor oldValue, ClassDescriptor newValue) {
+    public static ClassDefaults merge(ClassDefaults oldValue, ClassDefaults newValue) {
         if (oldValue == null)
             return newValue;
         if (newValue != null) {
-            ValueDescriptor valueDescriptor = newValue.getValueDescriptor();
-            if (valueDescriptor != null)
-                oldValue.setValueDescriptor(valueDescriptor);
-            Boolean debug = newValue.getDebug();
-            if (debug != null)
-                oldValue.setDebug(debug);
+            oldValue.setValueDescriptor(merge(oldValue.getValueDescriptor(), newValue.getValueDescriptor()));
+            if (newValue.getDebug() != null)
+                oldValue.setDebug(newValue.getDebug());
         }
         return oldValue;
     }
@@ -52,17 +50,36 @@ public class DescriptorUtil {
         if (oldValue == null)
             return newValue;
         if (newValue != null) {
-            String alias = newValue.getAlias();
-            if (alias != null)
-                oldValue.setAlias(alias);
-            ValueDescriptor returnDescriptor = newValue.getReturnDescriptor();
-            if (returnDescriptor != null)
-                oldValue.setReturnDescriptor(returnDescriptor);
-            for (int i = 0; i < newValue.getParameterDescriptors().length; i++) {
-                ValueDescriptor paramDescriptor = newValue.getParameterDescriptors()[i];
-                if (paramDescriptor != null)
-                    oldValue.setParameterDescriptor(i, paramDescriptor);
-            }
+            if (newValue.getAlias() != null)
+                oldValue.setAlias(newValue.getAlias());
+            if (newValue.getClose() != null)
+                oldValue.setClose(newValue.getClose());
+            oldValue.setReturnDescriptor(merge(oldValue.getReturnDescriptor(), newValue.getReturnDescriptor()));
+            for (int i = 0; i < newValue.getParameterDescriptors().length; i++)
+                oldValue.setParameterDescriptor(i, merge(oldValue.getParameterDescriptor(i), newValue.getParameterDescriptor(i)));
+        }
+        return oldValue;
+    }
+
+    public static ValueDescriptor merge(ValueDescriptor oldValue, ValueDescriptor newValue) {
+        if (oldValue == null)
+            return newValue;
+        if (newValue != null) {
+            if (newValue.getTransfer() != null && newValue.getTransfer() != ValueTransfer.DEFAULT)
+                oldValue.setTransfer(newValue.getTransfer());
+            if (newValue.getTypeParameters() != null && newValue.getTypeParameters().length > 0)
+                oldValue.setTypeParameters(newValue.getTypeParameters());
+        }
+        return oldValue;
+    }
+
+    public static ParamDescriptor merge(ParamDescriptor oldValue, ParamDescriptor newValue) {
+        if (oldValue == null)
+            return newValue;
+        if (newValue != null) {
+            oldValue.setTransfer(newValue.getTransfer());
+            oldValue.setTypeParameters(newValue.getTypeParameters());
+            oldValue.setClose(newValue.isClose());
         }
         return oldValue;
     }

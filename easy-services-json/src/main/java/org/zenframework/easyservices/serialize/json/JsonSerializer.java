@@ -12,6 +12,7 @@ import org.zenframework.easyservices.ResponseObject;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.ValueTransfer;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
+import org.zenframework.easyservices.descriptor.ParamDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
@@ -59,8 +60,8 @@ public class JsonSerializer implements Serializer {
 
     @Override
     public ResponseObject deserializeResponse(InputStream in, boolean success) throws IOException, SerializationException {
-        ValueDescriptor[] paramDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors()
-                : new ValueDescriptor[paramTypes.length];
+        ParamDescriptor[] paramDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors()
+                : new ParamDescriptor[paramTypes.length];
         ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
         try {
             ResponseObject responseObject = new ResponseObject();

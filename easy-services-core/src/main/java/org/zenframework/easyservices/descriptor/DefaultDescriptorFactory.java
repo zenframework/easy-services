@@ -50,22 +50,23 @@ public class DefaultDescriptorFactory extends CachingDescriptorFactory {
 
     @Override
     protected ClassDescriptor extractClassDescriptor(Class<?> cls) {
-        List<Class<?>> classes = DescriptorUtil.getAllAssignableFrom(cls);
         ClassDescriptor classDescriptor = new ClassDescriptor();
-        for (Class<?> c : classes)
-            for (DescriptorExtractor extractor : extractors)
-                classDescriptor = DescriptorUtil.merge(classDescriptor, extractor.getClassDescriptor(c));
+        for (Method method : cls.getMethods()) {
+            MethodIdentifier methodId = new MethodIdentifier(method);
+            MethodDescriptor methodDescriptor = extractMethodDescriptor(methodId);
+            if (methodDescriptor != null)
+                classDescriptor.setMethodDescriptor(methodId, methodDescriptor);
+        }
         return classDescriptor;
     }
 
-    @Override
-    protected MethodDescriptor extractMethodDescriptor(MethodIdentifier methodId) {
+    private MethodDescriptor extractMethodDescriptor(MethodIdentifier methodId) {
         List<Class<?>> classes = DescriptorUtil.getAllAssignableFrom(methodId.getMethodClass());
         MethodDescriptor methodDescriptor = getDefaultMethodDescriptor(methodId);
         for (Class<?> c : classes)
             for (DescriptorExtractor extractor : extractors)
-                methodDescriptor = DescriptorUtil.merge(methodDescriptor, extractor
-                        .getMethodDescriptor(new MethodIdentifier(c, methodId.getName(), methodId.getParameterTypes(), methodId.getReturnType())));
+                methodDescriptor = DescriptorUtil.merge(methodDescriptor, extractor.extractMethodDescriptor(
+                        new MethodIdentifier(c, methodId.getName(), methodId.getParameterTypes(), methodId.getReturnType())));
         if (autoAliasing) {
             int count = 0;
             for (Method method : methodId.getMethodClass().getMethods())
@@ -82,11 +83,23 @@ public class DefaultDescriptorFactory extends CachingDescriptorFactory {
 
     private MethodDescriptor getDefaultMethodDescriptor(MethodIdentifier methodId) {
         MethodDescriptor methodDescriptor = new MethodDescriptor(methodId.getParameterTypes().length);
-        methodDescriptor.setReturnDescriptor(getClassDescriptor(methodId.getReturnType()).getValueDescriptor());
-        for (int i = 0; i < methodId.getParameterTypes().length; i++)
-            methodDescriptor.setParameterDescriptor(i, getClassDescriptor(methodId.getParameterTypes()[i]).getValueDescriptor());
-        methodDescriptor.setDebug(getClassDescriptor(methodId.getMethodClass()).getDebug());
+        methodDescriptor.setReturnDescriptor(extractClassDefaults(methodId.getReturnType()).getValueDescriptor());
+        for (int i = 0; i < methodId.getParameterTypes().length; i++) {
+            ValueDescriptor defaultDescriptor = extractClassDefaults(methodId.getParameterTypes()[i]).getValueDescriptor();
+            if (defaultDescriptor != null)
+                methodDescriptor.setParameterDescriptor(i, new ParamDescriptor(defaultDescriptor));
+        }
+        methodDescriptor.setDebug(extractClassDefaults(methodId.getMethodClass()).getDebug());
         return methodDescriptor;
+    }
+
+    private ClassDefaults extractClassDefaults(Class<?> cls) {
+        List<Class<?>> classes = DescriptorUtil.getAllAssignableFrom(cls);
+        ClassDefaults classDefaults = null;
+        for (Class<?> c : classes)
+            for (DescriptorExtractor extractor : extractors)
+                classDefaults = DescriptorUtil.merge(classDefaults, extractor.extractClassDefaults(c));
+        return classDefaults;
     }
 
 }

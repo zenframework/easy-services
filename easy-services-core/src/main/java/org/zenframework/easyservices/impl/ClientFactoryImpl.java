@@ -6,8 +6,6 @@ import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.descriptor.CachingDescriptorFactory;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.DescriptorFactory;
-import org.zenframework.easyservices.descriptor.MethodDescriptor;
-import org.zenframework.easyservices.descriptor.MethodIdentifier;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.update.ValueUpdater;
 import org.zenframework.easyservices.update.ValueUpdaterImpl;
@@ -88,11 +86,6 @@ public class ClientFactoryImpl implements ClientFactory {
         @Override
         protected ClassDescriptor extractClassDescriptor(Class<?> cls) {
             return getRemoteFactory().getClassDescriptor(cls);
-        }
-
-        @Override
-        protected MethodDescriptor extractMethodDescriptor(MethodIdentifier methodId) {
-            return getRemoteFactory().getMethodDescriptor(methodId);
         }
 
         private synchronized DescriptorFactory getRemoteFactory() {

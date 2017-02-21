@@ -9,6 +9,7 @@ import java.util.Map;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.MethodIdentifier;
+import org.zenframework.easyservices.descriptor.ParamDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.util.cls.ClassInfo;
 import org.zenframework.easyservices.util.cls.ClassRef;
@@ -36,6 +37,7 @@ public class DefaultTypeAdapterFactory extends SimpleTypeAdapterFactory {
         typeAdapters.put(FieldInfo.class, new FieldInfoTypeAdapter());
         typeAdapters.put(MethodInfo.class, new MethodInfoTypeAdapter());
         typeAdapters.put(ValueDescriptor.class, new ValueDescriptorTypeAdapter());
+        typeAdapters.put(ParamDescriptor.class, new ParamDescriptorTypeAdapter());
         typeAdapters.put(MethodIdentifier.class, new MethodIdentifierTypeAdapter());
         typeAdapters.put(MethodDescriptor.class, new MethodDescriptorTypeAdapter());
         typeAdapters.put(ClassDescriptor.class, new ClassDescriptorTypeAdapter());

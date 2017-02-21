@@ -3,38 +3,77 @@ package org.zenframework.easyservices.descriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
+import org.zenframework.easyservices.ValueTransfer;
 import org.zenframework.easyservices.annotations.Alias;
+import org.zenframework.easyservices.annotations.Close;
 import org.zenframework.easyservices.annotations.Debug;
-import org.zenframework.easyservices.annotations.Value;
+import org.zenframework.easyservices.annotations.Out;
+import org.zenframework.easyservices.annotations.Ref;
+import org.zenframework.easyservices.annotations.TypeParameters;
 
 public class AnnotationDescriptorExtractor implements DescriptorExtractor {
 
     public static final AnnotationDescriptorExtractor INSTANCE = new AnnotationDescriptorExtractor();
 
     @Override
-    public MethodDescriptor getMethodDescriptor(MethodIdentifier methodId) {
+    public MethodDescriptor extractMethodDescriptor(MethodIdentifier methodId) {
         try {
+
             Method method = methodId.getMethodClass().getMethod(methodId.getName(), methodId.getParameterTypes());
-            Alias methodAlias = method.getAnnotation(Alias.class);
-            Value[] paramValues = getParamAnnotations(method, Value.class, new Value[methodId.getParameterTypes().length]);
-            Value returnValue = method.getAnnotation(Value.class);
-            Debug methodDebug = method.getAnnotation(Debug.class);
-            return getMethodDescriptor(methodAlias, paramValues, returnValue, methodDebug);
+            Alias alias = method.getAnnotation(Alias.class);
+            Close close = method.getAnnotation(Close.class);
+            Ref[] refParams = getParamAnnotations(method, Ref.class, new Ref[methodId.getParameterTypes().length]);
+            Close[] closeParams = getParamAnnotations(method, Close.class, new Close[methodId.getParameterTypes().length]);
+            Out[] outParams = getParamAnnotations(method, Out.class, new Out[methodId.getParameterTypes().length]);
+            TypeParameters[] paramTypeParams = getParamAnnotations(method, TypeParameters.class,
+                    new TypeParameters[methodId.getParameterTypes().length]);
+            Ref returnRef = method.getAnnotation(Ref.class);
+            TypeParameters returnTypeParams = method.getAnnotation(TypeParameters.class);
+            Debug debug = method.getAnnotation(Debug.class);
+
+            MethodDescriptor methodDescriptor = new MethodDescriptor(refParams.length);
+            boolean useful = false;
+            if (alias != null) {
+                methodDescriptor.setAlias(alias.value());
+                useful = true;
+            }
+            if (close != null) {
+                methodDescriptor.setClose(true);
+                useful = true;
+            }
+            if (returnRef != null || returnTypeParams != null) {
+                methodDescriptor.setReturnDescriptor(getValueDescriptor(returnRef, returnTypeParams));
+                useful = true;
+            }
+            if (debug != null) {
+                methodDescriptor.setDebug(debug.value());
+                useful = true;
+            }
+            for (int i = 0; i < refParams.length; i++) {
+                if (refParams[i] != null || closeParams[i] != null || outParams[i] != null || paramTypeParams[i] != null) {
+                    methodDescriptor.setParameterDescriptor(i, getParamDescriptor(refParams[i], outParams[i], closeParams[i], paramTypeParams[i]));
+                    useful = true;
+                }
+            }
+
+            return useful ? methodDescriptor : null;
+
         } catch (NoSuchMethodException e) {
             return null;
         }
     }
 
     @Override
-    public ClassDescriptor getClassDescriptor(Class<?> cls) {
-        ClassDescriptor classDescriptor = new ClassDescriptor();
-        Value value = cls.getAnnotation(Value.class);
+    public ClassDefaults extractClassDefaults(Class<?> cls) {
+        ClassDefaults classDefaults = new ClassDefaults();
+        Ref ref = cls.getAnnotation(Ref.class);
+        TypeParameters typeParams = cls.getAnnotation(TypeParameters.class);
         Debug clsDebug = cls.getAnnotation(Debug.class);
-        if (value != null)
-            classDescriptor.setValueDescriptor(getValueDescriptor(value));
+        if (ref != null || typeParams != null)
+            classDefaults.setValueDescriptor(getValueDescriptor(ref, typeParams));
         if (clsDebug != null)
-            classDescriptor.setDebug(clsDebug.value());
-        return classDescriptor;
+            classDefaults.setDebug(clsDebug.value());
+        return classDefaults;
     }
 
     @SuppressWarnings("unchecked")
@@ -51,45 +90,28 @@ public class AnnotationDescriptorExtractor implements DescriptorExtractor {
         return annotations;
     }
 
-    private static ValueDescriptor getValueDescriptor(Value value) {
-        if (value == null)
-            return null;
-        try {
-            ValueDescriptor descriptor = new ValueDescriptor();
-            descriptor.setTypeParameters(value.typeParameters());
-            Class<?>[] adapterClasses = value.adapters();
-            for (Class<?> cls : adapterClasses)
-                descriptor.addAdapter(cls.newInstance());
-            descriptor.setTransfer(value.transfer());
-            return descriptor;
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Can't get value descriptor", e);
-        }
+    private static ValueDescriptor getValueDescriptor(Ref ref, TypeParameters typeParams) {
+        ValueDescriptor descriptor = new ValueDescriptor();
+        if (ref != null)
+            descriptor.setTransfer(ValueTransfer.REF);
+        if (typeParams != null)
+            descriptor.setTypeParameters(typeParams.value());
+        return descriptor;
     }
 
-    private static MethodDescriptor getMethodDescriptor(Alias alias, Value[] paramValues, Value returnValue, Debug debug) {
-        MethodDescriptor methodDescriptor = new MethodDescriptor(paramValues.length);
-        boolean useful = false;
-        if (alias != null) {
-            methodDescriptor.setAlias(alias.value());
-            useful = true;
-        }
-        if (returnValue != null) {
-            methodDescriptor.setReturnDescriptor(getValueDescriptor(returnValue));
-            useful = true;
-        }
-        if (debug != null) {
-            methodDescriptor.setDebug(debug.value());
-            useful = true;
-        }
-        for (int i = 0; i < paramValues.length; i++) {
-            Value paramValue = paramValues[i];
-            if (paramValue != null) {
-                methodDescriptor.setParameterDescriptor(i, getValueDescriptor(paramValue));
-                useful = true;
-            }
-        }
-        return useful ? methodDescriptor : null;
+    private static ParamDescriptor getParamDescriptor(Ref ref, Out out, Close close, TypeParameters typeParams) {
+        if (ref == null && out == null && close == null && typeParams == null)
+            return null;
+        ParamDescriptor descriptor = new ParamDescriptor();
+        if (out != null)
+            descriptor.setTransfer(ValueTransfer.OUT);
+        if (ref != null)
+            descriptor.setTransfer(ValueTransfer.REF);
+        if (close != null)
+            descriptor.setClose(true);
+        if (typeParams != null)
+            descriptor.setTypeParameters(typeParams.value());
+        return descriptor;
     }
 
 }
