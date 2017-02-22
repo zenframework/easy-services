@@ -1,6 +1,6 @@
 package org.zenframework.easyservices;
 
-public class ServiceException extends Exception {
+public class ServiceException extends RuntimeException {
 
     private static final long serialVersionUID = -2101820360873511242L;
 

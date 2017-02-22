@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classes>
+    <class name="java.io.Closeable">
+        <value transfer="ref" />
+        <method name="close" close="true" />
+    </class>
     <class name="java.io.InputStream">
-        <value>
-            <transfer>ref</transfer>
-        </value>
         <method name="read" param-types="byte[]">
-            <param number="0">
-                <transfer>out</transfer>
-            </param>
+            <param number="0" transfer="out" />
         </method>
         <method name="read" param-types="byte[],int,int">
-            <param number="0">
-                <transfer>out</transfer>
-            </param>
+            <param number="0" transfer="out" />
         </method>
     </class>
 </classes>

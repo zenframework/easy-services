@@ -4,13 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.zenframework.easyservices.annotations.Ref;
-
 public interface StreamFactory {
 
     InputStream getInputStream() throws IOException;
 
-    @Ref
     OutputStream getOuptputStream() throws IOException;
 
 }

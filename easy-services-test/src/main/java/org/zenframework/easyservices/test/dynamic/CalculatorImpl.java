@@ -14,6 +14,11 @@ public class CalculatorImpl implements Calculator {
         return getFunctions().get(name);
     }
 
+    @Override
+    public void close(Function function) {
+        // do nothing, "closing" function is done by ServiceInvoker
+    }
+
     public Map<String, Function> getFunctions() {
         return functions;
     }

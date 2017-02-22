@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.zenframework.easyservices.Environment;
+import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.test.AbstractServiceTest;
 
 @RunWith(Parameterized.class)
@@ -62,6 +63,16 @@ public class StreamsTest extends AbstractServiceTest {
         InputStream in = streams.getInputStream();
         OutputStream out = streams.getOuptputStream();
         copy(in, out);
+        try {
+            in.read();
+        } catch (Throwable e) {
+            assertTrue("Expected ServiceException, caught " + e, e instanceof ServiceException);
+        }
+        try {
+            out.write(0);
+        } catch (Throwable e) {
+            assertTrue("Expected ServiceException, caught " + e, e instanceof ServiceException);
+        }
         assertTrue(equals(sourceFile, targetFile));
     }
 

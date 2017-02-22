@@ -37,22 +37,16 @@ import org.zenframework.easyservices.ValueTransfer;
  *         <!-- returns reference to org.example.service.Session service -->
  *         <method name="login" param-types="java.lang.String,java.lang.String">
  *             <alias>loginUserPassword</alias>
- *             <return>
- *                 <transfer>ref</transfer>
- *             </return>
+ *             <return transfer="ref" />
  *         </method>
  *         <!-- returns reference to org.example.service.Session service -->
  *         <method name="login" param-types="org.example.model.Token">
  *             <alias>loginToken</alias>
- *             <return>
- *                 <transfer>ref</transfer>
- *             </return>
+ *             <return transfer="ref" />
  *         </method>
  *         <!-- returns java.util.Map<java.lang.String, org.example.model.User> -->
- *         <method name="getUsers" param-types="">
- *             <return>
- *                 <type-parameters>java.lang.String, org.example.model.User</type-parameters>
- *             </return>
+ *         <method name="getUsers">
+ *             <return type-parameters="java.lang.String, org.example.model.User" />
  *         </method>
  *     </class>
  *     
@@ -73,9 +67,9 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
     public static final String ELEM_DEBUG = "debug";
     public static final String ELEM_RETURN = "return";
     public static final String ELEM_PARAMETER = "param";
-    public static final String ELEM_TYPE_PARAMETERS = "type-parameters";
-    public static final String ELEM_TRANSFER = "transfer";
-    public static final String ELEM_CLOSE = "close";
+    public static final String ATTR_TYPE_PARAMETERS = "type-params";
+    public static final String ATTR_TRANSFER = "transfer";
+    public static final String ATTR_CLOSE = "close";
     public static final String ATTR_NAME = "name";
     public static final String ATTR_PARAM_TYPES = "param-types";
     public static final String ATTR_NUMBER = "number";
@@ -149,8 +143,11 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
         return classes.get(cls);
     }
 
-    private static MethodDescriptor getMethodDescriptor(Element methodElement, Class<?>[] argTypes, Class<?> returnType) throws SAXException {
-        MethodDescriptor methodDescriptor = new MethodDescriptor(argTypes.length);
+    private static MethodDescriptor getMethodDescriptor(Element methodElement, Class<?>[] paramTypes, Class<?> returnType) throws SAXException {
+        MethodDescriptor methodDescriptor = new MethodDescriptor(paramTypes.length);
+        String close = getAttribute(methodElement, ATTR_CLOSE, false);
+        if (close != null && !close.isEmpty())
+            methodDescriptor.setClose(Boolean.parseBoolean(close));
         Element aliasElement = getElement(methodElement, ELEM_ALIAS);
         if (aliasElement != null)
             methodDescriptor.setAlias(aliasElement.getTextContent());
@@ -199,7 +196,7 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
 
     private static String getAttribute(Element element, String name, boolean required) throws SAXException {
         String value = element.getAttribute(name);
-        if (value == null && required)
+        if ((value == null || value.isEmpty()) && required)
             throw new SAXException("Element '" + element + "': attribute '" + name + "' is required");
         return value;
     }
@@ -224,26 +221,26 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
 
     private static ValueDescriptor getValueDescriptor(Element valueElement) throws SAXException {
         ValueDescriptor valueDescriptor = new ValueDescriptor();
-        Element typeParametersElement = getElement(valueElement, ELEM_TYPE_PARAMETERS);
-        if (typeParametersElement != null)
-            valueDescriptor.setTypeParameters(getClasses(typeParametersElement.getTextContent()));
-        Element transferElement = getElement(valueElement, ELEM_TRANSFER);
-        if (transferElement != null)
-            valueDescriptor.setTransfer(ValueTransfer.forName(transferElement.getTextContent()));
+        String typeParameters = getAttribute(valueElement, ATTR_TYPE_PARAMETERS, false);
+        if (typeParameters != null && !typeParameters.isEmpty())
+            valueDescriptor.setTypeParameters(getClasses(typeParameters));
+        String transfer = getAttribute(valueElement, ATTR_TRANSFER, false);
+        if (transfer != null && !transfer.isEmpty())
+            valueDescriptor.setTransfer(ValueTransfer.forName(transfer));
         return valueDescriptor;
     }
 
     private static ParamDescriptor getParamDescriptor(Element valueElement) throws SAXException {
         ParamDescriptor paramDescriptor = new ParamDescriptor();
-        Element typeParametersElement = getElement(valueElement, ELEM_TYPE_PARAMETERS);
-        if (typeParametersElement != null)
-            paramDescriptor.setTypeParameters(getClasses(typeParametersElement.getTextContent()));
-        Element transferElement = getElement(valueElement, ELEM_TRANSFER);
-        if (transferElement != null)
-            paramDescriptor.setTransfer(ValueTransfer.forName(transferElement.getTextContent()));
-        Element closeElement = getElement(valueElement, ELEM_CLOSE);
-        if (closeElement != null)
-            paramDescriptor.setClose(Boolean.parseBoolean(closeElement.getTextContent()));
+        String typeParameters = getAttribute(valueElement, ATTR_TYPE_PARAMETERS, false);
+        if (typeParameters != null && !typeParameters.isEmpty())
+            paramDescriptor.setTypeParameters(getClasses(typeParameters));
+        String transfer = getAttribute(valueElement, ATTR_TRANSFER, false);
+        if (transfer != null && !transfer.isEmpty())
+            paramDescriptor.setTransfer(ValueTransfer.forName(transfer));
+        String close = getAttribute(valueElement, ATTR_CLOSE, false);
+        if (close != null && !close.isEmpty())
+            paramDescriptor.setClose(Boolean.parseBoolean(close));
         return paramDescriptor;
     }
 

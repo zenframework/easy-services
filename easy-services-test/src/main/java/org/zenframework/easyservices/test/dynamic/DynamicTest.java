@@ -7,6 +7,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.zenframework.easyservices.Environment;
+import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.test.AbstractServiceTest;
 import org.zenframework.easyservices.test.simple.Addition;
 import org.zenframework.easyservices.test.simple.Function;
@@ -40,12 +41,38 @@ public class DynamicTest extends AbstractServiceTest {
     }
 
     @Test
-    public void testDynamic() throws Exception {
+    public void testCallDynamic() throws Exception {
         Calculator calc = getClient(Calculator.class, "/calc");
         Function add = calc.getFunction("add");
         Function sub = calc.getFunction("sub");
         assertEquals(3, calc.call(add, 1, 2));
         assertEquals(1, calc.call(sub, 3, 2));
+    }
+
+    @Test
+    public void testCloseByParam() throws Exception {
+        Calculator calc = getClient(Calculator.class, "/calc");
+        Function add = calc.getFunction("add");
+        calc.close(add);
+        try {
+            add.call(1, 2);
+            fail("Closed dynamic service can't be called");
+        } catch (Throwable e) {
+            assertTrue("Expected ServiceException, caught " + e, e instanceof ServiceException);
+        }
+    }
+
+    @Test
+    public void testCloseByMethod() throws Exception {
+        Calculator calc = getClient(Calculator.class, "/calc");
+        Function add = calc.getFunction("add");
+        add.close();
+        try {
+            add.call(1, 2);
+            fail("Closed dynamic service can't be called");
+        } catch (Throwable e) {
+            assertTrue("Expected ServiceException, caught " + e, e instanceof ServiceException);
+        }
     }
 
 }

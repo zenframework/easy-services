@@ -7,4 +7,9 @@ public class Substraction implements Function {
         return a - b;
     }
 
+    @Override
+    public void close() {
+        // do nothing, "closing" function is done by ServiceInvoker
+    }
+
 }

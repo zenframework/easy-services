@@ -92,6 +92,8 @@ public class MethodDescriptor implements Serializable {
         str.append('[');
         if (alias != null)
             str.append("alias: ").append(alias).append(", ");
+        if (isClose())
+            str.append("close, ");
         if (!emptyParameterDescriptors) {
             str.append("params: [");
             for (int i = 0; i < parameterDescriptors.length; i++) {
