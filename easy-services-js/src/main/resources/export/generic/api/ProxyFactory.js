@@ -1,5 +1,4 @@
 var DateUtil = require('generic/util/DateUtil');
-var keymirror = require('generic/lib/keymirror');
 
 var Client = function(config) {
 
@@ -68,7 +67,7 @@ var ProxyConfig = new Model({
 	service : Model,
 	debug : Boolean,
 	delay : Number,
-	parser : Model.Function(String).return([Number, String, Boolean, Symbol, Object, null, undefined])
+	parser : Model.Function(String).return([Number, String, Boolean, Object, null, undefined])
 }).defaults({
 	debug : false,
 	delay : 0,

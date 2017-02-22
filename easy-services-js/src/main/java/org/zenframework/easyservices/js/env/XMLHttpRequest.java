@@ -1,5 +1,6 @@
 package org.zenframework.easyservices.js.env;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.commons.io.IOUtils;
@@ -27,10 +28,6 @@ public class XMLHttpRequest {
     private Request request;
     private Thread runner = null;
 
-    public XMLHttpRequest() {
-        System.out.println(getClass().getSimpleName() + " created");
-    }
-
     public void open(final Object method, final Object url) {
         open(method, url, true, null, null);
     }
@@ -53,29 +50,39 @@ public class XMLHttpRequest {
 
     public void send(String body) {
         final TimeChecker time = LOG.isDebugEnabled() ? new TimeChecker("GET " + request.url + ", " + (request.async ? "async" : "sync"), LOG) : null;
+        final Environment env = Environment.getEnvironment();
         Runnable run = new Runnable() {
 
             @Override
             public void run() {
                 try {
-                    InputStream in = Environment.getEnvironment().openUrl(request.url);
+                    InputStream in = env.openUrl(request.url);
                     try {
                         readyState = STATE_LOADED;
+                        if (onreadystatechange != null)
+                            onreadystatechange.run();
                         responseText = IOUtils.toString(in, "UTF-8");
                         readyState = STATE_COMPLETE;
+                        if (onreadystatechange != null)
+                            onreadystatechange.run();
                     } finally {
                         if (time != null)
                             time.printDifference(responseText);
                         in.close();
                     }
-                } catch (Exception e) {
+                } catch (IOException e) {
+                    status = 500;
+                    responseText = e.getMessage();
+                    readyState = STATE_COMPLETE;
+                    if (onreadystatechange != null)
+                        onreadystatechange.run();
                     throw new RuntimeException(e);
                 }
             }
 
         };
         if (request.async) {
-            new Thread(run, request.method.toUpperCase() + '-' + request.url);
+            Environment.newThread(run, request.method.toUpperCase() + '-' + request.url).start();
         } else {
             run.run();
         }
@@ -99,7 +106,7 @@ public class XMLHttpRequest {
      * Возвращает строку со всеми HTTP-заголовками ответа сервера.
      **/
     public void setRequestHeader(String name, String value) {
-
+        // TODO setRequestHeader(name, value)
     }
 
     /**

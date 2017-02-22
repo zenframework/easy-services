@@ -9,7 +9,6 @@ import org.zenframework.easyservices.ClientFactory;
 import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
 import org.zenframework.easyservices.impl.ClientFactoryImpl;
 import org.zenframework.easyservices.jndi.JNDIHelper;
-import org.zenframework.easyservices.util.resource.ClasspathResourceFactory;
 
 import junit.framework.TestCase;
 
@@ -25,7 +24,6 @@ public abstract class AbstractServiceTest extends TestCase {
         super.setUp();
         clientFactory = new ClientFactoryImpl("http://localhost:" + TestContext.JETTY_PORT + "/services");
         server = new HttpServer(TestContext.JETTY_PORT);
-        server.setResourceFactory(new ClasspathResourceFactory());
         server.setServiceHttpRequestHandler(new ServiceHttpRequestHandler());
         server.start();
     }

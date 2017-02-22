@@ -89,7 +89,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         } catch (Throwable e) {
             if (e instanceof InvocationTargetException) {
                 e = ((InvocationTargetException) e).getTargetException();
-                LOG.info(request + (context != null ? '[' + context.toString() + ']' : "") + " invocation error" + context, e);
+                if (LOG.isDebugEnabled())
+                    LOG.debug(request + (context != null ? '[' + context.toString() + ']' : "") + " invocation error" + context, e);
             } else {
                 LOG.error(request + (context != null ? '[' + context.toString() + ']' : "") + " service error", e);
             }

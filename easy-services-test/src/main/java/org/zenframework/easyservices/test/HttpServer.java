@@ -12,14 +12,15 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
+import org.zenframework.easyservices.util.resource.ClasspathResourceFactory;
 import org.zenframework.easyservices.util.resource.Resource;
 import org.zenframework.easyservices.util.resource.ResourceFactory;
 
 public class HttpServer {
 
     private final int port;
-    private ServiceHttpRequestHandler serviceHttpRequestHandler;
-    private ResourceFactory resourceFactory;
+    private final ResourceFactory resourceFactory = new ClasspathResourceFactory();
+    private ServiceHttpRequestHandler serviceHttpRequestHandler = new ServiceHttpRequestHandler();
 
     private Server server;
 
@@ -44,8 +45,10 @@ public class HttpServer {
                     } finally {
                         in.close();
                     }
-                } else {
+                } else if (serviceHttpRequestHandler != null) {
                     serviceHttpRequestHandler.handleRequest(request, response);
+                } else {
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 }
                 baseRequest.setHandled(true);
             }
@@ -60,10 +63,6 @@ public class HttpServer {
 
     public void setServiceHttpRequestHandler(ServiceHttpRequestHandler httpServiceRequestHandler) {
         this.serviceHttpRequestHandler = httpServiceRequestHandler;
-    }
-
-    public void setResourceFactory(ResourceFactory resourceFactory) {
-        this.resourceFactory = resourceFactory;
     }
 
 }

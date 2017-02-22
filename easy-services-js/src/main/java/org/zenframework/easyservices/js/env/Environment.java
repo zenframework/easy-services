@@ -7,6 +7,8 @@ import java.io.Reader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -19,6 +21,7 @@ import org.apache.commons.io.IOUtils;
 public class Environment {
 
     private static ThreadLocal<Environment> THREAD_LOCAL = new ThreadLocal<Environment>();
+    private static List<Thread> THREADS = new LinkedList<Thread>();
 
     private final ScriptContext context = new SimpleScriptContext();
     private final ScriptEngine engine;
@@ -66,12 +69,46 @@ public class Environment {
         }
     }
 
+    public static Thread newThread(final Runnable run, final String name) {
+        final Thread thread = new Thread(name) {
+
+            @Override
+            public void run() {
+                try {
+                    run.run();
+                } finally {
+                    synchronized (THREADS) {
+                        THREADS.remove(this);
+                    }
+                }
+            }
+
+        };
+        synchronized (THREADS) {
+            THREADS.add(thread);
+        }
+        return thread;
+    }
+
+    public static void join() {
+        for (Thread t = getFirstThread(); t != null; t = getFirstThread())
+            try {
+                t.join();
+            } catch (InterruptedException e) {}
+    }
+
     public static void setEnvironment(Environment env) {
         THREAD_LOCAL.set(env);
     }
 
     public static Environment getEnvironment() {
         return THREAD_LOCAL.get();
+    }
+
+    private static Thread getFirstThread() {
+        synchronized (THREADS) {
+            return THREADS.isEmpty() ? null : THREADS.get(0);
+        }
     }
 
 }
