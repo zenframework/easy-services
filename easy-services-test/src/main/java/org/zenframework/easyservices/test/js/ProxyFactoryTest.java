@@ -7,13 +7,13 @@ import org.zenframework.easyservices.test.HttpServer;
 import org.zenframework.easyservices.test.TestContext;
 import org.zenframework.easyservices.test.simple.Addition;
 
-@JSTests(value = { "http://localhost:10000/generic/api/ProxyFactoryTest.js" })
+@JSTests(value = { "classpath://export/generic/api/ProxyFactoryTest.js" })
 public class ProxyFactoryTest extends JSTestSuite {
 
     private final HttpServer server = new HttpServer(TestContext.JETTY_PORT);
 
     @Override
-    protected void init() {
+    protected void setUp() {
         super.setUp();
         try {
             JNDIHelper.getDefaultContext().bind("/add", new Addition());
@@ -24,9 +24,10 @@ public class ProxyFactoryTest extends JSTestSuite {
     }
 
     @Override
-    protected void cleanUp() {
+    protected void tearDown() {
         super.tearDown();
         try {
+            JNDIHelper.getDefaultContext().unbind("/add");
             server.stop();
         } catch (Exception e) {
             throw new RuntimeException(e);

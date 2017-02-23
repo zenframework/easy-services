@@ -11,7 +11,7 @@ tests({
 			call : Model.Function(Number, Number).return(Number)
 		});
 		var Addition = ProxyFactory.create({
-			url : 'services/add',
+			url : 'http://localhost:10000/services/add',
 			debug : false,
 			service : model.Function
 		});
@@ -21,9 +21,6 @@ tests({
 		});
 		org.zenframework.easyservices.js.env.Environment.join();
 		jsAssert.assertIntegerEquals(3, result.response);
-		//var SimpleModule = require('SimpleModule');
-		//assert.assertEquals(SimpleModule.name, 'SimpleModule');
-		//jsAssert.assertIntegerEquals(SimpleModule.value, 1);
 	}
 
 });

@@ -92,7 +92,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
                 if (LOG.isDebugEnabled())
                     LOG.debug(request + (context != null ? '[' + context.toString() + ']' : "") + " invocation error" + context, e);
             } else {
-                LOG.error(request + (context != null ? '[' + context.toString() + ']' : "") + " service error", e);
+                LOG.info(request + (context != null ? '[' + context.toString() + ']' : "") + " service error", e);
             }
             responseObject.setResult(e);
             responseObject.setSuccess(false);
