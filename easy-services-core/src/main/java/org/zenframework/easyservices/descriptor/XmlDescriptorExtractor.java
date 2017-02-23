@@ -1,5 +1,6 @@
 package org.zenframework.easyservices.descriptor;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -9,6 +10,7 @@ import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.lang.ClassUtils;
 import org.slf4j.Logger;
@@ -74,8 +76,7 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
     public static final String ATTR_PARAM_TYPES = "param-types";
     public static final String ATTR_NUMBER = "number";
 
-    private final Map<Class<?>, ClassDefaults> classes = new HashMap<Class<?>, ClassDefaults>();
-    private final Map<MethodIdentifier, MethodDescriptor> methods = new HashMap<MethodIdentifier, MethodDescriptor>();
+    private final Map<Class<?>, ClassHolder> classes = new HashMap<Class<?>, ClassHolder>();
 
     public XmlDescriptorExtractor(String... urls) {
         this(getUrls(urls));
@@ -97,6 +98,7 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
                 while (classElements.hasMoreElements()) {
                     Element classElement = classElements.nextElement();
                     Class<?> cls = getClass(getAttribute(classElement, ATTR_NAME, true));
+                    ClassHolder classHolder = getClassHolder(cls);
                     ClassDefaults classDefaults = new ClassDefaults();
                     Element valueElement = getElement(classElement, ELEM_VALUE);
                     if (valueElement != null) {
@@ -115,32 +117,41 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
                             Method method = cls.getMethod(methodName, paramTypes);
                             MethodIdentifier methodIdentifier = new MethodIdentifier(method);
                             MethodDescriptor methodDescriptor = getMethodDescriptor(methodElement, paramTypes, method.getReturnType());
-                            methods.put(methodIdentifier, DescriptorUtil.merge(methods.get(methodIdentifier), methodDescriptor));
+                            classHolder.methods.put(methodIdentifier, DescriptorUtil.merge(classHolder.methods.get(methodIdentifier), methodDescriptor));
                         } catch (NoSuchMethodException e) {
                             throw new SAXException(e);
                         }
                     }
-                    classes.put(cls, DescriptorUtil.merge(classes.get(cls), classDefaults));
+                    classHolder.defaults = DescriptorUtil.merge(classHolder.defaults, classDefaults);
                 }
 
                 LOG.info("Load " + url + " Ok");
 
             }
 
-        } catch (Exception e) {
+        } catch (IOException | ParserConfigurationException | SAXException e) {
             throw new IllegalStateException(e);
         }
 
     }
 
     @Override
-    public MethodDescriptor extractMethodDescriptor(MethodIdentifier methodId) {
-        return methods.get(methodId);
+    public MethodDescriptor extractMethodDescriptor(Class<?> cls, MethodIdentifier methodId) {
+        return getClassHolder(cls).methods.get(methodId);
     }
 
     @Override
     public ClassDefaults extractClassDefaults(Class<?> cls) {
-        return classes.get(cls);
+        return getClassHolder(cls).defaults;
+    }
+
+    private ClassHolder getClassHolder(Class<?> cls) {
+        ClassHolder classHolder = classes.get(cls);
+        if (classHolder == null) {
+            classHolder = new ClassHolder();
+            classes.put(cls, classHolder);
+        }
+        return classHolder;
     }
 
     private static MethodDescriptor getMethodDescriptor(Element methodElement, Class<?>[] paramTypes, Class<?> returnType) throws SAXException {
@@ -253,6 +264,13 @@ public class XmlDescriptorExtractor implements DescriptorExtractor {
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(e);
         }
+    }
+
+    private static class ClassHolder {
+
+        ClassDefaults defaults;
+        final Map<MethodIdentifier, MethodDescriptor> methods = new HashMap<MethodIdentifier, MethodDescriptor>();
+
     }
 
 }

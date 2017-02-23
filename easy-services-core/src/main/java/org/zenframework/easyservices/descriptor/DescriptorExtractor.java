@@ -4,6 +4,6 @@ public interface DescriptorExtractor {
 
     ClassDefaults extractClassDefaults(Class<?> cls);
 
-    MethodDescriptor extractMethodDescriptor(MethodIdentifier methodId);
+    MethodDescriptor extractMethodDescriptor(Class<?> cls, MethodIdentifier methodId);
 
 }

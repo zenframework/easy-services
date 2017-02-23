@@ -16,10 +16,10 @@ public class AnnotationDescriptorExtractor implements DescriptorExtractor {
     public static final AnnotationDescriptorExtractor INSTANCE = new AnnotationDescriptorExtractor();
 
     @Override
-    public MethodDescriptor extractMethodDescriptor(MethodIdentifier methodId) {
+    public MethodDescriptor extractMethodDescriptor(Class<?> cls, MethodIdentifier methodId) {
         try {
 
-            Method method = methodId.getMethodClass().getMethod(methodId.getName(), methodId.getParameterTypes());
+            Method method = cls.getMethod(methodId.getName(), methodId.getParameterTypes());
             Alias alias = method.getAnnotation(Alias.class);
             Close close = method.getAnnotation(Close.class);
             Ref[] refParams = getParamAnnotations(method, Ref.class, new Ref[methodId.getParameterTypes().length]);

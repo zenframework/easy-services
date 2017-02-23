@@ -13,8 +13,9 @@ public class XmlDescriptorExtractorTest extends TestCase {
         System.out.println(extractor.extractClassDefaults(ServiceFactory.class));
         System.out.println(extractor.extractClassDefaults(InputStream.class));
         assertEquals(ValueTransfer.REF, extractor.extractClassDefaults(InputStream.class).getValueDescriptor().getTransfer());
-        assertEquals(ValueTransfer.OUT, extractor.extractMethodDescriptor(new MethodIdentifier(InputStream.class.getMethod("read", byte[].class)))
-                .getParameterDescriptor(0).getTransfer());
+        assertEquals(ValueTransfer.OUT,
+                extractor.extractMethodDescriptor(InputStream.class, new MethodIdentifier(InputStream.class.getMethod("read", byte[].class)))
+                        .getParameterDescriptor(0).getTransfer());
     }
 
 }
