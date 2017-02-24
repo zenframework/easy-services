@@ -6,17 +6,8 @@ public class ResponseObject implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private boolean success = true;
     private Object result = null;
     private Object[] parameters = null;
-
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public void setSuccess(boolean success) {
-        this.success = success;
-    }
 
     public Object getResult() {
         return result;

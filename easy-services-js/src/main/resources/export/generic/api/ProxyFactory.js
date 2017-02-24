@@ -79,12 +79,14 @@ var Client = function(config) {
 var ProxyConfig = new Model({
 	url : String,
 	async : Boolean,
+	outParams : Boolean,
 	service : Model,
 	debug : Boolean,
 	delay : Number,
 	parser : Model.Function(String).return([Number, String, Boolean, Object, null, undefined])
 }).defaults({
 	async : true,
+	outParams : false,
 	debug : false,
 	delay : 0,
 	parser : function(str) {

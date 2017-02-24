@@ -95,7 +95,6 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
                 LOG.info(request + (context != null ? '[' + context.toString() + ']' : "") + " service error", e);
             }
             responseObject.setResult(e);
-            responseObject.setSuccess(false);
             response.sendError(e);
         }
         OutputStream out = response.getOutputStream();

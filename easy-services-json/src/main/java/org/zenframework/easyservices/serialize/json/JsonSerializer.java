@@ -69,9 +69,7 @@ public class JsonSerializer implements Serializer {
             reader.beginObject();
             while (reader.hasNext()) {
                 String name = reader.nextName();
-                if ("success".equals(name)) {
-                    responseObject.setSuccess(reader.nextBoolean());
-                } else if ("result".equals(name)) {
+                if ("result".equals(name)) {
                     responseObject.setResult(deserialize(reader, success, returnType, returnDescriptor));
                 } else if ("parameters".equals(name)) {
                     responseObject.setParameters(deserialize(reader, success, paramTypes, paramDescriptors));

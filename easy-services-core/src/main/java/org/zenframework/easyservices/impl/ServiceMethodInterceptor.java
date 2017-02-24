@@ -104,7 +104,6 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
                 responseObject = new ResponseObject();
                 if (returnType != void.class)
                     responseObject.setResult(serializer.deserializeResult(in, true));
-                responseObject.setSuccess(true);
             }
             if (returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF) {
                 // If result is reference, replace with proxy object
@@ -123,6 +122,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
             }
             if (time != null)
                 time.printDifference(responseObject);
+            return responseObject.getResult();
         } catch (IOException e) {
             tryHandleError(connection, serializer, method.getParameterTypes(), paramDescriptors);
             throw e;
@@ -131,10 +131,6 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
                 in.close();
         }
 
-        if (responseObject.isSuccess())
-            return responseObject.getResult();
-        else
-            throw (Throwable) responseObject.getResult();
     }
 
     public ServiceLocator getServiceLocator() {
