@@ -1,7 +1,6 @@
 var DateUtil = require('generic/util/DateUtil');
 
 var parseResponse = function(client, xhr) {
-	console.log('--- ' + xhr.status);
 	var success = !client.async || xhr.status === 200;
 	var result = xhr.responseText ? client.parser(xhr.responseText) : {
 		message : 'Ошибка соединения с сервером'
