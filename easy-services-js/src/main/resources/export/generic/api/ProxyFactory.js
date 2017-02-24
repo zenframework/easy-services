@@ -1,61 +1,76 @@
 var DateUtil = require('generic/util/DateUtil');
 
+var parseResponse = function(client, xhr) {
+	console.log('--- ' + xhr.status);
+	var success = !client.async || xhr.status === 200;
+	var result = xhr.responseText ? client.parser(xhr.responseText) : {
+		message : 'Ошибка соединения с сервером'
+	};
+	if (client.debug) {
+		if (success)
+			console.info('CALL', client.url, client.method, args, ':', result);
+		else
+			console.error('CALL', client.url, client.method, args, ':', result);
+	}
+	if (success && client.returns) {
+		try {
+			result = new client.returns(result);
+		} catch (e) {
+			console.error('RETURN', e);
+			result = e;
+			success = false;
+		}
+	}
+	return {
+		success : success,
+		status : xhr.status,
+		statusText : xhr.statusText,
+		result : result
+	};
+};
+
 var Client = function(config) {
 
 	_.assign(this, config);
 
 	this.call = function() {
 		var me = this;
+		var async = config.async;
 		var len = arguments.length;
-		var args = _.slice(arguments, 0, len - 1);
+		var args = _.slice(arguments, 0, async ? len - 1 : len);
 		var callback = arguments[len - 1];
 		var url = me.url + '?method=' + me.method;
 		var argsStr = JSON.stringify(args);
 		if (!_.isEmpty(args))
 			url += '&args=' + argsStr;
 		var xhr = new XMLHttpRequest();
-		xhr.open('GET', url, true);
-		xhr.onreadystatechange = function() {
-			if (xhr.readyState == 4) {
-				var success = xhr.status === 200;
-				var response = xhr.responseText ? me.parser(xhr.responseText) : {
-					message : 'Ошибка соединения с сервером'
-				};
-				if (me.debug) {
-					if (success)
-						console.info('CALL', me.url, me.method, args, ':', response);
+		if (async) {
+			xhr.onreadystatechange = function() {
+				if (xhr.readyState == 4) {
+					var response = parseResponse(me, xhr);
+					if (typeof callback === 'function')
+						callback = {
+							context : this,
+							callback : callback
+						};
+					if (me.delay)
+						setTimeout(function() {
+							callback.callback.call(callback.context, response);
+						}, me.delay);
 					else
-						console.error('CALL', me.url, me.method, args, ':', response);
+						callback.callback.call(callback.context, response);
 				}
-				if (success && me.returns) {
-					try {
-						response = new me.returns(response);
-					} catch (e) {
-						console.error('RETURN', e);
-						response = e;
-						success = false;
-					}
-				}
-				var result = {
-					success : success,
-					status : xhr.status,
-					statusText : xhr.statusText,
-					response : response
-				};
-				if (typeof callback === 'function')
-					callback = {
-						context : this,
-						callback : callback
-					};
-				if (me.delay)
-					setTimeout(function() {
-						callback.callback.call(callback.context, result);
-					}, me.delay);
-				else
-					callback.callback.call(callback.context, result);
-			}
-		};
+			};
+		}
+		xhr.open('GET', url, async);
 		xhr.send();
+		if (!async) {
+			var response = parseResponse(me, xhr);
+			if (response.success)
+				return response.result;
+			else
+				throw response.result;
+		}
 	};
 	
 	_.bindAll(this, 'call');
@@ -64,11 +79,13 @@ var Client = function(config) {
 
 var ProxyConfig = new Model({
 	url : String,
+	async : Boolean,
 	service : Model,
 	debug : Boolean,
 	delay : Number,
 	parser : Model.Function(String).return([Number, String, Boolean, Object, null, undefined])
 }).defaults({
+	async : true,
 	debug : false,
 	delay : 0,
 	parser : function(str) {
@@ -93,14 +110,17 @@ var ProxyFactory = {
 		var service = { url : config.url };
 		var serviceDef = config.service.definition;
 		for (var method in serviceDef) {
-			var methodDef = serviceDef[method].definition;
-			var returns = methodDef.return;
-			// Append response callback to method model
-			methodDef.arguments.push([Callback, Function]);
-			// Proxy is async, so method must return void
-			methodDef.return = new Model();
+			if (config.async) {
+				var methodDef = serviceDef[method].definition;
+				var returns = methodDef.return;
+				// If proxy is async, append response callback to method model
+				methodDef.arguments.push([Callback, Function]);
+				// If proxy is async, method must return void
+				methodDef.return = new Model();
+			}
 			var client = new Client({
 				url : config.url,
+				async : config.async,
 				debug : config.debug,
 				delay : config.delay,
 				parser : config.parser,
