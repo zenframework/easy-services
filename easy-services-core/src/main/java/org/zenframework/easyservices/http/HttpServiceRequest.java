@@ -18,7 +18,7 @@ import org.zenframework.easyservices.util.net.URIUtil;
 public class HttpServiceRequest extends ServiceRequest {
 
     private static final String PARAM_METHOD = "method";
-    private static final String PARAM_ARGUMENTS = "args";
+    private static final String PARAM_PARAMETERS = "params";
     private static final String PARAM_OUT_PARAMETERS_MODE = "outParameters";
 
     private final HttpServletRequest request;
@@ -66,7 +66,7 @@ public class HttpServiceRequest extends ServiceRequest {
 
     @Override
     protected InputStream internalGetInputStream() throws IOException {
-        return parameters.containsKey(PARAM_ARGUMENTS) ? new ByteArrayInputStream(getParameter(PARAM_ARGUMENTS).getBytes())
+        return parameters.containsKey(PARAM_PARAMETERS) ? new ByteArrayInputStream(getParameter(PARAM_PARAMETERS).getBytes())
                 : request.getInputStream();
     }
 

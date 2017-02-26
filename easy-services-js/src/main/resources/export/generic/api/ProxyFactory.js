@@ -1,31 +1,64 @@
 var DateUtil = require('generic/util/DateUtil');
 
-var parseResponse = function(client, xhr) {
-	var success = !client.async || xhr.status === 200;
-	var result = xhr.responseText ? client.parser(xhr.responseText) : {
-		message : 'Ошибка соединения с сервером'
-	};
-	if (client.debug) {
-		if (success)
-			console.info('CALL', client.url, client.method, args, ':', result);
-		else
-			console.error('CALL', client.url, client.method, args, ':', result);
-	}
-	if (success && client.returns) {
-		try {
-			result = new client.returns(result);
-		} catch (e) {
-			console.error('RETURN', e);
-			result = e;
-			success = false;
+var updateValues = function(oldValues, newValues) {
+	if (!newValues)
+		return;
+	for (var i = 0; i < oldValues.length; i++) {
+		var oldVal = oldValues[i];
+		var newVal = newValues[i];
+		var type = typeof oldVal;
+		if (type === 'object') {
+			for (var prop in oldVal) {
+				if (oldVal.hasOwnProperty(prop))
+					delete oldVal[prop];
+			}
+			for (var prop in newVal) {
+				if (newVal.hasOwnProperty(prop))
+					oldVal[prop] = newVal[prop]
+			}
+		} else if (type === 'array') {
+			for (var i = 0; i < oldVal.length; i++)
+				oldVal[i] = newVal[i];
 		}
 	}
-	return {
-		success : success,
-		status : xhr.status,
-		statusText : xhr.statusText,
-		result : result
+};
+
+var parseResponse = function(client, params, xhr) {
+
+	var outParamsMode = client.outParams;
+
+	var response = xhr.responseText ? client.parser(xhr.responseText) : {
+		message : 'Ошибка соединения с сервером'
 	};
+	if (!outParamsMode)
+		response = { result : response };
+	response.success = !client.async || xhr.status === 200;
+	response.status = xhr.status;
+	response.statusText = xhr.statusText;
+
+	if (client.debug) {
+		if (success)
+			console.info('CALL', client.url, client.method, params, ':', response.result);
+		else
+			console.error('CALL', client.url, client.method, params, ':', response.result);
+	}
+
+	if (response.success) {
+		if (typeof client.returns === 'undefined') {
+			response.result = undefined;
+		} else if (client.returns) {
+			try {
+				response.result = new client.returns(response.result);
+			} catch (e) {
+				console.error('RETURN', e);
+				response.result = e;
+				response.success = false;
+			}
+		}
+	}
+
+	return response;
+
 };
 
 var Client = function(config) {
@@ -35,36 +68,46 @@ var Client = function(config) {
 	this.call = function() {
 		var me = this;
 		var async = config.async;
+		var outParams = me.outParams;
 		var len = arguments.length;
-		var args = _.slice(arguments, 0, async ? len - 1 : len);
+		var params = _.slice(arguments, 0, async ? len - 1 : len);
 		var callback = arguments[len - 1];
 		var url = me.url + '?method=' + me.method;
-		var argsStr = JSON.stringify(args);
-		if (!_.isEmpty(args))
-			url += '&args=' + argsStr;
+		var paramsStr = JSON.stringify(params);
+		if (!_.isEmpty(params))
+			url += '&params=' + paramsStr;
+		if (config.outParams)
+			url += '&outParameters=true';
 		var xhr = new XMLHttpRequest();
 		if (async) {
 			xhr.onreadystatechange = function() {
 				if (xhr.readyState == 4) {
-					var response = parseResponse(me, xhr);
+					var response = parseResponse(me, params, xhr);
 					if (typeof callback === 'function')
 						callback = {
 							context : this,
 							callback : callback
 						};
-					if (me.delay)
+					if (me.delay) {
 						setTimeout(function() {
+							if (outParams)
+								updateValues(params, response.parameters);
 							callback.callback.call(callback.context, response);
 						}, me.delay);
-					else
+					} else {
+						if (outParams)
+							updateValues(params, response.parameters);
 						callback.callback.call(callback.context, response);
+					}
 				}
 			};
 		}
-		xhr.open('GET', url, async);
+		xhr.open('GET', encodeURI(url), async);
 		xhr.send();
 		if (!async) {
-			var response = parseResponse(me, xhr);
+			var response = parseResponse(me, params, xhr);
+			if (outParams)
+				updateValues(params, response.parameters);
 			if (response.success)
 				return response.result;
 			else
@@ -111,17 +154,18 @@ var ProxyFactory = {
 		var service = { url : config.url };
 		var serviceDef = config.service.definition;
 		for (var method in serviceDef) {
+			var methodDef = serviceDef[method].definition;
+			var returns = methodDef.return;
 			if (config.async) {
-				var methodDef = serviceDef[method].definition;
-				var returns = methodDef.return;
 				// If proxy is async, append response callback to method model
 				methodDef.arguments.push([Callback, Function]);
 				// If proxy is async, method must return void
-				methodDef.return = new Model();
+				methodDef.return = undefined;
 			}
 			var client = new Client({
 				url : config.url,
 				async : config.async,
+				outParams : config.outParams,
 				debug : config.debug,
 				delay : config.delay,
 				parser : config.parser,

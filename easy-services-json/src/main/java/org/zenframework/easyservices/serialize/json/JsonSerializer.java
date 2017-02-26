@@ -105,6 +105,8 @@ public class JsonSerializer implements Serializer {
         if (objTypes.length != valueDescriptors.length)
             throw new SerializationException(
                     "objTypes.length == " + objTypes.length + " != " + valueDescriptors.length + " == valueDescriptors.length");
+        if (objTypes.length == 0)
+            return new Object[0];
         Object[] result = new Object[objTypes.length];
         in.beginArray();
         int count;

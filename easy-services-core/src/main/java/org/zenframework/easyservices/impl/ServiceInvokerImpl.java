@@ -83,6 +83,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
                 responseObject.setResult(invokeMethod(request, service, context));
                 if (request.isOutParametersMode())
                     responseObject.setParameters(getOutParameters(context));
+                else if (hasOutParameters(context))
+                    LOG.warn(request + ": Requested method has OUT parameters, but outParametersMode is off");
             }
         } catch (IOException e) {
             throw e;
@@ -335,6 +337,13 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             }
         }
         return param;
+    }
+
+    private static boolean hasOutParameters(InvocationContext context) {
+        for (ParamDescriptor paramDescriptor : context.methodDescriptor.getParameterDescriptors())
+            if (paramDescriptor != null && paramDescriptor.getTransfer() == ValueTransfer.OUT)
+                return true;
+        return false;
     }
 
     private static Object[] getOutParameters(InvocationContext context) {

@@ -117,8 +117,9 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
             for (int i = 0; i < paramDescriptors.length; i++) {
                 ParamDescriptor paramDescriptor = paramDescriptors[i];
                 ValueTransfer transfer = paramDescriptor != null ? paramDescriptor.getTransfer() : null;
-                if (transfer == ValueTransfer.OUT)
-                    updater.update(args[i], responseObject.getParameters()[i]);
+                Object[] outParams = responseObject.getParameters();
+                if (transfer == ValueTransfer.OUT && outParams != null)
+                    updater.update(args[i], outParams[i]);
             }
             if (time != null)
                 time.printDifference(responseObject);
