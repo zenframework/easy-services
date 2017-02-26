@@ -65,8 +65,7 @@ public class DescriptorTest extends AbstractServiceTest {
         assertTrue(Arrays.equals(new int[] { 1, 2, 3 }, values));
     }
 
-    //@Test
-    // TODO ReflectiveUpdater
+    @Test
     public void testOutObject() throws Exception {
         CollectionUtil util = getClient(CollectionUtil.class, "/util");
         SimpleBean o = new SimpleBean("zxc", 3);

@@ -9,7 +9,8 @@ public class ValueUpdaterImpl implements ValueUpdater {
 
     public static final ValueUpdaterImpl INSTANCE = new ValueUpdaterImpl();
 
-    private final Collection<UpdateAdapter> adapters = Arrays.<UpdateAdapter> asList(new CollectionUpdateAdapter(), new MapUpdateAdapter());
+    private final Collection<UpdateAdapter> adapters = Arrays.<UpdateAdapter> asList(new CollectionUpdateAdapter(), new MapUpdateAdapter(),
+            new ReflectiveUpdateAdapter());
 
     @Override
     public void update(Object oldValue, Object newValue) {
