@@ -6,6 +6,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -30,6 +34,7 @@ public class StreamsTest extends AbstractServiceTest {
 
     private final int size;
 
+    private Registry registry;
     private File sourceFile;
     private File targetFile;
 
@@ -46,33 +51,35 @@ public class StreamsTest extends AbstractServiceTest {
         super.setUp();
         sourceFile = createTestFile(File.createTempFile("easy-services-streams-test", ".in"), size);
         targetFile = File.createTempFile("easy-services-streams-test", ".out");
-        getServiceRegistry().bind("/streams", new StreamFactoryImpl(sourceFile, targetFile));
+        StreamFactory factory = new StreamFactoryImpl(sourceFile, targetFile);
+        getServiceRegistry().bind("/streams", factory);
+        getRegistry().rebind("/streams", factory);
     }
 
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
         getServiceRegistry().unbind("/streams");
+        getRegistry().unbind("/streams");
+        closeRegistry();
         sourceFile.delete();
         targetFile.delete();
     }
 
     @Test
-    public void testRemoteStreams() throws Exception {
+    public void testEasyServicesStreams() throws Exception {
         StreamFactory streams = getClient(StreamFactory.class, "/streams");
         InputStream in = streams.getInputStream();
-        OutputStream out = streams.getOuptputStream();
+        OutputStream out = streams.getOutputStream();
         copy(in, out);
         try {
             in.read();
-        } catch (Throwable e) {
-            assertTrue("Expected ServiceException, caught " + e, e instanceof ServiceException);
-        }
+            fail("read should fail");
+        } catch (ServiceException e) {}
         try {
             out.write(0);
-        } catch (Throwable e) {
-            assertTrue("Expected ServiceException, caught " + e, e instanceof ServiceException);
-        }
+            fail("write should fail");
+        } catch (ServiceException e) {}
         assertTrue(equals(sourceFile, targetFile));
     }
 
@@ -80,14 +87,45 @@ public class StreamsTest extends AbstractServiceTest {
     public void testLocalStreams() throws Exception {
         StreamFactory streams = (StreamFactory) getServiceRegistry().lookup("/streams");
         InputStream in = streams.getInputStream();
-        OutputStream out = streams.getOuptputStream();
+        OutputStream out = streams.getOutputStream();
         copy(in, out);
         assertTrue(equals(sourceFile, targetFile));
+    }
+
+    @Test
+    public void testRmiStreams() throws Exception {
+        StreamFactory streams = (StreamFactory) getRegistry().lookup("/streams");
+        RmiInputStream in = streams.getRmiInputStream();
+        RmiOutputStream out = streams.getRmiOutputStream();
+        copy(in, out);
+        assertTrue(equals(sourceFile, targetFile));
+    }
+
+    private Registry getRegistry() throws RemoteException {
+        if (registry == null)
+            registry = LocateRegistry.createRegistry(12345);
+        return registry;
+    }
+
+    private void closeRegistry() throws RemoteException {
+        if (registry != null) {
+            UnicastRemoteObject.unexportObject(registry, true);
+            registry = null;
+        }
     }
 
     private static void copy(InputStream in, OutputStream out) throws IOException {
         try {
             IOUtils.copy(in, out);
+        } finally {
+            IOUtils.closeQuietly(in, out);
+        }
+    }
+
+    private static void copy(RmiInputStream in, RmiOutputStream out) throws IOException {
+        try {
+            for (byte[] buf = in.read(8192); buf != null; buf = in.read(8192))
+                out.write(buf);
         } finally {
             IOUtils.closeQuietly(in, out);
         }

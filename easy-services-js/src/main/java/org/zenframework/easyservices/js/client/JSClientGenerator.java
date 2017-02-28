@@ -21,7 +21,7 @@ public class JSClientGenerator {
             classInfo.fillDependencies(dependencies, true);
         for (ClassInfo classInfo : dependencies)
             out.println("var " + classInfo.getName() + " = new Model({});");
-        out.println("\n");
+        out.println();
         for (ClassInfo classInfo : dependencies) {
             for (FieldInfo fieldInfo : classInfo.getFields().values())
                 out.println(classInfo.getName() + ".definition." + fieldInfo.getName() + " = " + fieldInfo.getName() + ";");

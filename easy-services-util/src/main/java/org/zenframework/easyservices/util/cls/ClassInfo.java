@@ -324,6 +324,7 @@ public class ClassInfo implements Comparable<ClassInfo>, Cloneable {
 
     private static Map<Class<?>, ClassInfo> getBasicClassInfos() {
         Map<Class<?>, ClassInfo> classInfos = new HashMap<Class<?>, ClassInfo>();
+        classInfos.put(void.class, new ClassInfo(void.class, "void", true, false));
         classInfos.put(byte.class, new ClassInfo(Object.class, "Number", true, false));
         classInfos.put(char.class, new ClassInfo(Object.class, "String", true, false));
         classInfos.put(short.class, new ClassInfo(Object.class, "Number", true, false));
