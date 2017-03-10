@@ -2,8 +2,6 @@ package org.zenframework.easyservices.descriptor;
 
 import java.io.InputStream;
 
-import org.zenframework.easyservices.ValueTransfer;
-
 import junit.framework.TestCase;
 
 public class XmlDescriptorExtractorTest extends TestCase {

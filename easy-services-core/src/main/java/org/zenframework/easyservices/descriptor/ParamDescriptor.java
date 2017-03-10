@@ -1,7 +1,5 @@
 package org.zenframework.easyservices.descriptor;
 
-import org.zenframework.easyservices.ValueTransfer;
-
 public class ParamDescriptor extends ValueDescriptor {
 
     private static final long serialVersionUID = 1L;

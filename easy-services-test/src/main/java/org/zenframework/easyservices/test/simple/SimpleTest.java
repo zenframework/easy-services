@@ -18,7 +18,7 @@ public class SimpleTest extends AbstractServiceTest {
     }
 
     public SimpleTest(String format) {
-        Environment.setDefaultFormat(format);
+        Environment.setSerializationFormat(format);
     }
 
     @Override

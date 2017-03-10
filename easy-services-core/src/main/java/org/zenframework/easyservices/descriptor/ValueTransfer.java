@@ -1,4 +1,4 @@
-package org.zenframework.easyservices;
+package org.zenframework.easyservices.descriptor;
 
 public enum ValueTransfer {
 

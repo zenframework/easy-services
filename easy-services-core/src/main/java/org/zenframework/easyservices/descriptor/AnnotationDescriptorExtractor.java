@@ -3,7 +3,6 @@ package org.zenframework.easyservices.descriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 
-import org.zenframework.easyservices.ValueTransfer;
 import org.zenframework.easyservices.annotations.Alias;
 import org.zenframework.easyservices.annotations.Close;
 import org.zenframework.easyservices.annotations.Debug;

@@ -4,7 +4,7 @@ import java.net.URI;
 
 public class IncorrectRequestException extends ServiceException {
 
-    private static final long serialVersionUID = 590874786753700574L;
+    private static final long serialVersionUID = 1L;
 
     public IncorrectRequestException(URI requestUri) {
         super(getMessage(requestUri, null));

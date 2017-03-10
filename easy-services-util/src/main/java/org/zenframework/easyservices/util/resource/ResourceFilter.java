@@ -30,7 +30,7 @@ public class ResourceFilter implements Filter {
     public void init(FilterConfig filterConfig) throws ServletException {
         Config config = new WebappConfig(filterConfig);
         LOG.debug(config.toString(true));
-        resourceFactory = (ResourceFactory) config.getInstance(PARAM_RESOURCE_FACTORY);
+        resourceFactory = config.getInstance(PARAM_RESOURCE_FACTORY);
     }
 
     @Override

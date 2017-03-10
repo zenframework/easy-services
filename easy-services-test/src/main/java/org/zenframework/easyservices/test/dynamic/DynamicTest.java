@@ -22,7 +22,7 @@ public class DynamicTest extends AbstractServiceTest {
     }
 
     public DynamicTest(String format) {
-        Environment.setDefaultFormat(format);
+        Environment.setSerializationFormat(format);
     }
 
     @Override

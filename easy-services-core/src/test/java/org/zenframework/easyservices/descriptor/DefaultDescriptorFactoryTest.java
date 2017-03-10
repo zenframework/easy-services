@@ -4,7 +4,6 @@ import java.io.InputStream;
 import java.lang.reflect.Method;
 
 import org.zenframework.easyservices.Environment;
-import org.zenframework.easyservices.ValueTransfer;
 
 import junit.framework.TestCase;
 

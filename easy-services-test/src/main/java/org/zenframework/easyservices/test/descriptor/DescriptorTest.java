@@ -20,7 +20,7 @@ public class DescriptorTest extends AbstractServiceTest {
     }
 
     public DescriptorTest(String format) {
-        Environment.setDefaultFormat(format);
+        Environment.setSerializationFormat(format);
         Environment.setOutParametersMode(true);
     }
 

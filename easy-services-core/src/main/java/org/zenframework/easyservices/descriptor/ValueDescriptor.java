@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 import org.apache.commons.lang.ClassUtils;
-import org.zenframework.easyservices.ValueTransfer;
 
 public class ValueDescriptor implements Serializable {
 

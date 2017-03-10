@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.zenframework.easyservices.ValueTransfer;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
+import org.zenframework.easyservices.descriptor.ValueTransfer;
 
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;

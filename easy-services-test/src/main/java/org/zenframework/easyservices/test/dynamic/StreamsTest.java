@@ -41,7 +41,7 @@ public class StreamsTest extends AbstractServiceTest {
     public StreamsTest(boolean autoAliasing, String format, int size) {
         Environment.setAutoAliasing(autoAliasing);
         Environment.setDuplicateMethodNamesSafe(!autoAliasing);
-        Environment.setDefaultFormat(format);
+        Environment.setSerializationFormat(format);
         Environment.setOutParametersMode(true);
         this.size = size * 1024;
     }

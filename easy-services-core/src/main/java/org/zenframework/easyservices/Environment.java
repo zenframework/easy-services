@@ -88,7 +88,7 @@ public class Environment {
         return SERIALIZER_FACTORIES.keySet().iterator().next();
     }
 
-    public static void setDefaultFormat(String format) {
+    public static void setSerializationFormat(String format) {
         CONFIG.setParam(PROP_SERIALIZATION_FORMAT, format);
     }
 
