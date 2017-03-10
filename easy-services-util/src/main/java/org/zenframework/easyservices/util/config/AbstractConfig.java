@@ -1,6 +1,7 @@
 package org.zenframework.easyservices.util.config;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -10,6 +11,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("unchecked")
 public abstract class AbstractConfig implements Config {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractConfig.class);
@@ -69,29 +71,31 @@ public abstract class AbstractConfig implements Config {
     }
 
     @Override
-    public Object getInstance(String name) {
+    public <T> T getInstance(String name) {
         return getInstance(name, getParam(name), null, false, true /*false*/);
     }
 
     @Override
-    public Object getInstance(String name, Object defaultValue) {
+    public <T> T getInstance(String name, T defaultValue) {
         return getInstance(name, getParam(name), defaultValue, false, true /*false*/);
     }
 
     @Override
-    public Object getInstance(String name, Class<?> defaultValueClass) {
+    public <T> T getInstance(String name, Class<T> defaultValueClass) {
         return getInstance(name, getParam(name), defaultValueClass, false, true /*false*/);
     }
 
-    // @Override
-    // public Object getConfigurableInstance(String name) {
-    //     return getInstance(name, getParam(name), null, false, true);
-    // }
-
-    // @Override
-    // public Object getConfigurableInstance(String name, Class<? extends Configurable> defaultValueClass) {
-    //     return getInstance(name, getParam(name), defaultValueClass, false, true);
-    // }
+    @Override
+    public <T> List<T> getInstances(String prefix) {
+        List<T> instances = new ArrayList<T>();
+        Object param = getParam(prefix + ".0");
+        for (int i = 0; param != null; i++, param = getParam(prefix + '.' + i)) {
+            T instance = getInstance(prefix, getParam(prefix), null, false, true /*false*/);
+            if (instance != null)
+                instances.add(instance);
+        }
+        return instances;
+    }
 
     @Override
     public void destroyInstances(Object... instances) {
@@ -138,12 +142,12 @@ public abstract class AbstractConfig implements Config {
         instancesCache.put(name, instance);
     }
 
-    private Object getInstance(String name, Object refOrClassName, Object defaultInstanceOrClass, boolean rootConfig, boolean configurable) {
+    private <T> T getInstance(String name, Object refOrClassName, Object defaultInstanceOrClass, boolean rootConfig, boolean configurable) {
 
         // search cache
         Object instanceOrClass = getCachedInstance(name);
         if (instanceOrClass != null)
-            return instanceOrClass;
+            return (T) instanceOrClass;
 
         if (refOrClassName == null) {
             // param is not set, use default class
@@ -180,7 +184,7 @@ public abstract class AbstractConfig implements Config {
         }
 
         cacheInstance(name, instanceOrClass);
-        return instanceOrClass;
+        return (T) instanceOrClass;
 
     }
 

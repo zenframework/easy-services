@@ -29,9 +29,9 @@ public class ServiceHttpRequestHandler implements Configurable {
 
     @Override
     public void init(Config config) {
-        errorMapper = (ErrorMapper) config.getInstance(PARAM_ERROR_MAPPER, errorMapper);
+        errorMapper = config.getInstance(PARAM_ERROR_MAPPER, errorMapper);
         servicesPath = config.getParam(PARAM_SERVICES_PATH, servicesPath);
-        serviceInvoker = (ServiceInvoker) config.getInstance(PARAM_SERVICE_INVOKER, serviceInvoker);
+        serviceInvoker = config.getInstance(PARAM_SERVICE_INVOKER, serviceInvoker);
     }
 
     @Override

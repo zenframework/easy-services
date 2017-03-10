@@ -22,7 +22,7 @@ public class CachingResourceFactory implements ResourceFactory, Configurable {
     public static final String PARAM_RESOURCE_FACTORY = "resources";
 
     private static final boolean DEFAULT_CACHE_ENABLED = true;
-    private static final Class<? extends Configurable> DEFAULT_RESOURCE_CACHE = FileResourceCache.class;
+    private static final Class<FileResourceCache> DEFAULT_RESOURCE_CACHE = FileResourceCache.class;
 
     private ResourceFactory factory;
     private ResourceCache cache;
@@ -45,9 +45,9 @@ public class CachingResourceFactory implements ResourceFactory, Configurable {
 
     @Override
     public void init(Config config) {
-        factory = (ResourceFactory) config.getInstance(PARAM_RESOURCE_FACTORY);
+        factory = config.getInstance(PARAM_RESOURCE_FACTORY);
         if (config.getParam(PARAM_CACHE_ENABLED, DEFAULT_CACHE_ENABLED))
-            cache = (ResourceCache) config.getInstance(PARAM_RESOURCE_CACHE, DEFAULT_RESOURCE_CACHE);
+            cache = config.getInstance(PARAM_RESOURCE_CACHE, DEFAULT_RESOURCE_CACHE);
     }
 
     @Override

@@ -31,15 +31,13 @@ public interface Config {
 
     File getAbsolutePath(String relativePath);
 
-    Object getInstance(String name);
+    <T> T getInstance(String name);
 
-    Object getInstance(String name, Object defaultValue);
+    <T> T getInstance(String name, T defaultValue);
 
-    Object getInstance(String name, Class<?> defaultValueClass);
+    <T> T getInstance(String name, Class<T> defaultValueClass);
 
-    // Object getConfigurableInstance(String name);
-
-    // Object getConfigurableInstance(String name, Class<? extends Configurable> defaultValueClass);
+    <T> List<T> getInstances(String prefix);
 
     void destroyInstances(Object... instances);
 

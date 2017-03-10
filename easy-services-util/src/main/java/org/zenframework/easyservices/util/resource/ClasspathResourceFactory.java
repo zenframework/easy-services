@@ -40,7 +40,7 @@ public class ClasspathResourceFactory implements ResourceFactory, Configurable {
 
     @Override
     public void init(Config config) {
-        classLoader = (ClassLoader) config.getInstance(PARAM_CLASS_LOADER, classLoader);
+        classLoader = config.getInstance(PARAM_CLASS_LOADER, classLoader);
         basePath = config.getParam(PARAM_ROOT, DEFAULT_ROOT);
         if (!basePath.endsWith("/"))
             basePath += '/';
