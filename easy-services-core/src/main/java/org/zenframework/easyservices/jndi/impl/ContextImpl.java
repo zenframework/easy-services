@@ -9,11 +9,14 @@ import java.util.Map.Entry;
 
 import javax.naming.Binding;
 import javax.naming.Context;
+import javax.naming.LinkRef;
 import javax.naming.Name;
 import javax.naming.NameClassPair;
 import javax.naming.NameParser;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.Reference;
+import javax.naming.spi.NamingManager;
 
 public class ContextImpl implements Context {
 
@@ -40,12 +43,25 @@ public class ContextImpl implements Context {
     @Override
     public Object lookup(String name) throws NamingException {
         name = prefix + name;
+        Object result;
         synchronized (context) {
             Binding binding = context.get(name);
             if (binding == null)
                 throw new NamingException("Object '" + name + "' not bound");
-            return binding.getObject();
+            result = binding.getObject();
         }
+        if (result instanceof LinkRef) {
+            result = lookup(((LinkRef) result).getLinkName());
+        } else if (result instanceof Reference) {
+            try {
+                result = NamingManager.getObjectInstance(result, null, null, this.environment);
+            } catch (NamingException e) {
+                throw e;
+            } catch (Exception e) {
+                throw (NamingException) new NamingException("Could not look up : " + name).initCause(e);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -200,12 +216,12 @@ public class ContextImpl implements Context {
 
     @Override
     public Name composeName(Name name, Name prefix) throws NamingException {
-        return name;
+        return new NameImpl(composeName(name.toString(), prefix.toString()));
     }
 
     @Override
     public String composeName(String name, String prefix) throws NamingException {
-        return name;
+        return prefix + NameImpl.DELIMETER + name;
     }
 
     @Override
@@ -233,7 +249,7 @@ public class ContextImpl implements Context {
 
     private Map<String, Binding> getSubContext(String name) throws NamingException {
         Map<String, Binding> subContext = new HashMap<String, Binding>();
-        String path = name + '/';
+        String path = name + NameImpl.DELIMETER;
         for (Map.Entry<String, Binding> entry : context.entrySet())
             if (entry.getKey().equals(name) || entry.getKey().startsWith(path))
                 subContext.put(entry.getKey(), entry.getValue());
