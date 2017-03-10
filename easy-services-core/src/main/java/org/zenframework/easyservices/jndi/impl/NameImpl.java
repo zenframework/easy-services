@@ -40,6 +40,10 @@ public class NameImpl implements Name {
         this.name = str.toString();
     }
 
+    public NameImpl() {
+        this("");
+    }
+
     public NameImpl(String name) {
         this.name = name;
         this.components = name.length() == 0 ? Collections.<String> emptyList() : Arrays.<String> asList(name.split("\\/"));

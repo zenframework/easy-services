@@ -11,7 +11,9 @@ import javax.naming.Binding;
 import javax.naming.Context;
 import javax.naming.LinkRef;
 import javax.naming.Name;
+import javax.naming.NameAlreadyBoundException;
 import javax.naming.NameClassPair;
+import javax.naming.NameNotFoundException;
 import javax.naming.NameParser;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -19,6 +21,15 @@ import javax.naming.Reference;
 import javax.naming.spi.NamingManager;
 
 public class ContextImpl implements Context {
+
+    private static final NameParser NAME_PARSER = new NameParser() {
+
+        @Override
+        public Name parse(String name) throws NamingException {
+            return new NameImpl(name);
+        }
+
+    };
 
     private final String name;
     private final String prefix;
@@ -47,7 +58,7 @@ public class ContextImpl implements Context {
         synchronized (context) {
             Binding binding = context.get(name);
             if (binding == null)
-                throw new NamingException("Object '" + name + "' not bound");
+                throw new NameNotFoundException("Object '" + name + "' not bound");
             result = binding.getObject();
         }
         if (result instanceof LinkRef) {
@@ -74,7 +85,7 @@ public class ContextImpl implements Context {
         name = prefix + name;
         synchronized (context) {
             if (context.containsKey(name))
-                throw new NamingException("Object '" + name + "' already bound");
+                throw new NameAlreadyBoundException("Object '" + name + "' already bound");
             context.put(name, new Binding(name, obj));
         }
     }
@@ -102,7 +113,7 @@ public class ContextImpl implements Context {
         name = prefix + name;
         synchronized (context) {
             if (!context.containsKey(name))
-                throw new NamingException("Object '" + name + "' not bound");
+                throw new NameNotFoundException("Object '" + name + "' not bound");
             context.remove(name);
         }
     }
@@ -118,9 +129,9 @@ public class ContextImpl implements Context {
         newName = prefix + newName;
         synchronized (context) {
             if (!context.containsKey(oldName))
-                throw new NamingException("Object '" + oldName + "' not bound");
+                throw new NameNotFoundException("Object '" + oldName + "' not bound");
             if (context.containsKey(newName))
-                throw new NamingException("Object '" + newName + "' already bound");
+                throw new NameAlreadyBoundException("Object '" + newName + "' already bound");
             context.put(newName, context.remove(oldName));
         }
     }
@@ -134,15 +145,14 @@ public class ContextImpl implements Context {
     public NamingEnumeration<NameClassPair> list(String name) throws NamingException {
         name = prefix + name;
         synchronized (context) {
-            return new NamingEnumerationImpl<NameClassPair>(getSubContext(name),
-                    new NamingEnumerationImpl.ElementFactory<NameClassPair>() {
+            return new NamingEnumerationImpl<NameClassPair>(getSubContext(name), new NamingEnumerationImpl.ElementFactory<NameClassPair>() {
 
-                        @Override
-                        public NameClassPair getElement(Entry<String, Binding> entry) {
-                            return new NameClassPair(entry.getKey(), entry.getValue().getClassName());
-                        }
+                @Override
+                public NameClassPair getElement(Entry<String, Binding> entry) {
+                    return new NameClassPair(entry.getKey(), entry.getValue().getClassName());
+                }
 
-                    });
+            });
         }
     }
 
@@ -155,15 +165,14 @@ public class ContextImpl implements Context {
     public NamingEnumeration<Binding> listBindings(String name) throws NamingException {
         name = prefix + name;
         synchronized (context) {
-            return new NamingEnumerationImpl<Binding>(getSubContext(name),
-                    new NamingEnumerationImpl.ElementFactory<Binding>() {
+            return new NamingEnumerationImpl<Binding>(getSubContext(name), new NamingEnumerationImpl.ElementFactory<Binding>() {
 
-                        @Override
-                        public Binding getElement(Entry<String, Binding> entry) {
-                            return entry.getValue();
-                        }
+                @Override
+                public Binding getElement(Entry<String, Binding> entry) {
+                    return entry.getValue();
+                }
 
-                    });
+            });
         }
     }
 
@@ -206,22 +215,27 @@ public class ContextImpl implements Context {
 
     @Override
     public NameParser getNameParser(Name name) throws NamingException {
-        return getNameParser(name.toString());
+        return NAME_PARSER;
     }
 
     @Override
     public NameParser getNameParser(String name) throws NamingException {
-        return new NameParserImpl(name);
+        return NAME_PARSER;
     }
 
     @Override
     public Name composeName(Name name, Name prefix) throws NamingException {
-        return new NameImpl(composeName(name.toString(), prefix.toString()));
+        return prefix.addAll(name);
     }
 
     @Override
     public String composeName(String name, String prefix) throws NamingException {
-        return prefix + NameImpl.DELIMETER + name;
+        StringBuilder str = new StringBuilder(name.length() + prefix.length() + NameImpl.DELIMETER.length());
+        str.append(prefix);
+        if (!name.isEmpty() && !prefix.isEmpty())
+            str.append(NameImpl.DELIMETER);
+        str.append(name);
+        return str.toString();
     }
 
     @Override
@@ -249,7 +263,7 @@ public class ContextImpl implements Context {
 
     private Map<String, Binding> getSubContext(String name) throws NamingException {
         Map<String, Binding> subContext = new HashMap<String, Binding>();
-        String path = name + NameImpl.DELIMETER;
+        String path = name.isEmpty() ? "" : name + NameImpl.DELIMETER;
         for (Map.Entry<String, Binding> entry : context.entrySet())
             if (entry.getKey().equals(name) || entry.getKey().startsWith(path))
                 subContext.put(entry.getKey(), entry.getValue());
