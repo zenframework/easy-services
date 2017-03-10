@@ -120,7 +120,7 @@ public class ContextImpl implements Context {
 
     @Override
     public void rename(Name oldName, Name newName) throws NamingException {
-        rename(oldName, newName);
+        rename(oldName.toString(), newName.toString());
     }
 
     @Override
@@ -132,7 +132,9 @@ public class ContextImpl implements Context {
                 throw new NameNotFoundException("Object '" + oldName + "' not bound");
             if (context.containsKey(newName))
                 throw new NameAlreadyBoundException("Object '" + newName + "' already bound");
-            context.put(newName, context.remove(oldName));
+            Binding binding = context.remove(oldName);
+            binding.setName(newName);
+            context.put(newName, binding);
         }
     }
 
