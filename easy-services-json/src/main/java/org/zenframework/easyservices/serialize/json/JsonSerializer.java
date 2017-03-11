@@ -1,5 +1,6 @@
 package org.zenframework.easyservices.serialize.json;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -48,13 +49,13 @@ public class JsonSerializer implements Serializer {
 
     @Override
     public Object deserializeResult(InputStream in, boolean success) throws IOException, SerializationException {
-        return deserialize(new JsonReader(new InputStreamReader(in)), success, returnType,
+        return deserialize(getJsonReader(in), success, returnType,
                 success && methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null);
     }
 
     @Override
     public Object[] deserializeParameters(InputStream in) throws IOException, SerializationException {
-        return deserialize(new JsonReader(new InputStreamReader(in)), true, paramTypes,
+        return deserialize(getJsonReader(in), true, paramTypes,
                 methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[paramTypes.length]);
     }
 
@@ -65,7 +66,7 @@ public class JsonSerializer implements Serializer {
         ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
         try {
             ResponseObject responseObject = new ResponseObject();
-            JsonReader reader = new JsonReader(new InputStreamReader(in));
+            JsonReader reader = getJsonReader(in);
             reader.beginObject();
             while (reader.hasNext()) {
                 String name = reader.nextName();
@@ -105,8 +106,13 @@ public class JsonSerializer implements Serializer {
         if (objTypes.length != valueDescriptors.length)
             throw new SerializationException(
                     "objTypes.length == " + objTypes.length + " != " + valueDescriptors.length + " == valueDescriptors.length");
-        if (objTypes.length == 0)
-            return new Object[0];
+        try {
+            in.peek();
+        } catch (EOFException e) {
+            if (objTypes.length == 0)
+                return new Object[0];
+            throw e;
+        }
         Object[] result = new Object[objTypes.length];
         in.beginArray();
         int count;
@@ -123,6 +129,10 @@ public class JsonSerializer implements Serializer {
         if (count != objTypes.length)
             throw new SerializationException("result.length == " + count + " != " + objTypes.length + " == objTypes.length");
         return result;
+    }
+
+    private static JsonReader getJsonReader(InputStream in) {
+        return new JsonReader(new InputStreamReader(in));
     }
 
 }
