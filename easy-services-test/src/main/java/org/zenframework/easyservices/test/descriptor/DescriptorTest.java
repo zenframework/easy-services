@@ -27,18 +27,18 @@ public class DescriptorTest extends AbstractServiceTest {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        getServiceRegistry().bind("/util", new CollectionUtilImpl());
+        getServiceRegistry().bind("util", new CollectionUtilImpl());
     }
 
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        getServiceRegistry().unbind("/util");
+        getServiceRegistry().unbind("util");
     }
 
     @Test
     public void testTypeParameters() throws Exception {
-        CollectionUtil util = getClient(CollectionUtil.class, "/util");
+        CollectionUtil util = getClient(CollectionUtil.class, "util");
         SimpleBean o1 = new SimpleBean("zxc", 3);
         SimpleBean o2 = new SimpleBean("asd", 1);
         SimpleBean o3 = new SimpleBean("qwe", 2);
@@ -48,7 +48,7 @@ public class DescriptorTest extends AbstractServiceTest {
 
     @Test
     public void testOutObjectList() throws Exception {
-        CollectionUtil util = getClient(CollectionUtil.class, "/util");
+        CollectionUtil util = getClient(CollectionUtil.class, "util");
         SimpleBean o1 = new SimpleBean("zxc", 3);
         SimpleBean o2 = new SimpleBean("asd", 1);
         SimpleBean o3 = new SimpleBean("qwe", 2);
@@ -59,7 +59,7 @@ public class DescriptorTest extends AbstractServiceTest {
 
     @Test
     public void testOutIntArray() throws Exception {
-        CollectionUtil util = getClient(CollectionUtil.class, "/util");
+        CollectionUtil util = getClient(CollectionUtil.class, "util");
         int[] values = { 2, 1, 3 };
         util.sortInts(values);
         assertTrue(Arrays.equals(new int[] { 1, 2, 3 }, values));
@@ -67,7 +67,7 @@ public class DescriptorTest extends AbstractServiceTest {
 
     @Test
     public void testOutObject() throws Exception {
-        CollectionUtil util = getClient(CollectionUtil.class, "/util");
+        CollectionUtil util = getClient(CollectionUtil.class, "util");
         SimpleBean o = new SimpleBean("zxc", 3);
         util.clearBean(o);
         assertEquals(new SimpleBean("", 0), o);

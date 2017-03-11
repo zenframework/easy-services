@@ -2,7 +2,7 @@ package org.zenframework.easyservices.descriptor;
 
 public interface DescriptorFactory {
 
-    String NAME = "/descriptorFactory";
+    String NAME = "descriptorFactory";
 
     ClassDescriptor getClassDescriptor(Class<?> cls);
 

@@ -31,18 +31,18 @@ public class DynamicTest extends AbstractServiceTest {
         CalculatorImpl functions = new CalculatorImpl();
         functions.getFunctions().put("add", new Addition());
         functions.getFunctions().put("sub", new Substraction());
-        getServiceRegistry().bind("/calc", functions);
+        getServiceRegistry().bind("calc", functions);
     }
 
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        getServiceRegistry().unbind("/calc");
+        getServiceRegistry().unbind("calc");
     }
 
     @Test
     public void testCallDynamic() throws Exception {
-        Calculator calc = getClient(Calculator.class, "/calc");
+        Calculator calc = getClient(Calculator.class, "calc");
         Function add = calc.getFunction("add");
         Function sub = calc.getFunction("sub");
         assertEquals(3, calc.call(add, 1, 2));
@@ -51,7 +51,7 @@ public class DynamicTest extends AbstractServiceTest {
 
     @Test
     public void testCloseByParam() throws Exception {
-        Calculator calc = getClient(Calculator.class, "/calc");
+        Calculator calc = getClient(Calculator.class, "calc");
         Function add = calc.getFunction("add");
         calc.close(add);
         try {
@@ -64,7 +64,7 @@ public class DynamicTest extends AbstractServiceTest {
 
     @Test
     public void testCloseByMethod() throws Exception {
-        Calculator calc = getClient(Calculator.class, "/calc");
+        Calculator calc = getClient(Calculator.class, "calc");
         Function add = calc.getFunction("add");
         add.close();
         try {

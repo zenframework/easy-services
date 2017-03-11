@@ -51,7 +51,7 @@ public final class ServiceLocator implements Serializable {
     }
 
     public static ServiceLocator qualified(String baseUrl, String servicePath) {
-        return new ServiceLocator(baseUrl, servicePath, baseUrl + servicePath);
+        return new ServiceLocator(baseUrl, servicePath, baseUrl + '/' + servicePath);
     }
 
     @Override

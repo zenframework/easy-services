@@ -18,9 +18,9 @@ public class ProxyFactoryTest extends JSTestSuite {
     protected void setUp() {
         super.setUp();
         try {
-            JNDIHelper.getDefaultContext().bind("/add", new Addition());
-            JNDIHelper.getDefaultContext().bind("/util", new CollectionUtilImpl());
-            JNDIHelper.getDefaultContext().bind("/echo", new EchoImpl());
+            JNDIHelper.getDefaultContext().bind("add", new Addition());
+            JNDIHelper.getDefaultContext().bind("util", new CollectionUtilImpl());
+            JNDIHelper.getDefaultContext().bind("echo", new EchoImpl());
             server.start();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -31,9 +31,9 @@ public class ProxyFactoryTest extends JSTestSuite {
     protected void tearDown() {
         super.tearDown();
         try {
-            JNDIHelper.getDefaultContext().unbind("/add");
-            JNDIHelper.getDefaultContext().unbind("/util");
-            JNDIHelper.getDefaultContext().unbind("/echo");
+            JNDIHelper.getDefaultContext().unbind("add");
+            JNDIHelper.getDefaultContext().unbind("util");
+            JNDIHelper.getDefaultContext().unbind("echo");
             server.stop();
         } catch (Exception e) {
             throw new RuntimeException(e);

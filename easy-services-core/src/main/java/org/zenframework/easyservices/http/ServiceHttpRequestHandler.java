@@ -21,7 +21,7 @@ public class ServiceHttpRequestHandler implements Configurable {
     private static final String PARAM_SERVICES_PATH = "servicesPath";
     private static final String PARAM_SERVICE_INVOKER = "serviceInvoker";
 
-    private static final String DEFAULT_SERVICES_PATH = "/services";
+    private static final String DEFAULT_SERVICES_PATH = "/services/";
 
     private ErrorMapper errorMapper = new ErrorMapper();
     private String servicesPath = DEFAULT_SERVICES_PATH;
