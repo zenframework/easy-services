@@ -4,8 +4,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -20,7 +20,8 @@ import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.spi.NamingManager;
 
-public class ContextImpl implements Context {
+@Deprecated
+public class PlainContext implements Context {
 
     private static final NameParser NAME_PARSER = new NameParser() {
 
@@ -36,11 +37,11 @@ public class ContextImpl implements Context {
     private final Map<String, Binding> context;
     private final Hashtable<String, Object> environment = new Hashtable<String, Object>();
 
-    public ContextImpl() {
+    public PlainContext() {
         this("", new HashMap<String, Binding>());
     }
 
-    private ContextImpl(String name, Map<String, Binding> context) {
+    private PlainContext(String name, Map<String, Binding> context) {
         this.name = name;
         this.prefix = name.isEmpty() ? "" : name + NameImpl.DELIMETER;
         this.context = context;
@@ -54,25 +55,12 @@ public class ContextImpl implements Context {
     @Override
     public Object lookup(String name) throws NamingException {
         name = prefix + name;
-        Object result;
         synchronized (context) {
             Binding binding = context.get(name);
             if (binding == null)
                 throw new NameNotFoundException("Object '" + name + "' not bound");
-            result = binding.getObject();
+            return binding.getObject();
         }
-        if (result instanceof LinkRef) {
-            result = lookup(((LinkRef) result).getLinkName());
-        } else if (result instanceof Reference) {
-            try {
-                result = NamingManager.getObjectInstance(result, null, null, this.environment);
-            } catch (NamingException e) {
-                throw e;
-            } catch (Exception e) {
-                throw (NamingException) new NamingException("Could not look up : " + name).initCause(e);
-            }
-        }
-        return result;
     }
 
     @Override
@@ -147,14 +135,35 @@ public class ContextImpl implements Context {
     public NamingEnumeration<NameClassPair> list(String name) throws NamingException {
         name = prefix + name;
         synchronized (context) {
-            return new NamingEnumerationImpl<NameClassPair>(getSubContext(name), new NamingEnumerationImpl.ElementFactory<NameClassPair>() {
+            final Iterator<Map.Entry<String, Binding>> it = getSubContext(name).entrySet().iterator();
+            return new NamingEnumeration<NameClassPair>() {
 
                 @Override
-                public NameClassPair getElement(Entry<String, Binding> entry) {
-                    return new NameClassPair(entry.getKey(), entry.getValue().getClassName());
+                public boolean hasMoreElements() {
+                    return it.hasNext();
                 }
 
-            });
+                @Override
+                public NameClassPair nextElement() {
+                    Map.Entry<String, Binding> entry = it.next();
+                    Object obj = entry.getValue().getObject();
+                    return new NameClassPair(entry.getKey(), obj == null ? null : obj.getClass().getName());
+                }
+
+                @Override
+                public NameClassPair next() throws NamingException {
+                    return nextElement();
+                }
+
+                @Override
+                public boolean hasMore() throws NamingException {
+                    return hasMoreElements();
+                }
+
+                @Override
+                public void close() throws NamingException {}
+
+            };
         }
     }
 
@@ -167,14 +176,33 @@ public class ContextImpl implements Context {
     public NamingEnumeration<Binding> listBindings(String name) throws NamingException {
         name = prefix + name;
         synchronized (context) {
-            return new NamingEnumerationImpl<Binding>(getSubContext(name), new NamingEnumerationImpl.ElementFactory<Binding>() {
+            final Iterator<Binding> it = getSubContext(name).values().iterator();
+            return new NamingEnumeration<Binding>() {
 
                 @Override
-                public Binding getElement(Entry<String, Binding> entry) {
-                    return entry.getValue();
+                public boolean hasMoreElements() {
+                    return it.hasNext();
                 }
 
-            });
+                @Override
+                public Binding nextElement() {
+                    return it.next();
+                }
+
+                @Override
+                public Binding next() throws NamingException {
+                    return nextElement();
+                }
+
+                @Override
+                public boolean hasMore() throws NamingException {
+                    return hasMoreElements();
+                }
+
+                @Override
+                public void close() throws NamingException {}
+
+            };
         }
     }
 
@@ -202,17 +230,29 @@ public class ContextImpl implements Context {
 
     @Override
     public Context createSubcontext(String name) throws NamingException {
-        return new ContextImpl(name, context);
+        return new PlainContext(name, context);
     }
 
     @Override
     public Object lookupLink(Name name) throws NamingException {
-        return lookup(name);
+        return lookupLink(name.toString());
     }
 
     @Override
     public Object lookupLink(String name) throws NamingException {
-        return lookup(name);
+        Object result = lookup(name);
+        if (result instanceof LinkRef) {
+            result = lookup(((LinkRef) result).getLinkName());
+        } else if (result instanceof Reference) {
+            try {
+                result = NamingManager.getObjectInstance(result, null, null, this.environment);
+            } catch (NamingException e) {
+                throw e;
+            } catch (Exception e) {
+                throw (NamingException) new NamingException("Could not look up : " + name).initCause(e);
+            }
+        }
+        return result;
     }
 
     @Override

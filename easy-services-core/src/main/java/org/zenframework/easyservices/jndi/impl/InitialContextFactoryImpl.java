@@ -8,11 +8,12 @@ import javax.naming.spi.InitialContextFactory;
 
 public class InitialContextFactoryImpl implements InitialContextFactory {
 
-    private static final Context CONTEXT = new ContextImpl();
-    
+    @SuppressWarnings({ "rawtypes", "unchecked" })
     @Override
     public Context getInitialContext(Hashtable<?, ?> environment) throws NamingException {
-        return CONTEXT;
+        Context context = new TreeContext();
+        context.getEnvironment().putAll((Hashtable) environment);
+        return context;
     }
 
 }
