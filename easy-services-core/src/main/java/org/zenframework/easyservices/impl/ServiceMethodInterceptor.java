@@ -78,7 +78,8 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
 
         TimeChecker time = null;
         if ((debug || methodDescriptor.getDebug()) && LOG.isDebugEnabled())
-            time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + ' ' + getMethodName(method, methodDescriptor), LOG);
+            time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + '.' + getMethodName(method, methodDescriptor)
+                    + getMethodParams(method, methodDescriptor), LOG);
 
         // Call service
         URL url = getServiceURL(serviceLocator, getMethodName(method, methodDescriptor));
@@ -163,6 +164,22 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
     private static String getMethodName(Method method, MethodDescriptor methodDescriptor) {
         String alias = methodDescriptor != null ? methodDescriptor.getAlias() : null;
         return alias != null ? alias : method.getName();
+    }
+
+    private static String getMethodParams(Method method, MethodDescriptor methodDescriptor) {
+        Class<?>[] paramTypes = method.getParameterTypes();
+        StringBuilder str = new StringBuilder(paramTypes.length * 20).append('(');
+        ValueDescriptor[] valueDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors()
+                : new ValueDescriptor[paramTypes.length];
+        for (int i = 0; i < paramTypes.length; i++) {
+            ValueDescriptor valueDescriptor = valueDescriptors[i];
+            str.append(paramTypes[i].getSimpleName());
+            if (valueDescriptor != null && valueDescriptor.getTransfer() != null)
+                str.append(valueDescriptor.getTransfer().getMarker());
+            if (i < paramTypes.length - 1)
+                str.append(", ");
+        }
+        return str.append(')').toString();
     }
 
 }
