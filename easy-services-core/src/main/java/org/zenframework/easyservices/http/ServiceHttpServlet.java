@@ -8,8 +8,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.zenframework.easyservices.ServiceInvoker;
-import org.zenframework.easyservices.util.config.Config;
-import org.zenframework.easyservices.util.config.WebappConfig;
+import org.zenframework.easyservices.config.Config;
+import org.zenframework.easyservices.config.WebappConfig;
 
 public class ServiceHttpServlet extends HttpServlet {
 

@@ -8,9 +8,9 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.ServiceInvoker;
+import org.zenframework.easyservices.config.Config;
+import org.zenframework.easyservices.config.Configurable;
 import org.zenframework.easyservices.impl.ServiceInvokerImpl;
-import org.zenframework.easyservices.util.config.Config;
-import org.zenframework.easyservices.util.config.Configurable;
 
 public class ServiceHttpRequestHandler implements Configurable {
 

@@ -12,9 +12,9 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
-import org.zenframework.easyservices.util.resource.ClasspathResourceFactory;
-import org.zenframework.easyservices.util.resource.Resource;
-import org.zenframework.easyservices.util.resource.ResourceFactory;
+import org.zenframework.easyservices.resource.ClasspathResourceFactory;
+import org.zenframework.easyservices.resource.Resource;
+import org.zenframework.easyservices.resource.ResourceFactory;
 
 public class HttpServer {
 

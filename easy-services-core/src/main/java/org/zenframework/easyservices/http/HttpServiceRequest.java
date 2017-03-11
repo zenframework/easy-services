@@ -13,7 +13,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.zenframework.easyservices.ServiceRequest;
-import org.zenframework.easyservices.util.net.URIUtil;
+import org.zenframework.easyservices.net.URIUtil;
 
 public class HttpServiceRequest extends ServiceRequest {
 

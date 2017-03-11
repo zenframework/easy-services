@@ -2,9 +2,9 @@ package org.zenframework.easyservices.serialize.json.gson;
 
 import java.io.IOException;
 
-import org.zenframework.easyservices.util.cls.ClassInfo;
-import org.zenframework.easyservices.util.cls.FieldInfo;
-import org.zenframework.easyservices.util.cls.MethodInfo;
+import org.zenframework.easyservices.cls.ClassInfo;
+import org.zenframework.easyservices.cls.FieldInfo;
+import org.zenframework.easyservices.cls.MethodInfo;
 
 import com.google.gson.TypeAdapter;
 import com.google.gson.stream.JsonReader;

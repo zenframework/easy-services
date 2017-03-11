@@ -10,11 +10,11 @@ import javax.script.ScriptException;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zenframework.easyservices.config.Config;
+import org.zenframework.easyservices.config.Configurable;
+import org.zenframework.easyservices.debug.TimeChecker;
 import org.zenframework.easyservices.js.util.JSUtil;
-import org.zenframework.easyservices.util.config.Config;
-import org.zenframework.easyservices.util.config.Configurable;
-import org.zenframework.easyservices.util.debug.TimeChecker;
-import org.zenframework.easyservices.util.string.StringUtil;
+import org.zenframework.easyservices.string.StringUtil;
 
 public class SimpleBabel implements Babel, Configurable {
 

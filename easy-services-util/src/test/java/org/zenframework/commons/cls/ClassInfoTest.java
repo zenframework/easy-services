@@ -2,8 +2,8 @@ package org.zenframework.commons.cls;
 
 import java.util.Collection;
 
-import org.zenframework.easyservices.util.cls.ClassInfo;
-import org.zenframework.easyservices.util.cls.ClassRef;
+import org.zenframework.easyservices.cls.ClassInfo;
+import org.zenframework.easyservices.cls.ClassRef;
 
 import junit.framework.TestCase;
 

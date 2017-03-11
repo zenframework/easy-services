@@ -1,8 +1,8 @@
 package org.zenframework.easyservices.js.babel;
 
 import org.apache.commons.pool2.impl.GenericObjectPool;
-import org.zenframework.easyservices.util.config.Config;
-import org.zenframework.easyservices.util.config.Configurable;
+import org.zenframework.easyservices.config.Config;
+import org.zenframework.easyservices.config.Configurable;
 
 public class DefaultBabelPool extends GenericObjectPool<Babel> implements Configurable {
 

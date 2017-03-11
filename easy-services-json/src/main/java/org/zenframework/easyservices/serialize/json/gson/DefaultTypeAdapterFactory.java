@@ -6,15 +6,15 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.zenframework.easyservices.cls.ClassInfo;
+import org.zenframework.easyservices.cls.ClassRef;
+import org.zenframework.easyservices.cls.FieldInfo;
+import org.zenframework.easyservices.cls.MethodInfo;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.descriptor.MethodIdentifier;
 import org.zenframework.easyservices.descriptor.ParamDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
-import org.zenframework.easyservices.util.cls.ClassInfo;
-import org.zenframework.easyservices.util.cls.ClassRef;
-import org.zenframework.easyservices.util.cls.FieldInfo;
-import org.zenframework.easyservices.util.cls.MethodInfo;
 
 import com.google.gson.TypeAdapter;
 

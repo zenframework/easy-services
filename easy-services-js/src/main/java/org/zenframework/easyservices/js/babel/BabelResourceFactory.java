@@ -8,11 +8,11 @@ import java.nio.charset.Charset;
 import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.easyservices.util.config.Config;
-import org.zenframework.easyservices.util.config.Configurable;
-import org.zenframework.easyservices.util.resource.FileResourceFactory;
-import org.zenframework.easyservices.util.resource.Resource;
-import org.zenframework.easyservices.util.resource.ResourceFactory;
+import org.zenframework.easyservices.config.Config;
+import org.zenframework.easyservices.config.Configurable;
+import org.zenframework.easyservices.resource.FileResourceFactory;
+import org.zenframework.easyservices.resource.Resource;
+import org.zenframework.easyservices.resource.ResourceFactory;
 
 public class BabelResourceFactory implements ResourceFactory, Configurable {
 
@@ -88,10 +88,10 @@ public class BabelResourceFactory implements ResourceFactory, Configurable {
 
     @Override
     public void init(Config config) {
-        sources = (ResourceFactory) config.getInstance(PARAM_SOURCE_RESOURCE_FACTORY, sources);
+        sources = config.getInstance(PARAM_SOURCE_RESOURCE_FACTORY, sources);
         sourceExtensions = config.getParam(PARAM_SOURCE_EXTENSIONS, DEFAULT_SOURCE_EXTENSIONS);
         targetExtension = config.getParam(PARAM_TARGET_EXTENSION, DEFAULT_TARGET_EXTENSION);
-        babel = (Babel) config.getInstance(PARAM_BABEL, babel);
+        babel = config.getInstance(PARAM_BABEL, babel);
         presets = config.getParam(PARAM_PRESETS, DEFAULT_PRESETS);
         charset = Charset.forName(config.getParam(PARAM_CHARSET, DEFAULT_CHARSET));
     }

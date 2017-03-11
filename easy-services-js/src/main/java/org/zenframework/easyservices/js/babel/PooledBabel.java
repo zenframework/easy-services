@@ -3,8 +3,8 @@ package org.zenframework.easyservices.js.babel;
 import org.apache.commons.pool2.ObjectPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.easyservices.util.config.Config;
-import org.zenframework.easyservices.util.config.Configurable;
+import org.zenframework.easyservices.config.Config;
+import org.zenframework.easyservices.config.Configurable;
 
 public class PooledBabel implements Babel, Configurable {
 
@@ -40,9 +40,8 @@ public class PooledBabel implements Babel, Configurable {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void init(Config config) {
-        pool = (ObjectPool<Babel>) config.getInstance(PARAM_POOL, pool);
+        pool = config.getInstance(PARAM_POOL, pool);
     }
 
     @Override

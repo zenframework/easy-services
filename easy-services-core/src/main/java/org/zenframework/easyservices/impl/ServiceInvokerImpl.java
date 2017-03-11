@@ -27,6 +27,10 @@ import org.zenframework.easyservices.ServiceInvoker;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.ServiceRequest;
 import org.zenframework.easyservices.ServiceResponse;
+import org.zenframework.easyservices.cls.ClassInfo;
+import org.zenframework.easyservices.config.Config;
+import org.zenframework.easyservices.config.Configurable;
+import org.zenframework.easyservices.debug.TimeChecker;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.DefaultDescriptorFactory;
 import org.zenframework.easyservices.descriptor.DescriptorFactory;
@@ -39,10 +43,6 @@ import org.zenframework.easyservices.jndi.JNDIHelper;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
-import org.zenframework.easyservices.util.cls.ClassInfo;
-import org.zenframework.easyservices.util.config.Config;
-import org.zenframework.easyservices.util.config.Configurable;
-import org.zenframework.easyservices.util.debug.TimeChecker;
 
 public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
