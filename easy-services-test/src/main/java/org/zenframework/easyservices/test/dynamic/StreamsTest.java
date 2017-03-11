@@ -29,7 +29,7 @@ public class StreamsTest extends AbstractServiceTest {
     @Parameterized.Parameters(name = "{index} autoAliasing: {0}, format: {1}, size: {2}K")
     public static Collection<Object[]> formats() {
         return Arrays
-                .asList(new Object[][] { /*{ true, "json", SIZE_K }, { true, "bin", SIZE_K },*/ { false, "json", SIZE_K }/*, { false, "bin", SIZE_K }*/ });
+                .asList(new Object[][] { { true, "json", SIZE_K }, { true, "bin", SIZE_K }, { false, "json", SIZE_K }, { false, "bin", SIZE_K } });
     }
 
     private final int size;
