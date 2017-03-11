@@ -1,4 +1,4 @@
-package org.zenframework.commons.cls;
+package org.zenframework.easyservices.cls;
 
 import java.util.Collection;
 

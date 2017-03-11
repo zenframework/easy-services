@@ -1,4 +1,4 @@
-package org.zenframework.commons.cls;
+package org.zenframework.easyservices.cls;
 
 public interface B {
 
