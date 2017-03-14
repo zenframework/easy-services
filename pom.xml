@@ -18,9 +18,12 @@
     </properties>
 
     <modules>
+        <module>easy-services-config</module>
         <module>easy-services-core</module>
+        <module>easy-services-jndi</module>
         <module>easy-services-js</module>
         <module>easy-services-json</module>
+        <module>easy-services-resource</module>
         <module>easy-services-test</module>
         <module>easy-services-util</module>
         <module>easy-services-websocket</module>
@@ -73,7 +76,7 @@
                             <!-- Имя бандла. По умолчанию = имя артифакта -->
                             <!-- <Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName> -->
                             <!-- Версия бандла. По умолчанию = версия артифакта -->
-                            <!-- <Bundle-Version>${pom.version}</Bundle-Version> -->
+                            <!-- <Bundle-Version>${project.version}</Bundle-Version> -->
                             <!-- Экспортируемые пакеты. '!' означает 'не' -->
                             <Export-Package>!${bundle.namespace}.internal.*,${bundle.namespace}.*;version="${project.version}",${bundle.extpackages}</Export-Package>
                             <!-- Это нужно, чтобы не импортировать собственные внутренние пакеты -->

@@ -8,7 +8,7 @@ import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ClientFactory;
 import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
 import org.zenframework.easyservices.impl.ClientFactoryImpl;
-import org.zenframework.easyservices.jndi.JNDIHelper;
+import org.zenframework.easyservices.util.jndi.JNDIHelper;
 
 import junit.framework.TestCase;
 

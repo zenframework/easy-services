@@ -28,7 +28,17 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>easy-services-core</artifactId>
+            <artifactId>easy-services-config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>easy-services-resource</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>easy-services-util</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -40,6 +50,7 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
+            <optional>true</optional>
             <scope>provided</scope>
         </dependency>
 

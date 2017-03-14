@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +19,6 @@ import javax.naming.NamingException;
 import org.apache.commons.lang.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.easyservices.ServiceRequestFilter;
 import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.InvocationContext;
 import org.zenframework.easyservices.ResponseObject;
@@ -26,11 +26,10 @@ import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.ServiceInvoker;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.ServiceRequest;
+import org.zenframework.easyservices.ServiceRequestFilter;
 import org.zenframework.easyservices.ServiceResponse;
-import org.zenframework.easyservices.cls.ClassInfo;
 import org.zenframework.easyservices.config.Config;
 import org.zenframework.easyservices.config.Configurable;
-import org.zenframework.easyservices.debug.TimeChecker;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.DefaultDescriptorFactory;
 import org.zenframework.easyservices.descriptor.DescriptorFactory;
@@ -39,10 +38,12 @@ import org.zenframework.easyservices.descriptor.MethodIdentifier;
 import org.zenframework.easyservices.descriptor.ParamDescriptor;
 import org.zenframework.easyservices.descriptor.ValueDescriptor;
 import org.zenframework.easyservices.descriptor.ValueTransfer;
-import org.zenframework.easyservices.jndi.JNDIHelper;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
+import org.zenframework.easyservices.util.cls.ClassInfo;
+import org.zenframework.easyservices.util.debug.TimeChecker;
+import org.zenframework.easyservices.util.jndi.JNDIHelper;
 
 public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
@@ -126,8 +127,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
     public void init(Config config) {
         Config serviceRegistryConfig = config.getSubConfig(PARAM_SERVICE_REGISTRY);
         if (!serviceRegistryConfig.isEmpty())
-            serviceRegistry = JNDIHelper.newDefaultContext(serviceRegistryConfig);
-        requestFilters.addAll(config.<ServiceRequestFilter>getInstances(PARAM_REQUEST_FILTER_PREF));
+            serviceRegistry = JNDIHelper.getInitialContext(new Hashtable<String, Object>(serviceRegistryConfig.toMap()));
+        requestFilters.addAll(config.<ServiceRequestFilter> getInstances(PARAM_REQUEST_FILTER_PREF));
         descriptorFactory = config.getInstance(PARAM_DESCRIPTOR_FACTORY, descriptorFactory);
         serializerFactory = config.getInstance(PARAM_SERIALIZER_FACTORY, serializerFactory);
         debug = config.getParam(PARAM_DEBUG, debug);

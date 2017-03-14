@@ -5,12 +5,12 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.easyservices.bean.ServiceUtil;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.serialize.json.gson.DefaultTypeAdapterFactory;
 import org.zenframework.easyservices.serialize.json.gson.SimpleTypeAdapterFactory;
+import org.zenframework.easyservices.util.bean.ServiceUtil;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.TypeAdapter;

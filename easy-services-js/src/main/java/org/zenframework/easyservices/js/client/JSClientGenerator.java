@@ -6,10 +6,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.zenframework.easyservices.cls.ClassInfo;
-import org.zenframework.easyservices.cls.ClassRef;
-import org.zenframework.easyservices.cls.FieldInfo;
-import org.zenframework.easyservices.cls.MethodInfo;
+import org.zenframework.easyservices.util.cls.ClassInfo;
+import org.zenframework.easyservices.util.cls.ClassRef;
+import org.zenframework.easyservices.util.cls.FieldInfo;
+import org.zenframework.easyservices.util.cls.MethodInfo;
 
 public class JSClientGenerator {
 
