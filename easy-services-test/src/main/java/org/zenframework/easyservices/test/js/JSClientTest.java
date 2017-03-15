@@ -11,6 +11,7 @@ public class JSClientTest extends AbstractServiceTest {
     public void testJSClient() throws Exception {
         JSClientGenerator generator = new JSClientGenerator();
         generator.generateJSClient(System.out, Function.class);
+        // TODO test JS client
     }
 
 }
