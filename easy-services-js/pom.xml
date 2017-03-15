@@ -18,7 +18,6 @@
         <commons.pool.version>2.4.2</commons.pool.version>
         <!-- Test dependencies -->
         <jetty.version>9.2.20.v20161216</jetty.version>
-        <servlet.api.version>3.0.1</servlet.api.version>
         <spring.version>4.2.4.RELEASE</spring.version>
         <log4j.version>1.2.17</log4j.version>
         <slf4j.version>1.7.21</slf4j.version>
@@ -55,12 +54,6 @@
         </dependency>
 
         <!-- Test -->
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>${servlet.api.version}</version>
-            <scope>test</scope>
-        </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>

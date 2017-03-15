@@ -8,9 +8,11 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.ServiceInvoker;
+import org.zenframework.easyservices.ServiceSessionManager;
 import org.zenframework.easyservices.config.Config;
 import org.zenframework.easyservices.config.Configurable;
 import org.zenframework.easyservices.impl.ServiceInvokerImpl;
+import org.zenframework.easyservices.impl.ServiceSessionManagerImpl;
 
 public class ServiceHttpRequestHandler implements Configurable {
 
@@ -25,6 +27,7 @@ public class ServiceHttpRequestHandler implements Configurable {
 
     private ErrorMapper errorMapper = new ErrorMapper();
     private String servicesPath = DEFAULT_SERVICES_PATH;
+    private ServiceSessionManager sessionManager = new ServiceSessionManagerImpl();
     private ServiceInvoker serviceInvoker = new ServiceInvokerImpl();
 
     @Override
@@ -41,7 +44,8 @@ public class ServiceHttpRequestHandler implements Configurable {
 
     public void handleRequest(HttpServletRequest request, final HttpServletResponse response) throws IOException {
         response.setCharacterEncoding("UTF-8");
-        serviceInvoker.invoke(new HttpServiceRequest(request, servicesPath), new HttpServiceResponse(response, errorMapper));
+        serviceInvoker.invoke(new HttpServiceRequest(sessionManager.getSession(request.getSession().getId()), request, servicesPath),
+                new HttpServiceResponse(response, errorMapper));
     }
 
     public void setErrorMapper(ErrorMapper errorMapper) {

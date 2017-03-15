@@ -1,9 +1,10 @@
-package org.zenframework.easyservices;
+package org.zenframework.easyservices.impl;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
+import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.serialize.Serializer;
 

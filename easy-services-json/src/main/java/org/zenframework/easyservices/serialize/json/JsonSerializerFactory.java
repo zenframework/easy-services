@@ -43,14 +43,14 @@ public class JsonSerializerFactory implements SerializerFactory {
     }
 
     @Override
-    public Serializer getSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor) {
+    public Serializer getSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor, boolean outParametersMode) {
         GsonBuilder builder = new GsonBuilder();
         if (exposedOnly)
             builder.excludeFieldsWithoutExposeAnnotation();
         builder.registerTypeAdapterFactory(defaultFactory);
         for (TypeAdapterFactory factory : typeAdapterFactories)
             builder.registerTypeAdapterFactory(factory);
-        return new JsonSerializer(paramTypes, returnType, methodDescriptor, builder.create());
+        return new JsonSerializer(paramTypes, returnType, methodDescriptor, outParametersMode, builder.create());
     }
 
     @Override

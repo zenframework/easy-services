@@ -21,6 +21,7 @@ public class Environment {
     public static final String PROP_AUTO_ALIASING = "autoAliasing";
     public static final String PROP_DUPLICATE_METHOD_NAMES_SAFE = "duplicateMethodNamesSafe";
     public static final String PROP_OUT_PARAMETERS_MODE = "outParametersMode";
+    public static final String PROP_SECURITY_ENABLED = "securityEnabled";
     public static final String PROP_SERIALIZATION_FORMAT = "serializationFormat";
 
     private static final Config CONFIG = new MapConfig(System.getProperties()).getSubConfig(PROPERTIES_PREFIX);
@@ -30,6 +31,7 @@ public class Environment {
     private static final boolean DEFAULT_AUTO_ALIASING = false;
     private static final boolean DEFAULT_DUPLICATE_METHOD_NAMES_SAFE = true;
     private static final boolean DEFAULT_OUT_PARAMETERS_MODE = false;
+    private static final boolean DEFAULT_SECURITY_ENABLED = false;
 
     private static final String PREFERRED_SERIALIZATION_FORMAT = "json";
 
@@ -41,6 +43,7 @@ public class Environment {
         str.append("\n\t- autoAliasing:             ").append(isAutoAliasing());
         str.append("\n\t- duplicateMethodNamesSafe: ").append(isDuplicateMethodNamesSafe());
         str.append("\n\t- outParametersMode:        ").append(isOutParametersMode());
+        str.append("\n\t- securityEnabled:          ").append(isSecurityEnabled());
         str.append("\n\t- serializationFormat:      ").append(getSerializationFormat());
         LOG.info(str.toString());
     }
@@ -77,6 +80,14 @@ public class Environment {
 
     public static void setOutParametersMode(boolean outParametersMode) {
         CONFIG.setParam(PROP_OUT_PARAMETERS_MODE, outParametersMode);
+    }
+
+    public static boolean isSecurityEnabled() {
+        return CONFIG.getParam(PROP_SECURITY_ENABLED, DEFAULT_SECURITY_ENABLED);
+    }
+
+    public static void setSecurityEnabled(boolean securityEnabled) {
+        CONFIG.setParam(PROP_SECURITY_ENABLED, securityEnabled);
     }
 
     public static String getSerializationFormat() {

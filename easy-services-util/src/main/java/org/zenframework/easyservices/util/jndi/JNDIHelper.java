@@ -9,13 +9,19 @@ import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
 
+import javax.naming.Binding;
 import javax.naming.Context;
+import javax.naming.LinkRef;
+import javax.naming.Name;
+import javax.naming.NameParser;
+import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
 import javax.naming.spi.NamingManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zenframework.easyservices.util.string.StringUtil;
 
 public class JNDIHelper {
 
@@ -76,6 +82,29 @@ public class JNDIHelper {
                 context.bind(entry.getKey(), entry.getValue());
         }
         return context;
+    }
+
+    public static Name compose(Context context, String... components) throws NamingException {
+        NameParser parser = context.getNameParser(context.getNameInNamespace());
+        Name name = parser.parse("");
+        for (String comp : components)
+            name = name.add(comp);
+        return name;
+    }
+
+    public static StringBuilder printContext(StringBuilder str, Context context, String name, int indent) throws NamingException {
+        NamingEnumeration<Binding> bindings = context.listBindings(name);
+        while (bindings.hasMore()) {
+            Binding binding = bindings.next();
+            StringUtil.indent(str, indent, true).append(binding.getName());
+            if (binding.getObject() instanceof LinkRef)
+                str.append(" --> ").append(((LinkRef) binding.getObject()).getLinkName());
+            else
+                str.append(" : ").append(binding.getClassName()).append('@').append(System.identityHashCode(binding.getObject()));
+            if (binding.getObject() instanceof Context)
+                printContext(str, (Context) binding.getObject(), binding.getName(), indent + 1);
+        }
+        return str;
     }
 
 }

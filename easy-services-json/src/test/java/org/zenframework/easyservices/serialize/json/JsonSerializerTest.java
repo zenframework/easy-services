@@ -23,7 +23,7 @@ public class JsonSerializerTest extends TestCase {
     private static final String TEST_JSON_OBJ2 = "{ a : [ {'str':'qwe','i':1} ], b : [ {'str':'asd','i':2} ] }";
 
     public void testStrToArgs() throws Exception {
-        Serializer serializer = new JsonSerializer(new Class<?>[] { SimpleBean.class, SimpleBean.class }, null, null, new Gson());
+        Serializer serializer = new JsonSerializer(new Class<?>[] { SimpleBean.class, SimpleBean.class }, null, null, false, new Gson());
         Object[] result = serializer.deserializeParameters(stream(TEST_JSON_ARR));
         assertTrue(result.length == 2);
         for (Object o : result)
@@ -31,7 +31,7 @@ public class JsonSerializerTest extends TestCase {
     }
 
     public void testNullSerialization() throws Exception {
-        Serializer serializer = new JsonSerializer(null, SimpleBean.class, null, new Gson());
+        Serializer serializer = new JsonSerializer(null, SimpleBean.class, null, false, new Gson());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         serializer.serialize((Object) null, out);
         assertTrue(Arrays.equals("null".getBytes(), out.toByteArray()));
@@ -41,7 +41,7 @@ public class JsonSerializerTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testGenericListSerialization() throws Exception {
         Serializer serializer = new JsonSerializer(null, List.class, getMethodDescriptor(null, new ParamDescriptor(null, false, SimpleBean.class)),
-                new Gson());
+                false, new Gson());
         List<SimpleBean> list = (List<SimpleBean>) serializer.deserializeResult(stream(TEST_JSON_ARR), true);
         assertEquals(new SimpleBean("qwe", 1), list.get(0));
         assertEquals(new SimpleBean("asd", 2), list.get(1));
@@ -50,7 +50,7 @@ public class JsonSerializerTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testGenericMapSerialization() throws Exception {
         Serializer serializer = new JsonSerializer(null, Map.class,
-                getMethodDescriptor(null, new ParamDescriptor(null, false, String.class, SimpleBean.class)), new Gson());
+                getMethodDescriptor(null, new ParamDescriptor(null, false, String.class, SimpleBean.class)), false, new Gson());
         Map<String, SimpleBean> map = (Map<String, SimpleBean>) serializer.deserializeResult(stream(TEST_JSON_OBJ), true);
         assertEquals(new SimpleBean("qwe", 1), map.get("a"));
         assertEquals(new SimpleBean("asd", 2), map.get("b"));
@@ -59,14 +59,14 @@ public class JsonSerializerTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testComplexGenericSerialization() throws Exception {
         Serializer serializer = new JsonSerializer(null, Map.class,
-                getMethodDescriptor(null, new ParamDescriptor(null, false, String.class, List.class, SimpleBean.class)), new Gson());
+                getMethodDescriptor(null, new ParamDescriptor(null, false, String.class, List.class, SimpleBean.class)), false, new Gson());
         Map<String, List<SimpleBean>> map = (Map<String, List<SimpleBean>>) serializer.deserializeResult(stream(TEST_JSON_OBJ2), true);
         assertEquals(Arrays.asList(new SimpleBean("qwe", 1)), map.get("a"));
         assertEquals(Arrays.asList(new SimpleBean("asd", 2)), map.get("b"));
     }
 
     public void testClassSerialization() throws Exception {
-        Serializer serializer = new JsonSerializerFactory().getSerializer(null, Class.class, null);
+        Serializer serializer = new JsonSerializerFactory().getSerializer(null, Class.class, null, false);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         serializer.serialize(getClass(), out);
         assertEquals(getClass(), serializer.deserializeResult(new ByteArrayInputStream(out.toByteArray()), true));

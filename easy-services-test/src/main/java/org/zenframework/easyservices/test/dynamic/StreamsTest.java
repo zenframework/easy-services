@@ -26,10 +26,10 @@ public class StreamsTest extends AbstractServiceTest {
 
     private static final int SIZE_K = 1024;
 
-    @Parameterized.Parameters(name = "{index} autoAliasing: {0}, format: {1}, size: {2}K")
-    public static Collection<Object[]> formats() {
-        return Arrays
-                .asList(new Object[][] { { true, "json", SIZE_K }, { true, "bin", SIZE_K }, { false, "json", SIZE_K }, { false, "bin", SIZE_K } });
+    @Parameterized.Parameters(name = "#{index} secure: {0}, format: {1}, autoAliasing: {2}, size: {3}K")
+    public static Collection<Object[]> params() {
+        return Arrays.asList(new Object[][] { { true, "json", true, SIZE_K }, { true, "json", false, SIZE_K }, { false, "bin", false, SIZE_K },
+                { false, "json", true, SIZE_K }, { false, "json", false, SIZE_K }, { true, "bin", false, SIZE_K } });
     }
 
     private final int size;
@@ -38,10 +38,11 @@ public class StreamsTest extends AbstractServiceTest {
     private File sourceFile;
     private File targetFile;
 
-    public StreamsTest(boolean autoAliasing, String format, int size) {
+    public StreamsTest(boolean securityEnabled, String format, boolean autoAliasing, int size) {
+        Environment.setSecurityEnabled(securityEnabled);
+        Environment.setSerializationFormat(format);
         Environment.setAutoAliasing(autoAliasing);
         Environment.setDuplicateMethodNamesSafe(!autoAliasing);
-        Environment.setSerializationFormat(format);
         Environment.setOutParametersMode(true);
         this.size = size * 1024;
     }
@@ -52,15 +53,15 @@ public class StreamsTest extends AbstractServiceTest {
         sourceFile = createTestFile(File.createTempFile("easy-services-streams-test", ".in"), size);
         targetFile = File.createTempFile("easy-services-streams-test", ".out");
         StreamFactory factory = new StreamFactoryImpl(sourceFile, targetFile);
-        getServiceRegistry().bind("/streams", factory);
-        getRegistry().rebind("/streams", factory);
+        getServiceRegistry().bind("streams", factory);
+        getRmiRegistry().rebind("streams", factory);
     }
 
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        getServiceRegistry().unbind("/streams");
-        getRegistry().unbind("/streams");
+        getServiceRegistry().unbind("streams");
+        getRmiRegistry().unbind("streams");
         closeRegistry();
         sourceFile.delete();
         targetFile.delete();
@@ -68,7 +69,7 @@ public class StreamsTest extends AbstractServiceTest {
 
     @Test
     public void testEasyServicesStreams() throws Exception {
-        StreamFactory streams = getClient(StreamFactory.class, "/streams");
+        StreamFactory streams = getClient(StreamFactory.class, "streams");
         InputStream in = streams.getInputStream();
         OutputStream out = streams.getOutputStream();
         copy(in, out);
@@ -85,7 +86,7 @@ public class StreamsTest extends AbstractServiceTest {
 
     @Test
     public void testLocalStreams() throws Exception {
-        StreamFactory streams = (StreamFactory) getServiceRegistry().lookup("/streams");
+        StreamFactory streams = (StreamFactory) getServiceRegistry().lookup("streams");
         InputStream in = streams.getInputStream();
         OutputStream out = streams.getOutputStream();
         copy(in, out);
@@ -94,14 +95,14 @@ public class StreamsTest extends AbstractServiceTest {
 
     @Test
     public void testRmiStreams() throws Exception {
-        StreamFactory streams = (StreamFactory) getRegistry().lookup("/streams");
+        StreamFactory streams = (StreamFactory) getRmiRegistry().lookup("streams");
         RmiInputStream in = streams.getRmiInputStream();
         RmiOutputStream out = streams.getRmiOutputStream();
         copy(in, out);
         assertTrue(equals(sourceFile, targetFile));
     }
 
-    private Registry getRegistry() throws RemoteException {
+    private Registry getRmiRegistry() throws RemoteException {
         if (registry == null)
             registry = LocateRegistry.createRegistry(12345);
         return registry;

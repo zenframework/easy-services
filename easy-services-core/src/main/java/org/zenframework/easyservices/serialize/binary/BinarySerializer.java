@@ -6,7 +6,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 
-import org.zenframework.easyservices.ResponseObject;
 import org.zenframework.easyservices.serialize.SerializationException;
 import org.zenframework.easyservices.serialize.Serializer;
 
@@ -29,16 +28,6 @@ public class BinarySerializer implements Serializer {
         ObjectInputStream obj = new ObjectInputStream(in);
         try {
             return obj.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new SerializationException(e);
-        }
-    }
-
-    @Override
-    public ResponseObject deserializeResponse(InputStream in, boolean success) throws IOException, SerializationException {
-        ObjectInputStream obj = new ObjectInputStream(in);
-        try {
-            return (ResponseObject) obj.readObject();
         } catch (ClassNotFoundException e) {
             throw new SerializationException(e);
         }

@@ -1,9 +1,9 @@
 package org.zenframework.easyservices.jndi;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Set;
+import java.util.List;
 
 import javax.naming.Binding;
 import javax.naming.Context;
@@ -15,24 +15,24 @@ import javax.naming.NoPermissionException;
 
 public class SecureContext extends FilterContext {
 
-    protected static final int LOOKUP = 1;
-    protected static final int BIND = 2;
-    protected static final int UNBIND = 4;
+    public static final int NONE = 0;
+    public static final int LOOKUP = 1;
+    public static final int BIND = 2;
+    public static final int UNBIND = 4;
+    public static final int ALL = 7;
 
-    private final Set<Name> allowedDomains = new HashSet<Name>();
+    private final List<Rule> rules = new ArrayList<Rule>();
     private final boolean systemAccess;
 
-    public SecureContext(Context context, boolean systemAccess, Name... allowedDomains) throws NamingException {
-        super(context);
-        this.systemAccess = systemAccess;
-        this.allowedDomains.addAll(Arrays.asList(allowedDomains));
+    public SecureContext(Context context, boolean systemAccess, Rule... rules) throws NamingException {
+        this(context, systemAccess, Arrays.asList(rules));
     }
 
-    public SecureContext(Context context, boolean systemAccess, String... allowedDomains) throws NamingException {
+    public SecureContext(Context context, boolean systemAccess, List<Rule> rules) throws NamingException {
         super(context);
         this.systemAccess = systemAccess;
-        for (String allowedDomain : allowedDomains)
-            this.allowedDomains.add(parser.parse(allowedDomain));
+        for (Rule rule : rules)
+            this.rules.add(rule.getDomainName() != null ? rule : new Rule(parser.parse(rule.getDomainStr()), rule.getAccess()));
     }
 
     @Override
@@ -126,11 +126,11 @@ public class SecureContext extends FilterContext {
 
     @Override
     public Context createSubcontext(Name name) throws NamingException {
-        Set<Name> allowedSubdomains = new HashSet<Name>();
-        for (Name allowedDomain : allowedDomains)
-            if (allowedDomain.startsWith(name))
-                allowedSubdomains.add(allowedDomain.getSuffix(name.size()));
-        return new SecureContext(context.createSubcontext(name), systemAccess, allowedSubdomains.toArray(new Name[allowedSubdomains.size()]));
+        List<Rule> rules = new ArrayList<Rule>(this.rules.size());
+        for (Rule rule : this.rules)
+            if (rule.getDomainName().startsWith(name))
+                rules.add(new Rule(rule.getDomainName().getSuffix(name.size()), rule.getAccess()));
+        return new SecureContext(context.createSubcontext(name), systemAccess, rules);
     }
 
     @Override
@@ -178,17 +178,87 @@ public class SecureContext extends FilterContext {
         return context.getNameInNamespace();
     }
 
-    protected void checkAccessContext(Name name, int operation) throws NamingException {
-        name = context.composeName(name, contextName);
-        for (Name allowedDomain : allowedDomains)
-            if (name.startsWith(allowedDomain))
-                return;
+    protected void checkAccessContext(Name name, int access) throws NamingException {
+        for (Rule rule : rules) {
+            // checked name in domain
+            if (name.startsWith(rule.getDomainName())) {
+                // access_granted = checked_access -> allowed_access
+                if (((~access | rule.getAccess()) & ALL) == ALL)
+                    return;
+                throw new NoPermissionException(name.toString());
+            }
+        }
         throw new NoPermissionException(name.toString());
     }
 
     protected void checkSystemAccess() throws NoPermissionException {
         if (!systemAccess)
             throw new NoPermissionException();
+    }
+
+    public static String ruleToString(Rule rule) {
+        return new StringBuilder().append(rule.getDomainName() != null ? rule.getDomainName().toString() : rule.getDomainStr()).append(':')
+                .append((rule.getAccess() & LOOKUP) != 0 ? 'l' : '-').append((rule.getAccess() & BIND) != 0 ? 'b' : '-')
+                .append((rule.getAccess() & UNBIND) != 0 ? 'u' : '-').toString();
+    }
+
+    public static Rule parseRule(String ruleStr) {
+        String[] nameAccess = ruleStr.trim().split("\\:");
+        if (nameAccess.length != 2)
+            throw new IllegalArgumentException(ruleStr);
+        return new Rule(nameAccess[0], (nameAccess[1].charAt(0) == 'l' ? LOOKUP : NONE) | (nameAccess[1].charAt(1) == 'b' ? BIND : NONE)
+                | (nameAccess[1].charAt(2) == 'u' ? UNBIND : NONE));
+    }
+
+    public static class Rule {
+
+        private final Name domainName;
+        private final String domainStr;
+        private final int access;
+
+        public Rule(Name domain, int access) {
+            this.domainName = domain;
+            this.domainStr = null;
+            this.access = access;
+        }
+
+        public Rule(String domain, int access) {
+            this.domainName = null;
+            this.domainStr = domain;
+            this.access = access;
+        }
+
+        public Name getDomainName() {
+            return domainName;
+        }
+
+        public String getDomainStr() {
+            return domainStr;
+        }
+
+        public int getAccess() {
+            return access;
+        }
+
+        @Override
+        public int hashCode() {
+            return domainName.hashCode() ^ domainStr.hashCode() ^ access;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof Rule))
+                return false;
+            Rule rule = (Rule) obj;
+            return (domainName != null && domainName.equals(rule.getDomainName()) || domainStr.equals(rule.getDomainStr()))
+                    && access == rule.getAccess();
+        }
+
+        @Override
+        public String toString() {
+            return SecureContext.ruleToString(this);
+        }
+
     }
 
 }

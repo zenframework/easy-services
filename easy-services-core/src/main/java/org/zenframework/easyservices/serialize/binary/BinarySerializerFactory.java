@@ -24,7 +24,7 @@ public class BinarySerializerFactory implements SerializerFactory {
     }
 
     @Override
-    public Serializer getSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor) {
+    public Serializer getSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor, boolean outParametersMode) {
         return BinarySerializer.INSTANCE;
     }
 

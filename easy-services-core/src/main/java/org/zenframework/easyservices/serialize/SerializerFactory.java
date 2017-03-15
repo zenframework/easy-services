@@ -10,7 +10,7 @@ public interface SerializerFactory {
 
     String getFormat();
 
-    Serializer getSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor);
+    Serializer getSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor, boolean outParametersMode);
 
     Serializer getTypeSafeSerializer();
 

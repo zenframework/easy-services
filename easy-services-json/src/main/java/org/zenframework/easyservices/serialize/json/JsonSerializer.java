@@ -30,12 +30,14 @@ public class JsonSerializer implements Serializer {
     private final Class<?>[] paramTypes;
     private final Class<?> returnType;
     private final MethodDescriptor methodDescriptor;
+    private final boolean outParametersMode;
     private final Gson gson;
 
-    public JsonSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor, Gson gson) {
+    public JsonSerializer(Class<?>[] paramTypes, Class<?> returnType, MethodDescriptor methodDescriptor, boolean outParametersMode, Gson gson) {
         this.paramTypes = paramTypes;
         this.returnType = returnType;
         this.methodDescriptor = methodDescriptor;
+        this.outParametersMode = outParametersMode;
         this.gson = gson;
     }
 
@@ -49,40 +51,39 @@ public class JsonSerializer implements Serializer {
 
     @Override
     public Object deserializeResult(InputStream in, boolean success) throws IOException, SerializationException {
-        return deserialize(getJsonReader(in), success, returnType,
-                success && methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null);
+        if (outParametersMode) {
+            ParamDescriptor[] paramDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors()
+                    : new ParamDescriptor[paramTypes.length];
+            ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
+            try {
+                ResponseObject responseObject = new ResponseObject();
+                JsonReader reader = getJsonReader(in);
+                reader.beginObject();
+                while (reader.hasNext()) {
+                    String name = reader.nextName();
+                    if ("result".equals(name)) {
+                        responseObject.setResult(deserialize(reader, success, returnType, returnDescriptor));
+                    } else if ("parameters".equals(name)) {
+                        responseObject.setParameters(deserialize(reader, success, paramTypes, paramDescriptors));
+                    } else {
+                        throw new IOException("Unexpected name '" + name + "'");
+                    }
+                }
+                reader.endObject();
+                return responseObject;
+            } catch (JsonParseException e) {
+                throw new SerializationException(e);
+            }
+        } else {
+            return deserialize(getJsonReader(in), success, returnType,
+                    success && methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null);
+        }
     }
 
     @Override
     public Object[] deserializeParameters(InputStream in) throws IOException, SerializationException {
         return deserialize(getJsonReader(in), true, paramTypes,
                 methodDescriptor != null ? methodDescriptor.getParameterDescriptors() : new ValueDescriptor[paramTypes.length]);
-    }
-
-    @Override
-    public ResponseObject deserializeResponse(InputStream in, boolean success) throws IOException, SerializationException {
-        ParamDescriptor[] paramDescriptors = methodDescriptor != null ? methodDescriptor.getParameterDescriptors()
-                : new ParamDescriptor[paramTypes.length];
-        ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
-        try {
-            ResponseObject responseObject = new ResponseObject();
-            JsonReader reader = getJsonReader(in);
-            reader.beginObject();
-            while (reader.hasNext()) {
-                String name = reader.nextName();
-                if ("result".equals(name)) {
-                    responseObject.setResult(deserialize(reader, success, returnType, returnDescriptor));
-                } else if ("parameters".equals(name)) {
-                    responseObject.setParameters(deserialize(reader, success, paramTypes, paramDescriptors));
-                } else {
-                    throw new IOException("Unexpected name '" + name + "'");
-                }
-            }
-            reader.endObject();
-            return responseObject;
-        } catch (JsonParseException e) {
-            throw new SerializationException(e);
-        }
     }
 
     @Override

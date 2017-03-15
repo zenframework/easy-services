@@ -13,6 +13,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.zenframework.easyservices.ServiceRequest;
+import org.zenframework.easyservices.ServiceSession;
 import org.zenframework.easyservices.util.net.URIUtil;
 
 public class HttpServiceRequest extends ServiceRequest {
@@ -25,7 +26,8 @@ public class HttpServiceRequest extends ServiceRequest {
     private final String servicesPath;
     private final Map<String, List<String>> parameters;
 
-    public HttpServiceRequest(HttpServletRequest request, String servicesPath) {
+    public HttpServiceRequest(ServiceSession session, HttpServletRequest request, String servicesPath) {
+        super(session);
         this.request = request;
         this.servicesPath = servicesPath;
         this.parameters = URIUtil.splitQuery(request.getQueryString(), request.getCharacterEncoding());

@@ -1,10 +1,8 @@
 package org.zenframework.easyservices.impl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -12,6 +10,7 @@ import java.net.URLConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.ClientException;
+import org.zenframework.easyservices.ClientURLHandler;
 import org.zenframework.easyservices.ResponseObject;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
@@ -26,6 +25,8 @@ import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.update.ValueUpdater;
 import org.zenframework.easyservices.util.debug.TimeChecker;
 
+import net.sf.cglib.proxy.Callback;
+import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
@@ -33,21 +34,24 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceMethodInterceptor.class);
 
+    private final ClientFactoryImpl clientFactory;
     private final ServiceLocator serviceLocator;
     private final DescriptorFactory descriptorFactory;
+    private final ClientURLHandler clientUrlHandler;
     private final SerializerFactory serializerFactory;
     private final boolean outParametersMode;
     private final ValueUpdater updater;
     private final boolean debug;
 
-    public ServiceMethodInterceptor(ServiceLocator serviceLocator, DescriptorFactory descriptorFactory, SerializerFactory serializerFactory,
-            boolean outParametersMode, ValueUpdater updater, boolean debug) {
+    public ServiceMethodInterceptor(ClientFactoryImpl clientFactory, ServiceLocator serviceLocator, DescriptorFactory descriptorFactory) {
+        this.clientFactory = clientFactory;
         this.serviceLocator = serviceLocator;
         this.descriptorFactory = descriptorFactory;
-        this.serializerFactory = serializerFactory;
-        this.outParametersMode = outParametersMode;
-        this.updater = updater;
-        this.debug = debug;
+        this.clientUrlHandler = clientFactory.getClientUrlHandler();
+        this.serializerFactory = clientFactory.getSerializerFactory();
+        this.outParametersMode = clientFactory.isOutParametersMode();
+        this.updater = clientFactory.getUpdater();
+        this.debug = clientFactory.isDebug();
     }
 
     @Override
@@ -65,13 +69,13 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
                 : new MethodDescriptor(args.length);
         ParamDescriptor[] paramDescriptors = methodDescriptor.getParameterDescriptors();
         ValueDescriptor returnDescriptor = methodDescriptor.getReturnDescriptor();
-        Serializer serializer = serializerFactory.getSerializer(paramTypes, returnType, methodDescriptor);
+        Serializer serializer = serializerFactory.getSerializer(paramTypes, returnType, methodDescriptor, outParametersMode);
 
         // Find and replace proxy objects with references
         for (int i = 0; i < args.length; i++) {
             ParamDescriptor paramDescriptor = paramDescriptors[i];
             if (paramDescriptor != null && paramDescriptor.getTransfer() == ValueTransfer.REF) {
-                ServiceMethodInterceptor intercpetor = ClientProxy.getMethodInterceptor(args[i], ServiceMethodInterceptor.class);
+                ServiceMethodInterceptor intercpetor = getMethodInterceptor(args[i], ServiceMethodInterceptor.class);
                 args[i] = intercpetor.getServiceLocator();
             }
         }
@@ -84,73 +88,58 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         // Call service
         URL url = getServiceURL(serviceLocator, getMethodName(method, methodDescriptor));
         URLConnection connection = url.openConnection();
+        if (clientUrlHandler != null && clientFactory.getSessionId() != null)
+            clientUrlHandler.setSessionId(connection, clientFactory.getSessionId());
         connection.setDoOutput(true);
         connection.setDoInput(true);
         OutputStream out = connection.getOutputStream();
         try {
-            //out.write("args=");
             serializer.serialize(args, out);
         } finally {
             out.close();
         }
 
         // Receive response
-        ResponseObject responseObject = null;
-        InputStream in = null;
+        if (clientUrlHandler != null) {
+            String sessionId = clientUrlHandler.getSessionId(connection);
+            if (sessionId != null)
+                clientFactory.setSessionId(sessionId);
+        }
+        boolean error = clientUrlHandler != null && clientUrlHandler.isError(connection);
+        InputStream in = error ? clientUrlHandler.getErrorStream(connection) : connection.getInputStream();
+        Object result = null;
+        Object[] outParams = null;
         try {
-            in = connection.getInputStream();
-            if (outParametersMode) {
-                responseObject = serializer.deserializeResponse(in, true);
-            } else {
-                responseObject = new ResponseObject();
-                if (returnType != void.class)
-                    responseObject.setResult(serializer.deserializeResult(in, true));
+            if (returnType != void.class || error || outParametersMode)
+                result = serializer.deserializeResult(in, !error);
+            if (result instanceof ResponseObject) {
+                ResponseObject responseObject = (ResponseObject) result;
+                outParams = responseObject.getParameters();
+                result = responseObject.getResult();
             }
-            if (returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF) {
+            if (!error && returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF) {
                 // If result is reference, replace with proxy object
-                ServiceLocator locator = (ServiceLocator) responseObject.getResult();
+                ServiceLocator locator = (ServiceLocator) result;
                 if (locator.isRelative())
                     locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
-                responseObject.setResult(ClientProxy.getCGLibProxy(method.getReturnType(), locator, descriptorFactory, serializerFactory,
-                        outParametersMode, updater, debug));
+                result = clientFactory.getClient(method.getReturnType(), locator.getServiceName());
             }
             // Update OUT parameters
-            for (int i = 0; i < paramDescriptors.length; i++) {
-                ParamDescriptor paramDescriptor = paramDescriptors[i];
-                ValueTransfer transfer = paramDescriptor != null ? paramDescriptor.getTransfer() : null;
-                Object[] outParams = responseObject.getParameters();
-                if (transfer == ValueTransfer.OUT && outParams != null)
-                    updater.update(args[i], outParams[i]);
-            }
+            if (outParams != null)
+                updateParameters(args, outParams, paramDescriptors);
             if (time != null)
-                time.printDifference(responseObject);
-            return responseObject.getResult();
-        } catch (IOException e) {
-            tryHandleError(connection, serializer, method.getParameterTypes(), paramDescriptors);
-            throw e;
+                time.printDifference(result);
+            if (error)
+                throw (Throwable) result;
+            return result;
         } finally {
-            if (in != null)
-                in.close();
+            in.close();
         }
 
     }
 
     public ServiceLocator getServiceLocator() {
         return serviceLocator;
-    }
-
-    // TODO must be extendable
-    private void tryHandleError(URLConnection connection, Serializer serializer, Class<?>[] paramTypes, ValueDescriptor[] paramDescriptors)
-            throws Throwable {
-        if (connection instanceof HttpURLConnection) {
-            HttpURLConnection httpConnection = (HttpURLConnection) connection;
-            if (httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                InputStream in = httpConnection.getErrorStream();
-                Throwable e = (Throwable) (outParametersMode ? serializer.deserializeResponse(in, false).getResult()
-                        : serializer.deserializeResult(in, false));
-                throw e;
-            }
-        }
     }
 
     private URL getServiceURL(ServiceLocator serviceLocator, String methodName) throws MalformedURLException {
@@ -180,6 +169,27 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
                 str.append(", ");
         }
         return str.append(')').toString();
+    }
+
+    private void updateParameters(Object[] params, Object[] outParams, ParamDescriptor[] paramDescriptors) {
+        for (int i = 0; i < paramDescriptors.length; i++) {
+            ParamDescriptor paramDescriptor = paramDescriptors[i];
+            ValueTransfer transfer = paramDescriptor != null ? paramDescriptor.getTransfer() : null;
+            if (transfer == ValueTransfer.OUT && outParams != null)
+                updater.update(params[i], outParams[i]);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends MethodInterceptor> T getMethodInterceptor(Object proxy, Class<T> interceptorClass) {
+        if (proxy instanceof Factory) {
+            Factory factory = (Factory) proxy;
+            Callback callback = factory.getCallback(0);
+            if (interceptorClass.isInstance(callback)) {
+                return (T) callback;
+            }
+        }
+        throw new RuntimeException(proxy + " is not a proxy object");
     }
 
 }

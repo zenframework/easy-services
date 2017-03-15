@@ -4,30 +4,28 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class ServiceRequest {
 
-    private static final AtomicLong COUNTER = new AtomicLong();
+    private static final AtomicLong COUNTER = new AtomicLong(new Date().getTime());
 
     private final long id;
-    private Class<?> serviceClass;
+    private final ServiceSession session;
     private byte[] cachedData;
 
-    public ServiceRequest() {
-        id = COUNTER.incrementAndGet();
+    public ServiceRequest(ServiceSession session) {
+        this.id = COUNTER.incrementAndGet();
+        this.session = session;
     }
 
     public long getId() {
         return id;
     }
 
-    public Class<?> getServiceClass() {
-        return serviceClass;
-    }
-
-    public void setServiceClass(Class<?> serviceClass) {
-        this.serviceClass = serviceClass;
+    public ServiceSession getSession() {
+        return session;
     }
 
     public void cacheInput() throws IOException {
@@ -51,8 +49,8 @@ public abstract class ServiceRequest {
 
     @Override
     public String toString() {
-        return new StringBuilder().append('#').append(String.format("%06d", id)).append(':').append(getServiceName()).append('.')
-                .append(getMethodName()).toString();
+        return new StringBuilder().append('#').append(Long.toHexString(id).substring(2)).append(':').append(session.getId()).append('/')
+                .append(getServiceName()).append('.').append(getMethodName()).append("()").toString();
     }
 
     abstract public String getServiceName();

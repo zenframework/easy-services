@@ -14,8 +14,8 @@ import org.zenframework.easyservices.test.AbstractServiceTest;
 @RunWith(Parameterized.class)
 public class DescriptorTest extends AbstractServiceTest {
 
-    @Parameterized.Parameters(name = "{index} format:{0}")
-    public static Collection<Object[]> formats() {
+    @Parameterized.Parameters(name = "#{index} format:{0}")
+    public static Collection<Object[]> params() {
         return Arrays.asList(new Object[][] { { "json" }, { "bin" } });
     }
 

@@ -3,25 +3,33 @@ package org.zenframework.easyservices.test.dynamic;
 import java.util.Arrays;
 import java.util.Collection;
 
+import javax.naming.NamingException;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.test.AbstractServiceTest;
 import org.zenframework.easyservices.test.simple.Addition;
 import org.zenframework.easyservices.test.simple.Function;
 import org.zenframework.easyservices.test.simple.Substraction;
+import org.zenframework.easyservices.util.jndi.JNDIHelper;
 
 @RunWith(Parameterized.class)
 public class DynamicTest extends AbstractServiceTest {
 
-    @Parameterized.Parameters(name = "{index} format:{0}")
-    public static Collection<Object[]> formats() {
-        return Arrays.asList(new Object[][] { { "json" }, { "bin" } });
+    private static final Logger LOG = LoggerFactory.getLogger(DynamicTest.class);
+
+    @Parameterized.Parameters(name = "#{index} secure: {0}, format: {1}")
+    public static Collection<Object[]> params() {
+        return Arrays.asList(new Object[][] { { true, "json" }, { true, "bin" }, { false, "json" }, { false, "bin" } });
     }
 
-    public DynamicTest(String format) {
+    public DynamicTest(boolean securityEnabled, String format) {
+        Environment.setSecurityEnabled(securityEnabled);
         Environment.setSerializationFormat(format);
     }
 
@@ -51,9 +59,12 @@ public class DynamicTest extends AbstractServiceTest {
 
     @Test
     public void testCloseByParam() throws Exception {
+        logContext("REGISTRY after init");
         Calculator calc = getClient(Calculator.class, "calc");
         Function add = calc.getFunction("add");
+        logContext("REGISTRY after get dynamic");
         calc.close(add);
+        logContext("REGISTRY after close dynamic");
         try {
             add.call(1, 2);
             fail("Closed dynamic service can't be called");
@@ -73,6 +84,10 @@ public class DynamicTest extends AbstractServiceTest {
         } catch (Throwable e) {
             assertTrue("Expected ServiceException, caught " + e, e instanceof ServiceException);
         }
+    }
+
+    private void logContext(String title) throws NamingException {
+        LOG.info(JNDIHelper.printContext(new StringBuilder().append(title), getServiceRegistry(), "", 1).toString());
     }
 
 }
