@@ -8,8 +8,10 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class StringUtil {
 
@@ -576,6 +578,18 @@ public class StringUtil {
                 return new String(bytes, 0, i, charset);
         }
         return new String(bytes, charset);
+    }
+
+    public static Map<String, String> toMap(String header, String keyValueSeparator, String pairsSeparator) {
+        Map<String, String> map = new HashMap<String, String>();
+        String[] pairs = header == null ? new String[0] : header.split(pairsSeparator);
+        for (String pair : pairs) {
+            int idx = pair.indexOf(keyValueSeparator);
+            String key = idx > 0 ? pair.substring(0, idx).trim() : pair.trim();
+            String value = idx > 0 && pair.length() > idx + 1 ? pair.substring(idx + 1).trim() : null;
+            map.put(key, value);
+        }
+        return map;
     }
 
 }
