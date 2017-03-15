@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.zenframework.easyservices.ServiceException;
 
-public class ErrorMapper {
+public class HttpErrorMapper {
 
     private static final int DEFAULT_STATUS = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 

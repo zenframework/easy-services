@@ -1,10 +1,8 @@
 package org.zenframework.easyservices.serialize;
 
-import org.zenframework.easyservices.ServiceException;
+public class SerializationException extends RuntimeException {
 
-public class SerializationException extends ServiceException {
-
-    private static final long serialVersionUID = -5368103071231339780L;
+    private static final long serialVersionUID = 1L;
 
     public SerializationException(String message) {
         super(message);

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.naming.Context;
+import javax.naming.Name;
 import javax.naming.NamingException;
 
 import org.apache.commons.lang.ClassUtils;
@@ -103,13 +104,6 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         } catch (IOException e) {
             throw e;
         } catch (Throwable e) {
-            if (e instanceof InvocationTargetException) {
-                e = ((InvocationTargetException) e).getTargetException();
-                if (LOG.isDebugEnabled())
-                    LOG.debug(request + (context != null ? '[' + context.toString() + ']' : "") + " invocation error" + context, e);
-            } else {
-                LOG.info(request + (context != null ? '[' + context.toString() + ']' : "") + " service error", e);
-            }
             responseObject.setResult(e);
             response.sendError(e);
         }
@@ -207,34 +201,53 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         MethodDescriptor methodDescriptor = context.getMethodDescriptor();
         TimeChecker time = (debug || methodDescriptor != null && methodDescriptor.getDebug()) && LOG.isDebugEnabled()
                 ? new TimeChecker(request + " INVOKE ", LOG) : null;
-        Object result = context.getMethod().invoke(service, context.getParams());
-        // If method must return reference, bind result to service register and set result to service locator
-        ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
-        if (returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF)
-            result = ServiceLocator.relative(request.getSession().bindService(Long.toHexString(request.getId()), result));
-        // If method must close dynamic service, remove it from repository
-        if (methodDescriptor.isClose())
-            request.getSession().unbindService(request.getServiceName());
-        // Close dynamic services, passed as parameters
-        for (int i = 0; i < context.getRawParams().length; i++) {
-            ParamDescriptor paramDescriptor = methodDescriptor.getParameterDescriptor(i);
-            if (paramDescriptor != null && paramDescriptor.getTransfer() == ValueTransfer.REF && paramDescriptor.isClose())
-                request.getSession().unbindService(((ServiceLocator) context.getRawParams()[i]).getServiceName());
+        try {
+            Object result = context.getMethod().invoke(service, context.getParams());
+            // If method must return reference, bind result to service register and set result to service locator
+            ValueDescriptor returnDescriptor = methodDescriptor != null ? methodDescriptor.getReturnDescriptor() : null;
+            if (returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF)
+                result = ServiceLocator.relative(bindDynamicService(request, result));
+            // If method must close dynamic service, remove it from repository
+            if (methodDescriptor.isClose())
+                request.getSession().getServiceRegistry().unbind(request.getServiceName());
+            // Close dynamic services, passed as parameters
+            for (int i = 0; i < context.getRawParams().length; i++) {
+                ParamDescriptor paramDescriptor = methodDescriptor.getParameterDescriptor(i);
+                if (paramDescriptor != null && paramDescriptor.getTransfer() == ValueTransfer.REF && paramDescriptor.isClose())
+                    request.getSession().getServiceRegistry().unbind(((ServiceLocator) context.getRawParams()[i]).getServiceName());
+            }
+            if (time != null)
+                time.printDifference(result);
+            return result;
+        } catch (InvocationTargetException e) {
+            Throwable target = ((InvocationTargetException) e).getTargetException();
+            if (LOG.isDebugEnabled())
+                LOG.debug(request + (context != null ? '[' + context.toString() + ']' : "") + " invocation error" + context, target);
+            throw target;
+        } catch (Exception e) {
+            LOG.info(request + (context != null ? '[' + context.toString() + ']' : "") + " service error", e);
+            throw new ServiceException(request.toString() + ", invocation " + context + " error", e);
         }
-        if (time != null)
-            time.printDifference(result);
-        return result;
     }
 
     protected Object lookupService(ServiceRequest request) {
         String serviceName = request.getServiceName();
-        if (DescriptorFactory.NAME.equals(serviceName))
-            return descriptorFactory;
         try {
-            return request.getSession().getServiceRegistry().lookupLink(serviceName);
+            return DescriptorFactory.NAME.equals(serviceName) ? descriptorFactory : request.getSession().getServiceRegistry().lookupLink(serviceName);
         } catch (NamingException e) {
-            throw new ServiceException("Service " + serviceName + " not found", e);
+            throw new ServiceException(request.toString() + " error: service not found", e);
         }
+    }
+
+    protected String bindDynamicService(ServiceRequest request, Object service) throws NamingException {
+        Context serviceRegistry = request.getSession().getServiceRegistry();
+        Name name = request.getSession().getSessionContextName().add(service.getClass().getName() + '@' + System.identityHashCode(service));
+        try {
+            serviceRegistry.lookupLink(name);
+        } catch (NamingException e) {
+            serviceRegistry.bind(name, service);
+        }
+        return name.toString();
     }
 
     private InvocationContext getInvocationContext(ServiceRequest request, Class<?> serviceClass) throws IOException, ServiceException {

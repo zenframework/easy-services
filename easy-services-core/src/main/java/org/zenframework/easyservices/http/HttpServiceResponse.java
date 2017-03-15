@@ -10,9 +10,9 @@ import org.zenframework.easyservices.ServiceResponse;
 public class HttpServiceResponse extends ServiceResponse {
 
     private final HttpServletResponse response;
-    private final ErrorMapper errorMapper;
+    private final HttpErrorMapper errorMapper;
 
-    public HttpServiceResponse(HttpServletResponse response, ErrorMapper errorMapper) {
+    public HttpServiceResponse(HttpServletResponse response, HttpErrorMapper errorMapper) {
         this.response = response;
         this.errorMapper = errorMapper;
     }

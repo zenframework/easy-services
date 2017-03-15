@@ -11,15 +11,15 @@ import org.zenframework.easyservices.ServiceInvoker;
 import org.zenframework.easyservices.config.Config;
 import org.zenframework.easyservices.config.WebappConfig;
 
-public class ServiceHttpServlet extends HttpServlet {
+public class HttpServiceServlet extends HttpServlet {
 
     private static final long serialVersionUID = 6337141493514767757L;
 
-    private final ServiceHttpRequestHandler requestHandler = new ServiceHttpRequestHandler();
+    private final HttpServiceRequestHandler requestHandler = new HttpServiceRequestHandler();
 
     private Config config;
 
-    public void setErrorMapper(ErrorMapper errorMapper) {
+    public void setErrorMapper(HttpErrorMapper errorMapper) {
         requestHandler.setErrorMapper(errorMapper);
     }
 
@@ -31,7 +31,7 @@ public class ServiceHttpServlet extends HttpServlet {
         requestHandler.setServiceInvoker(serviceInvoker);
     }
 
-    public ErrorMapper getErrorMapper() {
+    public HttpErrorMapper getErrorMapper() {
         return requestHandler.getErrorMapper();
     }
 

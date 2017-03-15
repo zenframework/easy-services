@@ -4,13 +4,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
-import org.zenframework.easyservices.http.ErrorMapper;
+import org.zenframework.easyservices.http.HttpErrorMapper;
 
 import junit.framework.TestCase;
 
-public class ErrorMapperTest extends TestCase {
+public class HttpErrorMapperTest extends TestCase {
 
-    private final ErrorMapper errorMapper = new ErrorMapper();
+    private final HttpErrorMapper errorMapper = new HttpErrorMapper();
 
     @Override
     protected void setUp() throws Exception {

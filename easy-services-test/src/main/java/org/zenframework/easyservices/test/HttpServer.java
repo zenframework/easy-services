@@ -16,7 +16,7 @@ import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.session.HashSessionIdManager;
 import org.eclipse.jetty.server.session.HashSessionManager;
 import org.eclipse.jetty.server.session.SessionHandler;
-import org.zenframework.easyservices.http.ServiceHttpRequestHandler;
+import org.zenframework.easyservices.http.HttpServiceRequestHandler;
 import org.zenframework.easyservices.resource.ClasspathResourceFactory;
 import org.zenframework.easyservices.resource.Resource;
 import org.zenframework.easyservices.resource.ResourceFactory;
@@ -25,7 +25,7 @@ public class HttpServer {
 
     private final int port;
     private final ResourceFactory resourceFactory = new ClasspathResourceFactory();
-    private ServiceHttpRequestHandler serviceHttpRequestHandler = new ServiceHttpRequestHandler();
+    private HttpServiceRequestHandler serviceHttpRequestHandler = new HttpServiceRequestHandler();
 
     private Server server;
 
@@ -83,7 +83,7 @@ public class HttpServer {
         server.stop();
     }
 
-    public void setServiceHttpRequestHandler(ServiceHttpRequestHandler httpServiceRequestHandler) {
+    public void setServiceHttpRequestHandler(HttpServiceRequestHandler httpServiceRequestHandler) {
         this.serviceHttpRequestHandler = httpServiceRequestHandler;
     }
 
