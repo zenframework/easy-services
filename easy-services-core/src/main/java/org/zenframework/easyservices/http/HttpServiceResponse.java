@@ -23,6 +23,9 @@ public class HttpServiceResponse extends ServiceResponse {
     }
 
     @Override
+    public void sendSuccess() throws IOException {}
+
+    @Override
     public void sendError(Throwable e) {
         response.setStatus(getStatus(e));
     }

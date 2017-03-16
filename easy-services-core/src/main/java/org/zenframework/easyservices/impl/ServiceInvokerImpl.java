@@ -101,6 +101,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
                 else if (hasOutParameters(context))
                     LOG.warn(request + ": Requested method has OUT parameters, but outParametersMode is off");
             }
+            response.sendSuccess();
         } catch (IOException e) {
             throw e;
         } catch (Throwable e) {

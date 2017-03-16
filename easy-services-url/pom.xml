@@ -3,8 +3,8 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>easy-services-util</artifactId>
-    <name>Zenframework Easy Services - Utils</name>
+    <artifactId>easy-services-url</artifactId>
+    <name>Zenframework Easy Services - URL Handlers</name>
     <packaging>bundle</packaging>
 
     <parent>
@@ -14,19 +14,14 @@
     </parent>
 
     <properties>
-        <bundle.namespace>org.zenframework.easyservices.util</bundle.namespace>
+        <bundle.namespace>org.zenframework.easyservices.protocol</bundle.namespace>
+        <bundle.extpackages>sun.net.www.protocol.classpath,sun.net.www.protocol.tcp</bundle.extpackages>
         <commons.io.version>2.5</commons.io.version>
         <commons.lang.version>2.6</commons.lang.version>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-            <version>${servlet.api.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
+        <!-- <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
             <version>${commons.lang.version}</version>
@@ -35,7 +30,7 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons.io.version}</version>
-        </dependency>
+        </dependency> -->
     </dependencies>
 
     <build>

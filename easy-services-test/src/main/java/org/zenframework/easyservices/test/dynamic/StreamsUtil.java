@@ -6,10 +6,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
 
 public class StreamsUtil {
+
+    private static final File TEMP_FOLDER = new File("/opt/ramdisk");
 
     private StreamsUtil() {}
 
@@ -30,7 +33,8 @@ public class StreamsUtil {
         }
     }
 
-    public static File createTestFile(File file, int size) throws IOException {
+    public static File createTestFile(String prefix, String suffix, int size) throws IOException {
+        File file = getTempFile(prefix, suffix);
         OutputStream out = new FileOutputStream(file);
         byte[] buf = new byte[8192];
         try {
@@ -48,6 +52,12 @@ public class StreamsUtil {
             out.close();
         }
         return file;
+    }
+
+    public static File getTempFile(String prefix, String suffix) throws IOException {
+        if (TEMP_FOLDER.exists())
+            return new File(TEMP_FOLDER, prefix + UUID.randomUUID().toString() + suffix);
+        return File.createTempFile(prefix, suffix);
     }
 
     public static boolean equals(File f1, File f2) throws IOException {

@@ -25,6 +25,7 @@
         <module>easy-services-json</module>
         <module>easy-services-resource</module>
         <module>easy-services-test</module>
+        <module>easy-services-url</module>
         <module>easy-services-util</module>
         <module>easy-services-websocket</module>
     </modules>

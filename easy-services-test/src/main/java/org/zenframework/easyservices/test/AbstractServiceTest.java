@@ -7,7 +7,7 @@ import org.junit.Before;
 import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ClientFactory;
 import org.zenframework.easyservices.http.HttpServiceRequestHandler;
-import org.zenframework.easyservices.impl.ClientFactoryImpl;
+import org.zenframework.easyservices.impl.URLClientFactory;
 import org.zenframework.easyservices.util.jndi.JNDIHelper;
 
 import junit.framework.TestCase;
@@ -22,7 +22,7 @@ public abstract class AbstractServiceTest extends TestCase {
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        clientFactory = new ClientFactoryImpl("http://localhost:" + TestContext.JETTY_PORT + "/services");
+        clientFactory = new URLClientFactory("http://localhost:" + TestContext.JETTY_PORT + "/services");
         server = new HttpServer(TestContext.JETTY_PORT);
         server.setServiceHttpRequestHandler(new HttpServiceRequestHandler());
         server.start();

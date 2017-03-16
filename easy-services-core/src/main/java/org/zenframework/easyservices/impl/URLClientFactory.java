@@ -18,9 +18,9 @@ import org.zenframework.easyservices.update.ValueUpdaterImpl;
 
 import net.sf.cglib.proxy.Enhancer;
 
-public class ClientFactoryImpl implements ClientFactory {
+public class URLClientFactory implements ClientFactory {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ClientFactoryImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(URLClientFactory.class);
 
     private DescriptorFactory descriptorFactory = new ClientDescriptorFactory();
     private SerializerFactory serializerFactory = Environment.getSerializerFactory();
@@ -31,15 +31,15 @@ public class ClientFactoryImpl implements ClientFactory {
     private ClientURLHandler clientUrlHandler;
     private String sessionId;
 
-    public ClientFactoryImpl() {}
+    public URLClientFactory() {}
 
-    public ClientFactoryImpl(String baseUrl) {
+    public URLClientFactory(String baseUrl) {
         this.baseUrl = baseUrl;
     }
 
     @Override
     public <T> T getClient(Class<T> serviceClass, String serviceName) {
-        return getProxy(serviceClass, serviceName, descriptorFactory);
+        return getProxy(serviceClass, serviceName, true);
     }
 
     public void setDescriptorFactory(DescriptorFactory descriptorFactory) {
@@ -114,9 +114,8 @@ public class ClientFactoryImpl implements ClientFactory {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> T getProxy(Class<T> serviceClass, String serviceName, DescriptorFactory classDescriptorFactory) {
-        return (T) Enhancer.create(serviceClass,
-                new ServiceMethodInterceptor(this, ServiceLocator.qualified(baseUrl, serviceName), classDescriptorFactory));
+    private <T> T getProxy(Class<T> serviceClass, String serviceName, boolean useDescriptors) {
+        return (T) Enhancer.create(serviceClass, new URLMethodInterceptor(this, ServiceLocator.qualified(baseUrl, serviceName), useDescriptors));
     }
 
     private class ClientDescriptorFactory extends CachingDescriptorFactory {
@@ -130,7 +129,7 @@ public class ClientFactoryImpl implements ClientFactory {
 
         private synchronized DescriptorFactory getRemoteFactory() {
             if (remoteDescriptorFactory == null)
-                remoteDescriptorFactory = getProxy(DescriptorFactory.class, DescriptorFactory.NAME, null);
+                remoteDescriptorFactory = getProxy(DescriptorFactory.class, DescriptorFactory.NAME, false);
             return remoteDescriptorFactory;
         }
 

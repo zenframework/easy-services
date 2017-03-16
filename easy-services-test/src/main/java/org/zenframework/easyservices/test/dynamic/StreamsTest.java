@@ -41,8 +41,8 @@ public class StreamsTest extends AbstractServiceTest {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        sourceFile = StreamsUtil.createTestFile(File.createTempFile("easy-services-streams-test", ".in"), size);
-        targetFile = File.createTempFile("easy-services-streams-test", ".out");
+        sourceFile = StreamsUtil.createTestFile("easy-services-streams-test", ".in", size);
+        targetFile = StreamsUtil.getTempFile("easy-services-streams-test", ".out");
         getServiceRegistry().bind("streams", new StreamFactoryImpl(sourceFile, targetFile));
     }
 

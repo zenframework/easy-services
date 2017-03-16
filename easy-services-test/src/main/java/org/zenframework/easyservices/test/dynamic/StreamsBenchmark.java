@@ -22,8 +22,8 @@ public class StreamsBenchmark extends TestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        sourceFile = StreamsUtil.createTestFile(File.createTempFile("easy-services-streams-test", ".in"), StreamsTest.SIZE_K * 1024);
-        targetFile = File.createTempFile("easy-services-streams-test", ".out");
+        sourceFile = StreamsUtil.createTestFile("easy-services-streams-test", ".in", StreamsTest.SIZE_K * 1024);
+        targetFile = StreamsUtil.getTempFile("easy-services-streams-test", ".out");
         streams = new StreamFactoryImpl(sourceFile, targetFile);
         getRmiRegistry().rebind("streams", streams);
     }

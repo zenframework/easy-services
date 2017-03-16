@@ -20,6 +20,8 @@ public abstract class ServiceResponse {
 
     abstract public OutputStream getOutputStream() throws IOException;
 
-    abstract public void sendError(Throwable e);
+    abstract public void sendSuccess() throws IOException;
+
+    abstract public void sendError(Throwable e) throws IOException;
 
 }

@@ -60,6 +60,11 @@
             <artifactId>easy-services-js</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>easy-services-url</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         
         <!-- Web support -->
         <dependency>
