@@ -26,6 +26,7 @@ public class Environment {
 
     private static final Config CONFIG = new MapConfig(System.getProperties()).getSubConfig(PROPERTIES_PREFIX);
     private static final Map<String, SerializerFactory> SERIALIZER_FACTORIES = initFactories();
+    private static final Map<String, ClientURLHandler> CLIENT_URL_HANDLERS = initClientUrlHandlers();
 
     private static final boolean DEFAULT_DEBUG = true;
     private static final boolean DEFAULT_AUTO_ALIASING = false;
@@ -107,8 +108,20 @@ public class Environment {
         return SERIALIZER_FACTORIES.get(getSerializationFormat());
     }
 
+    public static SerializerFactory getSerializerFactory(String format) {
+        return SERIALIZER_FACTORIES.get(format);
+    }
+
     public static Map<String, SerializerFactory> getSerializationFactories() {
         return SERIALIZER_FACTORIES;
+    }
+
+    public static ClientURLHandler getClientUrlHandler(String protocol) {
+        return CLIENT_URL_HANDLERS.get(protocol);
+    }
+
+    public static Map<String, ClientURLHandler> getClientUrlHandlers() {
+        return CLIENT_URL_HANDLERS;
     }
 
     private static Map<String, SerializerFactory> initFactories() {
@@ -116,6 +129,13 @@ public class Environment {
         for (SerializerFactory factory : ServiceUtil.getServices(SerializerFactory.class))
             factories.put(factory.getFormat(), factory);
         return Collections.unmodifiableMap(factories);
+    }
+
+    private static Map<String, ClientURLHandler> initClientUrlHandlers() {
+        Map<String, ClientURLHandler> handlers = new HashMap<String, ClientURLHandler>();
+        for (ClientURLHandler handler : ServiceUtil.getServices(ClientURLHandler.class))
+            handlers.put(handler.getProtocol(), handler);
+        return Collections.unmodifiableMap(handlers);
     }
 
 }

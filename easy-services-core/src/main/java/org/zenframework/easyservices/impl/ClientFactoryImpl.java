@@ -1,6 +1,7 @@
 package org.zenframework.easyservices.impl;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +15,6 @@ import org.zenframework.easyservices.descriptor.DescriptorFactory;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.update.ValueUpdater;
 import org.zenframework.easyservices.update.ValueUpdaterImpl;
-import org.zenframework.easyservices.util.bean.ServiceUtil;
 
 import net.sf.cglib.proxy.Enhancer;
 
@@ -93,11 +93,8 @@ public class ClientFactoryImpl implements ClientFactory {
     public ClientURLHandler getClientUrlHandler() {
         if (clientUrlHandler == null) {
             try {
-                URI baseUri = new URI(baseUrl);
-                for (ClientURLHandler handler : ServiceUtil.getServices(ClientURLHandler.class))
-                    if (handler.getProtocol().equals(baseUri.getScheme()))
-                        clientUrlHandler = handler;
-            } catch (Throwable e) {
+                clientUrlHandler = Environment.getClientUrlHandler(new URI(baseUrl).getScheme());
+            } catch (URISyntaxException e) {
                 LOG.warn("Can't initialize default client URL handler for URL " + baseUrl, e);
             }
         }
