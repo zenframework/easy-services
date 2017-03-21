@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.socket;
+package org.zenframework.easyservices.tcp;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -8,14 +8,14 @@ import java.io.OutputStream;
 
 import org.zenframework.easyservices.net.Header;
 
-public class ResponseHeader implements Header {
+public class TcpResponseHeader implements Header {
 
     private String sessionId;
     private boolean success;
 
-    public ResponseHeader() {}
+    public TcpResponseHeader() {}
 
-    public ResponseHeader(String sessionId, boolean success) {
+    public TcpResponseHeader(String sessionId, boolean success) {
         this.sessionId = sessionId;
         this.success = success;
     }

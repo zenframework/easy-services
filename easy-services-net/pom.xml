@@ -3,7 +3,7 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>easy-services-url</artifactId>
+    <artifactId>easy-services-net</artifactId>
     <name>Zenframework Easy Services - URL Handlers</name>
     <packaging>bundle</packaging>
 
@@ -14,7 +14,7 @@
     </parent>
 
     <properties>
-        <bundle.namespace>org.zenframework.easyservices.protocol</bundle.namespace>
+        <bundle.namespace>org.zenframework.easyservices.net</bundle.namespace>
         <bundle.extpackages>sun.net.www.protocol.classpath,sun.net.www.protocol.tcp</bundle.extpackages>
     </properties>
 

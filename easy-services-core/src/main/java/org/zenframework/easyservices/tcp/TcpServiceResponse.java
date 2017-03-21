@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.socket;
+package org.zenframework.easyservices.tcp;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -6,12 +6,12 @@ import java.io.OutputStream;
 import org.zenframework.easyservices.ServiceResponse;
 import org.zenframework.easyservices.util.io.BlockOutputStream;
 
-public class SocketServiceResponse extends ServiceResponse {
+public class TcpServiceResponse extends ServiceResponse {
 
     private final String sessionId;
     private final OutputStream out;
 
-    public SocketServiceResponse(String sessionId, OutputStream out) {
+    public TcpServiceResponse(String sessionId, OutputStream out) {
         this.sessionId = sessionId;
         this.out = new BlockOutputStream(out);
     }
@@ -23,12 +23,12 @@ public class SocketServiceResponse extends ServiceResponse {
 
     @Override
     public void sendSuccess() throws IOException {
-        new ResponseHeader(sessionId, true).write(out);
+        new TcpResponseHeader(sessionId, true).write(out);
     }
 
     @Override
     public void sendError(Throwable e) throws IOException {
-        new ResponseHeader(sessionId, false).write(out);
+        new TcpResponseHeader(sessionId, false).write(out);
     }
 
 }

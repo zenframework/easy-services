@@ -9,7 +9,7 @@ import org.zenframework.easyservices.ClientFactory;
 import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.http.HttpServiceRequestHandler;
 import org.zenframework.easyservices.impl.ClientFactoryImpl;
-import org.zenframework.easyservices.socket.TcpServiceServer;
+import org.zenframework.easyservices.tcp.TcpServiceServer;
 import org.zenframework.easyservices.util.jndi.JNDIHelper;
 
 import junit.framework.TestCase;

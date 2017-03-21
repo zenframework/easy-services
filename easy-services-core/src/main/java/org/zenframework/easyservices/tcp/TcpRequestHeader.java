@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.socket;
+package org.zenframework.easyservices.tcp;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -8,16 +8,16 @@ import java.io.OutputStream;
 
 import org.zenframework.easyservices.net.Header;
 
-public class RequestHeader implements Header {
+public class TcpRequestHeader implements Header {
 
     private String sessionId;
     private String serviceName;
     private String methodName;
     private boolean outParametersMode;
 
-    public RequestHeader() {}
+    public TcpRequestHeader() {}
 
-    public RequestHeader(String sessionId, String serviceName, String methodName, boolean outParametersMode) {
+    public TcpRequestHeader(String sessionId, String serviceName, String methodName, boolean outParametersMode) {
         this.sessionId = sessionId;
         this.serviceName = serviceName;
         this.methodName = methodName;

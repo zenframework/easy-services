@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.socket;
+package org.zenframework.easyservices.tcp;
 
 import java.io.IOException;
 

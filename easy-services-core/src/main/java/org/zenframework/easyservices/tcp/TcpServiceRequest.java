@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.socket;
+package org.zenframework.easyservices.tcp;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -6,12 +6,12 @@ import java.io.InputStream;
 import org.zenframework.easyservices.ServiceRequest;
 import org.zenframework.easyservices.ServiceSession;
 
-public class SocketServiceRequest extends ServiceRequest {
+public class TcpServiceRequest extends ServiceRequest {
 
-    private final RequestHeader header;
+    private final TcpRequestHeader header;
     private final InputStream in;
 
-    public SocketServiceRequest(ServiceSession session, RequestHeader header, InputStream in) throws IOException {
+    public TcpServiceRequest(ServiceSession session, TcpRequestHeader header, InputStream in) throws IOException {
         super(session);
         this.header = header;
         this.in = in;

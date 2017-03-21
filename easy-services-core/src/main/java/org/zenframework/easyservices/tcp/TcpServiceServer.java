@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.socket;
+package org.zenframework.easyservices.tcp;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -78,10 +78,10 @@ public class TcpServiceServer {
         @Override
         public void run() {
             InputStream in = null;
-            RequestHeader header = null;
+            TcpRequestHeader header = null;
             try {
                 in = new BlockInputStream(socket.getInputStream());
-                header = new RequestHeader();
+                header = new TcpRequestHeader();
                 header.read(in);
             } catch (EOFException e) {} catch (IOException e) {
                 IOUtils.closeQuietly(in);
@@ -92,9 +92,9 @@ public class TcpServiceServer {
                     if (sessionId == null || sessionId.isEmpty())
                         sessionId = UUID.randomUUID().toString();
                     serviceInvoker.invoke(
-                            new SocketServiceRequest(new ServiceSession(sessionId, sessionContextManager.getSecureServiceRegistry(sessionId),
+                            new TcpServiceRequest(new ServiceSession(sessionId, sessionContextManager.getSecureServiceRegistry(sessionId),
                                     sessionContextManager.getSessionContextName(sessionId)), header, in),
-                            new SocketServiceResponse(sessionId, socket.getOutputStream()));
+                            new TcpServiceResponse(sessionId, socket.getOutputStream()));
                 } catch (IOException e) {
                     LOG.error(e.getMessage(), e);
                     IOUtils.closeQuietly(socket);

@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.socket;
+package org.zenframework.easyservices.tcp;
 
 import java.io.FilterInputStream;
 import java.io.IOException;
@@ -53,12 +53,12 @@ public class TcpClientRequest implements ClientRequest {
 
     @Override
     public void writeRequestHeader() throws IOException {
-        new RequestHeader(clientFactory.getSessionId(), serviceLocator.getServiceName(), methodName, outParametersMode).write(out);
+        new TcpRequestHeader(clientFactory.getSessionId(), serviceLocator.getServiceName(), methodName, outParametersMode).write(out);
     }
 
     @Override
     public void readResponseHeader() throws IOException {
-        ResponseHeader header = new ResponseHeader();
+        TcpResponseHeader header = new TcpResponseHeader();
         header.read(in);
         clientFactory.setSessionId(header.getSessionId());
         success = header.isSuccess();

@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.socket;
+package org.zenframework.easyservices.tcp;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,31 +24,31 @@ public class TcpURLHandler implements URLHandler {
 
     @Override
     public void prepareConnection(URLConnection connection) {
-        TcpURLConnection<RequestHeader, ResponseHeader> tcpConnection = (TcpURLConnection<RequestHeader, ResponseHeader>) connection;
+        TcpURLConnection<TcpRequestHeader, TcpResponseHeader> tcpConnection = (TcpURLConnection<TcpRequestHeader, TcpResponseHeader>) connection;
         try {
             tcpConnection.setRequestHeader(getRequestHeader(connection.getURL().toURI()));
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
-        tcpConnection.setResponseHeader(new ResponseHeader());
+        tcpConnection.setResponseHeader(new TcpResponseHeader());
     }
 
     @Override
     public String getSessionId(URLConnection connection) throws IOException {
-        TcpURLConnection<RequestHeader, ResponseHeader> tcpConnection = (TcpURLConnection<RequestHeader, ResponseHeader>) connection;
+        TcpURLConnection<TcpRequestHeader, TcpResponseHeader> tcpConnection = (TcpURLConnection<TcpRequestHeader, TcpResponseHeader>) connection;
         tcpConnection.getInputStream();
         return tcpConnection.getResponseHeader().getSessionId();
     }
 
     @Override
     public void setSessionId(URLConnection connection, String sessionId) throws IOException {
-        TcpURLConnection<RequestHeader, ResponseHeader> tcpConnection = (TcpURLConnection<RequestHeader, ResponseHeader>) connection;
+        TcpURLConnection<TcpRequestHeader, TcpResponseHeader> tcpConnection = (TcpURLConnection<TcpRequestHeader, TcpResponseHeader>) connection;
         tcpConnection.getRequestHeader().setSessionId(sessionId);
     }
 
     @Override
     public boolean isSuccessful(URLConnection connection) throws IOException {
-        TcpURLConnection<RequestHeader, ResponseHeader> tcpConnection = (TcpURLConnection<RequestHeader, ResponseHeader>) connection;
+        TcpURLConnection<TcpRequestHeader, TcpResponseHeader> tcpConnection = (TcpURLConnection<TcpRequestHeader, TcpResponseHeader>) connection;
         tcpConnection.getInputStream();
         return tcpConnection.getResponseHeader().isSuccess();
     }
@@ -58,12 +58,12 @@ public class TcpURLHandler implements URLHandler {
         return connection.getInputStream();
     }
 
-    private static RequestHeader getRequestHeader(URI uri) {
+    private static TcpRequestHeader getRequestHeader(URI uri) {
         Map<String, List<String>> params = URIUtil.getParameters(uri, "UTF-8");
         String serviceName = uri.getPath().substring(1);
         List<String> methodParam = params.get("method");
         List<String> outParamsParam = params.get("outParameters");
-        return new RequestHeader(null, serviceName, methodParam != null && !methodParam.isEmpty() ? methodParam.get(0) : null,
+        return new TcpRequestHeader(null, serviceName, methodParam != null && !methodParam.isEmpty() ? methodParam.get(0) : null,
                 outParamsParam != null && !outParamsParam.isEmpty() && Boolean.parseBoolean(outParamsParam.get(0)));
     }
 
