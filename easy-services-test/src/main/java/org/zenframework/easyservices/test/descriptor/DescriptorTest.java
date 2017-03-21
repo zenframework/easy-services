@@ -14,13 +14,13 @@ import org.zenframework.easyservices.test.AbstractServiceTest;
 @RunWith(Parameterized.class)
 public class DescriptorTest extends AbstractServiceTest {
 
-    @Parameterized.Parameters(name = "#{index} format:{0}")
+    @Parameterized.Parameters(name = "#{index} protocol/format: {0}")
     public static Collection<Object[]> params() {
-        return Arrays.asList(new Object[][] { { "json" }, { "bin" } });
+        return org.zenframework.easyservices.util.CollectionUtil.combinations(arr("http/json", "tcp/bin"));
     }
 
-    public DescriptorTest(String format) {
-        Environment.setSerializationFormat(format);
+    public DescriptorTest(String protocolFormat) {
+        super(protocolFormat);
         Environment.setOutParametersMode(true);
     }
 

@@ -6,8 +6,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ClientFactory;
+import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.http.HttpServiceRequestHandler;
-import org.zenframework.easyservices.impl.URLClientFactory;
+import org.zenframework.easyservices.impl.ClientFactoryImpl;
+import org.zenframework.easyservices.socket.TcpServiceServer;
 import org.zenframework.easyservices.util.jndi.JNDIHelper;
 
 import junit.framework.TestCase;
@@ -15,23 +17,42 @@ import junit.framework.TestCase;
 public abstract class AbstractServiceTest extends TestCase {
 
     private final Context serviceRegistry = JNDIHelper.getDefaultContext();
+
+    private final String protocol;
+
     private ClientFactory clientFactory;
-    private HttpServer server;
+    private HttpServer httpServer;
+    private TcpServiceServer tcpServer;
+
+    protected AbstractServiceTest(String protocolFormat) {
+        String[] pair = protocolFormat.split("/");
+        this.protocol = pair[0].trim();
+        Environment.setSerializationFormat(pair[1].trim());
+    }
 
     @Override
     @Before
     public void setUp() throws Exception {
         super.setUp();
-        clientFactory = new URLClientFactory("http://localhost:" + TestContext.JETTY_PORT + "/services");
-        server = new HttpServer(TestContext.JETTY_PORT);
-        server.setServiceHttpRequestHandler(new HttpServiceRequestHandler());
-        server.start();
+        if ("http".equals(protocol)) {
+            clientFactory = new ClientFactoryImpl("http://localhost:" + TestContext.SERVER_PORT + "/services");
+            httpServer = new HttpServer(TestContext.SERVER_PORT);
+            httpServer.setServiceHttpRequestHandler(new HttpServiceRequestHandler());
+            httpServer.start();
+        } else if ("tcp".equals(protocol)) {
+            clientFactory = new ClientFactoryImpl("tcp://localhost:" + TestContext.SERVER_PORT);
+            tcpServer = new TcpServiceServer(TestContext.SERVER_PORT);
+            tcpServer.start();
+        }
     }
 
     @Override
     @After
     public void tearDown() throws Exception {
-        server.stop();
+        if (httpServer != null)
+            httpServer.stop();
+        if (tcpServer != null)
+            tcpServer.stop();
         super.tearDown();
     }
 
@@ -41,6 +62,10 @@ public abstract class AbstractServiceTest extends TestCase {
 
     protected Context getServiceRegistry() {
         return serviceRegistry;
+    }
+
+    protected static Object[] arr(Object... objs) {
+        return objs;
     }
 
 }

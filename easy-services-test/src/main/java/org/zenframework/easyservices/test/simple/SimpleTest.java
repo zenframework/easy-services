@@ -6,19 +6,18 @@ import java.util.Collection;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.test.AbstractServiceTest;
 
 @RunWith(Parameterized.class)
 public class SimpleTest extends AbstractServiceTest {
 
-    @Parameterized.Parameters(name = "#{index} format:{0}")
+    @Parameterized.Parameters(name = "#{index} protocol/format: {0}")
     public static Collection<Object[]> params() {
-        return Arrays.asList(new Object[][] { { "json" }, { "bin" } });
+        return Arrays.asList(arr("http/json"), arr("http/bin"), arr("tcp/json"), arr("tcp/bin"));
     }
 
-    public SimpleTest(String format) {
-        Environment.setSerializationFormat(format);
+    public SimpleTest(String protocolFormat) {
+        super(protocolFormat);
     }
 
     @Override

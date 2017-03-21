@@ -1,43 +1,78 @@
 package org.zenframework.easyservices.socket;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.Serializable;
+import java.io.OutputStream;
 
-public class RequestHeader implements Serializable {
+import org.zenframework.easyservices.net.Header;
 
-    private static final long serialVersionUID = 1L;
+public class RequestHeader implements Header {
 
-    private final String serviceName;
-    private final String methodName;
-    private final boolean outParametersMode;
+    private String sessionId;
+    private String serviceName;
+    private String methodName;
+    private boolean outParametersMode;
 
-    public RequestHeader(String serviceName, String methodName, boolean outParametersMode) {
-        super();
+    public RequestHeader() {}
+
+    public RequestHeader(String sessionId, String serviceName, String methodName, boolean outParametersMode) {
+        this.sessionId = sessionId;
         this.serviceName = serviceName;
         this.methodName = methodName;
         this.outParametersMode = outParametersMode;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(String sessionId) {
+        this.sessionId = sessionId;
     }
 
     public String getServiceName() {
         return serviceName;
     }
 
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
+
     public String getMethodName() {
         return methodName;
+    }
+
+    public void setMethodName(String methodName) {
+        this.methodName = methodName;
     }
 
     public boolean isOutParametersMode() {
         return outParametersMode;
     }
 
-    public static RequestHeader readRequestHeader(InputStream in) throws IOException {
-        try {
-            return (RequestHeader) new ObjectInputStream(in).readObject();
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException(e);
-        }
+    public void setOutParametersMode(boolean outParametersMode) {
+        this.outParametersMode = outParametersMode;
+    }
+
+    @Override
+    public void read(InputStream in) throws IOException {
+        DataInputStream data = new DataInputStream(in);
+        sessionId = data.readUTF();
+        serviceName = data.readUTF();
+        methodName = data.readUTF();
+        outParametersMode = data.readBoolean();
+    }
+
+    @Override
+    public void write(OutputStream out) throws IOException {
+        DataOutputStream data = new DataOutputStream(out);
+        data.writeUTF(sessionId != null ? sessionId : "");
+        data.writeUTF(serviceName);
+        data.writeUTF(methodName);
+        data.writeBoolean(outParametersMode);
+        data.flush();
     }
 
 }

@@ -27,7 +27,8 @@ var parseResponse = function(client, params, xhr) {
 
 	var outParamsMode = client.outParams;
 
-	var response = xhr.responseText ? client.parser(xhr.responseText) : {
+	var responseText = xhr.responseText;
+	var response = responseText && !responseText.isEmpty() ? client.parser(responseText) : {
 		message : 'Ошибка соединения с сервером'
 	};
 	if (!outParamsMode)

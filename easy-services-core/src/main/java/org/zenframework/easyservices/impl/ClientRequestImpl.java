@@ -7,27 +7,31 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 
-import org.zenframework.easyservices.ClientURLHandler;
-import org.zenframework.easyservices.ClientConnection;
+import org.zenframework.easyservices.URLHandler;
+import org.zenframework.easyservices.ClientRequest;
 import org.zenframework.easyservices.ServiceLocator;
 
-public class URLClientConnection implements ClientConnection {
+public class ClientRequestImpl implements ClientRequest {
 
-    private final URLClientFactory clientFactory;
+    private final ClientFactoryImpl clientFactory;
     private final URLConnection urlConnection;
-    private final ClientURLHandler clientUrlHandler;
+    private final URLHandler clientUrlHandler;
     private boolean successful;
 
-    public URLClientConnection(URLClientFactory clientFactory, ServiceLocator serviceLocator, String methodName)
-            throws IOException {
+    public ClientRequestImpl(ClientFactoryImpl clientFactory, ServiceLocator serviceLocator, String methodName) throws IOException {
         this.clientFactory = clientFactory;
-        URL url = getServiceURL(serviceLocator, methodName, clientFactory.isOutParametersMode());
-        urlConnection = url.openConnection();
-        clientUrlHandler = clientFactory.getClientUrlHandler();
-        if (clientUrlHandler != null && clientFactory.getSessionId() != null)
-            clientUrlHandler.setSessionId(urlConnection, clientFactory.getSessionId());
+        clientUrlHandler = clientFactory.getURLHandler();
+        urlConnection = getRequestURL(serviceLocator, methodName, clientFactory.isOutParametersMode()).openConnection();
+        if (clientUrlHandler != null)
+            clientUrlHandler.prepareConnection(urlConnection);
         urlConnection.setDoOutput(true);
         urlConnection.setDoInput(true);
+    }
+
+    @Override
+    public void writeRequestHeader() throws IOException {
+        if (clientUrlHandler != null && clientFactory.getSessionId() != null)
+            clientUrlHandler.setSessionId(urlConnection, clientFactory.getSessionId());
     }
 
     @Override
@@ -36,13 +40,17 @@ public class URLClientConnection implements ClientConnection {
     }
 
     @Override
-    public InputStream getInputStream() throws IOException {
+    public void readResponseHeader() throws IOException {
         if (clientUrlHandler != null) {
             String sessionId = clientUrlHandler.getSessionId(urlConnection);
             if (sessionId != null)
                 clientFactory.setSessionId(sessionId);
         }
-        successful = clientUrlHandler == null || !clientUrlHandler.isError(urlConnection);
+        successful = clientUrlHandler == null || clientUrlHandler.isSuccessful(urlConnection);
+    }
+
+    @Override
+    public InputStream getInputStream() throws IOException {
         return successful ? urlConnection.getInputStream() : clientUrlHandler.getErrorStream(urlConnection);
     }
 
@@ -51,10 +59,7 @@ public class URLClientConnection implements ClientConnection {
         return successful;
     }
 
-    @Override
-    public void close() {}
-
-    private URL getServiceURL(ServiceLocator serviceLocator, String methodName, boolean outParametersMode) throws MalformedURLException {
+    private URL getRequestURL(ServiceLocator serviceLocator, String methodName, boolean outParametersMode) throws MalformedURLException {
         StringBuilder str = new StringBuilder();
         str.append(serviceLocator.getServiceUrl()).append("?method=").append(methodName);
         if (outParametersMode)

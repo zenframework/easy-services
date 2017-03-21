@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.util.net;
+package org.zenframework.easyservices.util;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;

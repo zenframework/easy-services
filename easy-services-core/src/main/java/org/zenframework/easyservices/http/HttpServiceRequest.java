@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.zenframework.easyservices.ServiceRequest;
 import org.zenframework.easyservices.ServiceSession;
-import org.zenframework.easyservices.util.net.URIUtil;
+import org.zenframework.easyservices.util.URIUtil;
 
 public class HttpServiceRequest extends ServiceRequest {
 

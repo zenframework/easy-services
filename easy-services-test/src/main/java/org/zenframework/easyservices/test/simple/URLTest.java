@@ -26,7 +26,7 @@ public class URLTest extends TestCase {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        server = new Server(TestContext.JETTY_PORT);
+        server = new Server(TestContext.SERVER_PORT);
         server.setHandler(new AbstractHandler() {
 
             @Override
@@ -55,12 +55,12 @@ public class URLTest extends TestCase {
     }
 
     public void testUrlGet() throws Exception {
-        URL url = new URL("http://localhost:" + TestContext.JETTY_PORT + "/service?method=call&args=[]");
+        URL url = new URL("http://localhost:" + TestContext.SERVER_PORT + "/service?method=call&args=[]");
         assertEquals("method=call&args=[]", read(url.openStream()));
     }
 
     public void testUrlPost() throws Exception {
-        URL url = new URL("http://localhost:" + TestContext.JETTY_PORT + "/service?method=call");
+        URL url = new URL("http://localhost:" + TestContext.SERVER_PORT + "/service?method=call");
         URLConnection conn = url.openConnection();
         conn.setDoOutput(true);
         conn.setDoInput(true);

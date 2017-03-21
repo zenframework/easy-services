@@ -1,6 +1,5 @@
 package org.zenframework.easyservices.test.dynamic;
 
-import java.util.Arrays;
 import java.util.Collection;
 
 import javax.naming.NamingException;
@@ -16,6 +15,7 @@ import org.zenframework.easyservices.test.AbstractServiceTest;
 import org.zenframework.easyservices.test.simple.Addition;
 import org.zenframework.easyservices.test.simple.Function;
 import org.zenframework.easyservices.test.simple.Substraction;
+import org.zenframework.easyservices.util.CollectionUtil;
 import org.zenframework.easyservices.util.jndi.JNDIHelper;
 
 @RunWith(Parameterized.class)
@@ -23,14 +23,14 @@ public class DynamicTest extends AbstractServiceTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(DynamicTest.class);
 
-    @Parameterized.Parameters(name = "#{index} secure: {0}, format: {1}")
+    @Parameterized.Parameters(name = "#{index} protocol/format: {0}, secure: {1}")
     public static Collection<Object[]> params() {
-        return Arrays.asList(new Object[][] { { true, "json" }, { true, "bin" }, { false, "json" }, { false, "bin" } });
+        return CollectionUtil.combinations(arr("http/json", "http/bin"), arr(true, false));
     }
 
-    public DynamicTest(boolean securityEnabled, String format) {
+    public DynamicTest(String protocolFormat, boolean securityEnabled) {
+        super(protocolFormat);
         Environment.setSecurityEnabled(securityEnabled);
-        Environment.setSerializationFormat(format);
     }
 
     @Override

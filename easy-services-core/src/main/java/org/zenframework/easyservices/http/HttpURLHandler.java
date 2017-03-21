@@ -5,10 +5,10 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URLConnection;
 
-import org.zenframework.easyservices.ClientURLHandler;
-import org.zenframework.easyservices.util.string.StringUtil;
+import org.zenframework.easyservices.URLHandler;
+import org.zenframework.easyservices.util.StringUtil;
 
-public class HttpClientURLHandler implements ClientURLHandler {
+public class HttpURLHandler implements URLHandler {
 
     public static final String PROTOCOL = "http";
 
@@ -20,6 +20,9 @@ public class HttpClientURLHandler implements ClientURLHandler {
     public String getProtocol() {
         return PROTOCOL;
     }
+
+    @Override
+    public void prepareConnection(URLConnection connection) {}
 
     @Override
     public String getSessionId(URLConnection connection) {
@@ -34,9 +37,9 @@ public class HttpClientURLHandler implements ClientURLHandler {
     }
 
     @Override
-    public boolean isError(URLConnection connection) throws IOException {
+    public boolean isSuccessful(URLConnection connection) throws IOException {
         HttpURLConnection httpConnection = (HttpURLConnection) connection;
-        return httpConnection.getResponseCode() != HttpURLConnection.HTTP_OK;
+        return httpConnection.getResponseCode() == HttpURLConnection.HTTP_OK;
     }
 
     @Override

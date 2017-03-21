@@ -1,5 +1,7 @@
 package org.zenframework.easyservices.util.string;
 
+import org.zenframework.easyservices.util.StringUtil;
+
 public class ParameterizedString {
 
     private final String string;

@@ -3,7 +3,6 @@ package org.zenframework.easyservices.test.dynamic;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Arrays;
 import java.util.Collection;
 
 import org.junit.Test;
@@ -12,16 +11,16 @@ import org.junit.runners.Parameterized;
 import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.test.AbstractServiceTest;
+import org.zenframework.easyservices.util.CollectionUtil;
 
 @RunWith(Parameterized.class)
 public class StreamsTest extends AbstractServiceTest {
 
     public static final int SIZE_K = 1024;
 
-    @Parameterized.Parameters(name = "#{index} secure: {0}, format: {1}, autoAliasing: {2}, size: {3}K")
+    @Parameterized.Parameters(name = "#{index} protocol/format: {0}, secure: {1}, autoAliasing: {2}, size: {3}K")
     public static Collection<Object[]> params() {
-        return Arrays.asList(new Object[][] { { false, "json", true, SIZE_K }, { false, "json", false, SIZE_K }, { false, "bin", false, SIZE_K },
-                { true, "json", true, SIZE_K }, { true, "json", false, SIZE_K }, { true, "bin", false, SIZE_K } });
+        return CollectionUtil.combinations(arr("http/json", "tcp/bin"), arr(false, true), arr(true, false), arr(SIZE_K));
     }
 
     private final int size;
@@ -29,9 +28,9 @@ public class StreamsTest extends AbstractServiceTest {
     private File sourceFile;
     private File targetFile;
 
-    public StreamsTest(boolean securityEnabled, String format, boolean autoAliasing, int size) {
+    public StreamsTest(String protocolFormat, boolean securityEnabled, boolean autoAliasing, int size) {
+        super(protocolFormat);
         Environment.setSecurityEnabled(securityEnabled);
-        Environment.setSerializationFormat(format);
         Environment.setAutoAliasing(autoAliasing);
         Environment.setDuplicateMethodNamesSafe(!autoAliasing);
         Environment.setOutParametersMode(true);

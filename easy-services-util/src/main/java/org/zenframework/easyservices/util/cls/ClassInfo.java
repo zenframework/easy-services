@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.zenframework.easyservices.util.StringUtil;
 import org.zenframework.easyservices.util.compare.ClassArrayComparator;
 import org.zenframework.easyservices.util.compare.ComparableListComparator;
-import org.zenframework.easyservices.util.string.StringUtil;
 
 public class ClassInfo implements Comparable<ClassInfo>, Cloneable {
 

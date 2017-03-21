@@ -21,7 +21,7 @@ import javax.naming.spi.NamingManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.easyservices.util.string.StringUtil;
+import org.zenframework.easyservices.util.StringUtil;
 
 public class JNDIHelper {
 

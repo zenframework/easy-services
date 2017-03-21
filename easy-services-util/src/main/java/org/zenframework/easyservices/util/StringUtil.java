@@ -1,5 +1,9 @@
-package org.zenframework.easyservices.util.string;
+package org.zenframework.easyservices.util;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
@@ -590,6 +594,41 @@ public class StringUtil {
             map.put(key, value);
         }
         return map;
+    }
+
+    public static String deepToString(Object obj) {
+        StringWriter w = new StringWriter();
+        try {
+            deepToString(w, obj);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+        return w.toString();
+    }
+
+    public static void deepToString(Writer writer, Object obj) throws IOException {
+        if (obj.getClass().isArray()) {
+            writer.write('[');
+            int len = Array.getLength(obj);
+            for (int i = 0; i < len; i++) {
+                if (i > 0)
+                    writer.write(", ");
+                deepToString(writer, Array.get(obj, i));
+            }
+            writer.write(']');
+        } else if (obj instanceof Iterable) {
+            writer.write('[');
+            boolean tail = false;
+            for (Object o : (Iterable<?>) obj) {
+                if (tail)
+                    writer.write(", ");
+                deepToString(writer, o);
+                tail = true;
+            }
+            writer.write(']');
+        } else {
+            writer.write(obj.toString());
+        }
     }
 
 }

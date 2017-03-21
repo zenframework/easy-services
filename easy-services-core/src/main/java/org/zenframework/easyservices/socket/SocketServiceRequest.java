@@ -11,9 +11,9 @@ public class SocketServiceRequest extends ServiceRequest {
     private final RequestHeader header;
     private final InputStream in;
 
-    public SocketServiceRequest(ServiceSession session, InputStream in) throws IOException {
+    public SocketServiceRequest(ServiceSession session, RequestHeader header, InputStream in) throws IOException {
         super(session);
-        this.header = RequestHeader.readRequestHeader(in);
+        this.header = header;
         this.in = in;
     }
 

@@ -8,8 +8,8 @@ import java.lang.reflect.Method;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.ClientException;
+import org.zenframework.easyservices.ClientRequest;
 import org.zenframework.easyservices.ResponseObject;
-import org.zenframework.easyservices.ClientConnection;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.descriptor.ClassDescriptor;
 import org.zenframework.easyservices.descriptor.DescriptorFactory;
@@ -28,11 +28,11 @@ import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-public abstract class ServiceMethodInterceptor implements MethodInterceptor {
+public class ServiceMethodInterceptor implements MethodInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceMethodInterceptor.class);
 
-    protected final URLClientFactory clientFactory;
+    protected final ClientFactoryImpl clientFactory;
     protected final ServiceLocator serviceLocator;
     protected final DescriptorFactory descriptorFactory;
     protected final SerializerFactory serializerFactory;
@@ -40,7 +40,7 @@ public abstract class ServiceMethodInterceptor implements MethodInterceptor {
     protected final ValueUpdater updater;
     protected final boolean debug;
 
-    public ServiceMethodInterceptor(URLClientFactory clientFactory, ServiceLocator serviceLocator, boolean useDescriptors) {
+    public ServiceMethodInterceptor(ClientFactoryImpl clientFactory, ServiceLocator serviceLocator, boolean useDescriptors) {
         this.clientFactory = clientFactory;
         this.serviceLocator = serviceLocator;
         this.descriptorFactory = useDescriptors ? clientFactory.getDescriptorFactory() : null;
@@ -82,8 +82,9 @@ public abstract class ServiceMethodInterceptor implements MethodInterceptor {
             time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + '.' + methodName + getMethodParams(method, methodDescriptor), LOG);
 
         // Call service
-        ClientConnection connection = getServiceConnection(methodName);
-        OutputStream out = connection.getOutputStream();
+        ClientRequest request = createRequest(methodName);
+        request.writeRequestHeader();
+        OutputStream out = request.getOutputStream();
         try {
             serializer.serialize(args, out);
         } finally {
@@ -91,8 +92,9 @@ public abstract class ServiceMethodInterceptor implements MethodInterceptor {
         }
 
         // Receive response
-        InputStream in = connection.getInputStream();
-        boolean success = connection.isSuccessful();
+        request.readResponseHeader();
+        InputStream in = request.getInputStream();
+        boolean success = request.isSuccessful();
         Object result = null;
         Object[] outParams = null;
         try {
@@ -129,7 +131,9 @@ public abstract class ServiceMethodInterceptor implements MethodInterceptor {
         return serviceLocator;
     }
 
-    protected abstract ClientConnection getServiceConnection(String methodName) throws IOException;
+    protected ClientRequest createRequest(String methodName) throws IOException {
+        return new ClientRequestImpl(clientFactory, serviceLocator, methodName);
+    }
 
     private static String getMethodName(Method method, MethodDescriptor methodDescriptor) {
         String alias = methodDescriptor != null ? methodDescriptor.getAlias() : null;

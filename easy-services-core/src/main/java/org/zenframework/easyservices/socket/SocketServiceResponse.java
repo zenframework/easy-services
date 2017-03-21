@@ -1,19 +1,19 @@
 package org.zenframework.easyservices.socket;
 
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
 import org.zenframework.easyservices.ServiceResponse;
+import org.zenframework.easyservices.util.io.BlockOutputStream;
 
 public class SocketServiceResponse extends ServiceResponse {
 
+    private final String sessionId;
     private final OutputStream out;
-    private final DataOutputStream data;
 
-    public SocketServiceResponse(OutputStream out) {
-        this.out = out;
-        this.data = new DataOutputStream(out);
+    public SocketServiceResponse(String sessionId, OutputStream out) {
+        this.sessionId = sessionId;
+        this.out = new BlockOutputStream(out);
     }
 
     @Override
@@ -23,14 +23,12 @@ public class SocketServiceResponse extends ServiceResponse {
 
     @Override
     public void sendSuccess() throws IOException {
-        data.writeBoolean(true);
-        data.flush();
+        new ResponseHeader(sessionId, true).write(out);
     }
 
     @Override
     public void sendError(Throwable e) throws IOException {
-        data.writeBoolean(false);
-        data.flush();
+        new ResponseHeader(sessionId, false).write(out);
     }
 
 }

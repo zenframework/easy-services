@@ -12,7 +12,7 @@ import org.zenframework.easyservices.util.jndi.JNDIHelper;
 @JSTests(value = { "classpath://export/generic/api/ProxyFactoryTest.js" })
 public class ProxyFactoryTest extends JSTestSuite {
 
-    private final HttpServer server = new HttpServer(TestContext.JETTY_PORT);
+    private final HttpServer server = new HttpServer(TestContext.SERVER_PORT);
 
     @Override
     protected void setUp() {

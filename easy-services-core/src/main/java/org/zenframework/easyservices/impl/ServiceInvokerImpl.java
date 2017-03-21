@@ -86,10 +86,6 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         try {
             Object service = lookupService(request);
             if (request.getMethodName() == null) {
-                context = new InvocationContext(null, null, serializerFactory.getSerializer(null, Map.class, null, request.isOutParametersMode()),
-                        null, null);
-                for (ServiceRequestFilter filter : requestFilters)
-                    filter.filterContext(request, context);
                 responseObject.setResult(getServiceInfo(request, service));
             } else {
                 context = getInvocationContext(request, service.getClass());
@@ -108,14 +104,19 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             responseObject.setResult(e);
             response.sendError(e);
         }
-        OutputStream out = response.getOutputStream();
-        try {
-            Serializer serializer = context != null ? context.getSerializer()
-                    : serializerFactory.getSerializer(null, Map.class, null, request.isOutParametersMode());
-            serializer.serialize(request.isOutParametersMode() ? responseObject : responseObject.getResult(), out);
-        } finally {
-            out.close();
+
+        if (context == null || context.getMethod().getReturnType() != void.class || responseObject.getResult() != null
+                || request.isOutParametersMode()) {
+            OutputStream out = response.getOutputStream();
+            try {
+                Serializer serializer = context != null ? context.getSerializer()
+                        : serializerFactory.getSerializer(null, Map.class, null, request.isOutParametersMode());
+                serializer.serialize(request.isOutParametersMode() ? responseObject : responseObject.getResult(), out);
+            } finally {
+                out.close();
+            }
         }
+
     }
 
     @Override
