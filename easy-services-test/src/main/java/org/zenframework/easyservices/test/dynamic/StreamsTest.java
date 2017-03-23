@@ -8,14 +8,19 @@ import java.util.Collection;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.test.AbstractServiceTest;
 import org.zenframework.easyservices.util.CollectionUtil;
+import org.zenframework.easyservices.util.debug.TimeChecker;
 
 @RunWith(Parameterized.class)
 public class StreamsTest extends AbstractServiceTest {
 
+    private static final Logger LOG = LoggerFactory.getLogger(StreamsTest.class);
+    
     public static final int SIZE_K = 1024;
 
     @Parameterized.Parameters(name = "#{index} protocol/format: {0}, secure: {1}, autoAliasing: {2}, size: {3}K")
@@ -58,7 +63,9 @@ public class StreamsTest extends AbstractServiceTest {
         StreamFactory streams = getClient(StreamFactory.class, "streams");
         InputStream in = streams.getInputStream();
         OutputStream out = streams.getOutputStream();
+        TimeChecker time = new TimeChecker("TEST EASY-SERVICES STREAMS", LOG);
         StreamsUtil.copy(in, out);
+        time.printDifference();
         try {
             in.read();
             fail("read should fail");
