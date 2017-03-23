@@ -58,7 +58,8 @@ public class BlockInputStream extends InputStream {
 
     @Override
     public void close() throws IOException {
-        blockSize = -1;
+        while (blockSize >= 0)
+            readBlock();
     }
 
     protected final int readInt() throws IOException {

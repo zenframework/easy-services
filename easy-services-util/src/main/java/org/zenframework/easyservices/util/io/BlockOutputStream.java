@@ -63,7 +63,7 @@ public class BlockOutputStream extends FilterOutputStream {
     public synchronized void write(int b) throws IOException {
         if (count >= buf.length)
             flushBuffer();
-        buf[count++] = (byte)b;
+        buf[count++] = (byte) b;
     }
 
     /**
@@ -89,7 +89,9 @@ public class BlockOutputStream extends FilterOutputStream {
                flush the output buffer and then write the data directly.
                In this way buffered streams will cascade harmlessly. */
             flushBuffer();
+            writeInt(len);
             out.write(b, off, len);
+            out.flush();
             return;
         }
         if (len > buf.length - count)
@@ -115,6 +117,7 @@ public class BlockOutputStream extends FilterOutputStream {
     public void close() throws IOException {
         flushBuffer();
         writeInt(-1);
+        out.flush();
     }
 
     /** Flush the internal buffer */
@@ -129,8 +132,8 @@ public class BlockOutputStream extends FilterOutputStream {
     protected final void writeInt(int v) throws IOException {
         out.write((v >>> 24) & 0xFF);
         out.write((v >>> 16) & 0xFF);
-        out.write((v >>>  8) & 0xFF);
-        out.write((v >>>  0) & 0xFF);
+        out.write((v >>> 8) & 0xFF);
+        out.write((v >>> 0) & 0xFF);
     }
 
 }
