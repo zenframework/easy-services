@@ -3,9 +3,12 @@ package org.zenframework.easyservices.tcp;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -18,10 +21,13 @@ import org.zenframework.easyservices.SessionContextManager;
 import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 import org.zenframework.easyservices.impl.SessionContextManagerImpl;
 import org.zenframework.easyservices.util.io.BlockInputStream;
+import org.zenframework.easyservices.util.io.BlockOutputStream;
 
 public class TcpServiceServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(TcpServiceServer.class);
+
+    private final Map<String, ServiceSession> sessions = new HashMap<String, ServiceSession>();
 
     private SessionContextManager sessionContextManager = new SessionContextManagerImpl();
     private ServiceInvoker serviceInvoker = new ServiceInvokerImpl();
@@ -66,6 +72,18 @@ public class TcpServiceServer {
             Thread.sleep(100);
     }
 
+    private ServiceSession getSession(String sessionId) {
+        synchronized (sessions) {
+            ServiceSession session = sessions.get(sessionId);
+            if (session == null) {
+                session = new ServiceSession(sessionId, sessionContextManager.getSecureServiceRegistry(sessionId),
+                        sessionContextManager.getSessionContextName(sessionId));
+                sessions.put(sessionId, session);
+            }
+            return session;
+        }
+    }
+
     private class ClientThread extends Thread {
 
         private final Socket socket;
@@ -77,28 +95,24 @@ public class TcpServiceServer {
 
         @Override
         public void run() {
-            InputStream in = null;
-            TcpRequestHeader header = null;
+            TcpRequestHeader header = new TcpRequestHeader();
             try {
-                in = new BlockInputStream(socket.getInputStream());
-                header = new TcpRequestHeader();
-                header.read(in);
-            } catch (EOFException e) {} catch (IOException e) {
-                IOUtils.closeQuietly(in);
-            }
-            if (header != null) {
-                try {
-                    String sessionId = header.getSessionId();
-                    if (sessionId == null || sessionId.isEmpty())
-                        sessionId = UUID.randomUUID().toString();
-                    serviceInvoker.invoke(
-                            new TcpServiceRequest(new ServiceSession(sessionId, sessionContextManager.getSecureServiceRegistry(sessionId),
-                                    sessionContextManager.getSessionContextName(sessionId)), header, in),
-                            new TcpServiceResponse(sessionId, socket.getOutputStream()));
-                } catch (IOException e) {
-                    LOG.error(e.getMessage(), e);
-                    IOUtils.closeQuietly(socket);
+                InputStream socketIn = socket.getInputStream();
+                OutputStream socketOut = socket.getOutputStream();
+                while (true) {
+                    InputStream in = new BlockInputStream(socketIn);
+                    OutputStream out = new BlockOutputStream(socketOut);
+                    header.read(in);
+                    if (header.getSessionId() == null || header.getSessionId().isEmpty())
+                        header.setSessionId(UUID.randomUUID().toString());
+                    TcpServiceRequest request = new TcpServiceRequest(getSession(header.getSessionId()), header, in);
+                    TcpServiceResponse response = new TcpServiceResponse(header.getSessionId(), out);
+                    serviceInvoker.invoke(request, response);
                 }
+            } catch (IOException e) {
+                if (!(e instanceof EOFException))
+                    LOG.error(e.getMessage(), e);
+                IOUtils.closeQuietly(socket);
             }
         }
 

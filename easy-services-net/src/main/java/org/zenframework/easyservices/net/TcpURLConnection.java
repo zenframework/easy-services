@@ -12,6 +12,8 @@ import org.zenframework.easyservices.util.io.BlockOutputStream;
 
 public class TcpURLConnection<REQ extends Header, RESP extends Header> extends URLConnection {
 
+    private static final ThreadLocal<Socket> sockets = new ThreadLocal<Socket>();
+
     private Socket socket;
     private REQ requestHeader;
     private RESP responseHeader;
@@ -24,6 +26,11 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
 
     @Override
     public void connect() throws IOException {
+        socket = sockets.get();
+        if (socket == null || !socket.getInetAddress().getHostName().equals(url.getHost()) || socket.getPort() != url.getPort()) {
+            socket = new SharedSocket(url.getHost(), url.getPort());
+            sockets.set(socket);
+        }
         socket = new Socket(url.getHost(), url.getPort());
     }
 
@@ -72,6 +79,27 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
 
     public void setResponseHeader(RESP responseHeader) {
         this.responseHeader = responseHeader;
+    }
+
+    private static class SharedSocket extends Socket {
+
+        private final InputStream in = super.getInputStream();
+        private final OutputStream out = super.getOutputStream();
+
+        private SharedSocket(String host, int port) throws IOException {
+            super(host, port);
+        }
+
+        @Override
+        public InputStream getInputStream() throws IOException {
+            return in;
+        }
+
+        @Override
+        public OutputStream getOutputStream() throws IOException {
+            return out;
+        }
+
     }
 
 }

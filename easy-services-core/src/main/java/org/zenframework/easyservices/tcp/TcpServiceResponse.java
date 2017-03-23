@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.zenframework.easyservices.ServiceResponse;
-import org.zenframework.easyservices.util.io.BlockOutputStream;
 
 public class TcpServiceResponse extends ServiceResponse {
 
@@ -13,7 +12,7 @@ public class TcpServiceResponse extends ServiceResponse {
 
     public TcpServiceResponse(String sessionId, OutputStream out) {
         this.sessionId = sessionId;
-        this.out = new BlockOutputStream(out);
+        this.out = out;
     }
 
     @Override
