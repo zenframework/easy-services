@@ -28,6 +28,11 @@ public class TcpServiceRequest extends ServiceRequest {
     }
 
     @Override
+    public Class<?>[] getParameterTypes() {
+        return header.getParameterTypes();
+    }
+
+    @Override
     public boolean isOutParametersMode() {
         return header.isOutParametersMode();
     }

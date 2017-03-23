@@ -57,6 +57,8 @@ public abstract class ServiceRequest {
 
     abstract public String getMethodName();
 
+    abstract public Class<?>[] getParameterTypes();
+
     abstract public boolean isOutParametersMode();
 
     abstract protected InputStream internalGetInputStream() throws IOException;

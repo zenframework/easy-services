@@ -1,15 +1,12 @@
 package org.zenframework.easyservices.tcp;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
 
 import org.zenframework.easyservices.ClientRequest;
-import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.impl.ClientFactoryImpl;
 import org.zenframework.easyservices.util.io.BlockInputStream;
 import org.zenframework.easyservices.util.io.BlockOutputStream;
@@ -17,43 +14,28 @@ import org.zenframework.easyservices.util.io.BlockOutputStream;
 public class TcpClientRequest implements ClientRequest {
 
     private final ClientFactoryImpl clientFactory;
-    private final ServiceLocator serviceLocator;
+    private final String serviceName;
     private final String methodName;
+    private final Class<?>[] parameterTypes;
     private final boolean outParametersMode;
     private final OutputStream out;
     private final InputStream in;
     private boolean success;
 
-    public TcpClientRequest(ClientFactoryImpl clientFactory, ServiceLocator serviceLocator, String methodName, boolean outParametersMode)
+    public TcpClientRequest(ClientFactoryImpl clientFactory, final Socket socket, String serviceName, Method method, boolean outParametersMode)
             throws IOException {
         this.clientFactory = clientFactory;
-        this.serviceLocator = serviceLocator;
-        this.methodName = methodName;
+        this.serviceName = serviceName;
+        this.methodName = method.getName();
+        this.parameterTypes = method.getParameterTypes();
         this.outParametersMode = outParametersMode;
-        try {
-            URI uri = new URI(serviceLocator.getBaseUrl());
-            final Socket socket = new Socket(uri.getHost(), uri.getPort());
-            out = new BlockOutputStream(socket.getOutputStream());
-            in = new FilterInputStream(new BlockInputStream(socket.getInputStream())) {
-
-                @Override
-                public void close() throws IOException {
-                    try {
-                        super.close();
-                    } finally {
-                        socket.close();
-                    }
-                }
-
-            };
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(serviceLocator.toString(), e);
-        }
+        out = new BlockOutputStream(socket.getOutputStream());
+        in = new BlockInputStream(socket.getInputStream());
     }
 
     @Override
     public void writeRequestHeader() throws IOException {
-        new TcpRequestHeader(clientFactory.getSessionId(), serviceLocator.getServiceName(), methodName, outParametersMode).write(out);
+        new TcpRequestHeader(clientFactory.getSessionId(), serviceName, methodName, parameterTypes, outParametersMode).write(out);
     }
 
     @Override

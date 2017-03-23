@@ -34,7 +34,7 @@ public class ClientFactoryImpl implements ClientFactory {
     public ClientFactoryImpl() {}
 
     public ClientFactoryImpl(String baseUrl) {
-        this.baseUrl = baseUrl;
+        setBaseUrl(baseUrl);
     }
 
     @Override

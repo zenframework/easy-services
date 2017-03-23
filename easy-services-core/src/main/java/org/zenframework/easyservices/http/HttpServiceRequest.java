@@ -49,6 +49,11 @@ public class HttpServiceRequest extends ServiceRequest {
     }
 
     @Override
+    public Class<?>[] getParameterTypes() {
+        return null;
+    }
+
+    @Override
     public boolean isOutParametersMode() {
         String outParams = getParameter(PARAM_OUT_PARAMETERS_MODE);
         return outParams != null && Boolean.parseBoolean(outParams);

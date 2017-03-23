@@ -254,7 +254,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
     private InvocationContext getInvocationContext(ServiceRequest request, Class<?> serviceClass) throws IOException, ServiceException {
         ClassDescriptor classDescriptor = descriptorFactory.getClassDescriptor(serviceClass);
-        if (serializerFactory.isTypeSafe()) {
+        if (serializerFactory.isTypeSafe() || request.getParameterTypes() != null) {
             // If serializer factory is type-safe, simply deserialize parameters & get method by name/alias and its parameter types
             TimeChecker time = debug && LOG.isDebugEnabled() ? new TimeChecker(request + " GET CONTEXT (type-safe)", LOG) : null;
             InvocationContext context = newInvocationContext(request, serviceClass, classDescriptor);
@@ -295,13 +295,31 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
     private InvocationContext newInvocationContext(ServiceRequest request, Class<?> serviceClass, ClassDescriptor classDescriptor)
             throws IOException, ServiceException {
-        Serializer serializer = serializerFactory.getTypeSafeSerializer();
+        Method method = null;
+        MethodDescriptor methodDescriptor = null;
+        Serializer serializer = null;
+        Object[] rawParams, params;
+
+        if (request.getParameterTypes() != null) {
+            method = getMethod(serviceClass, request.getMethodName(), request.getParameterTypes());
+            methodDescriptor = classDescriptor.getMethodDescriptor(new MethodIdentifier(method));
+            serializer = serializerFactory.getSerializer(request.getParameterTypes(), method.getReturnType(), methodDescriptor,
+                    request.isOutParametersMode());
+        } else {
+            serializer = serializerFactory.getTypeSafeSerializer();
+        }
+
         InputStream in = request.getInputStream();
         try {
-            Object[] rawParams = serializer.deserializeParameters(in);
-            Object[] params = findAndReplaceRefs(rawParams);
-            Method method = null;
-            MethodDescriptor methodDescriptor = null;
+            rawParams = serializer.deserializeParameters(in);
+            params = findAndReplaceRefs(rawParams);
+        } finally {
+            in.close();
+        }
+
+        if (method != null) {
+            return new InvocationContext(method, methodDescriptor, serializer, rawParams, params);
+        } else {
             for (Map.Entry<MethodIdentifier, MethodDescriptor> e : classDescriptor.getMethodDescriptors().entrySet()) {
                 Class<?>[] paramTypes = e.getKey().getParameterTypes();
                 if (request.getMethodName().equals(e.getValue().getAlias())
@@ -312,9 +330,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
                     return new InvocationContext(method, methodDescriptor, serializer, rawParams, params);
                 }
             }
-        } finally {
-            in.close();
         }
+
         throw new ServiceException("Can't find method [" + request.getMethodName() + "] applicable for given args");
     }
 

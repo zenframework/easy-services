@@ -76,13 +76,13 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
             }
         }
 
-        String methodName = getMethodName(method, methodDescriptor);
         TimeChecker time = null;
         if ((debug || methodDescriptor.getDebug()) && LOG.isDebugEnabled())
-            time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + '.' + methodName + getMethodParams(method, methodDescriptor), LOG);
+            time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + '.' + getMethodName(method, methodDescriptor)
+                    + getMethodParams(method, methodDescriptor), LOG);
 
         // Call service
-        ClientRequest request = createRequest(methodName);
+        ClientRequest request = createRequest(method, methodDescriptor);
         request.writeRequestHeader();
         OutputStream out = request.getOutputStream();
         try {
@@ -131,8 +131,8 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         return serviceLocator;
     }
 
-    protected ClientRequest createRequest(String methodName) throws IOException {
-        return new ClientRequestImpl(clientFactory, serviceLocator, methodName);
+    protected ClientRequest createRequest(Method method, MethodDescriptor methodDescriptor) throws IOException {
+        return new ClientRequestImpl(clientFactory, serviceLocator, getMethodName(method, methodDescriptor));
     }
 
     private static String getMethodName(Method method, MethodDescriptor methodDescriptor) {
