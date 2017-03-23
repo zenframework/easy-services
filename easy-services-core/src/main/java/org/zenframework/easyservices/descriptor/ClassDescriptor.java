@@ -27,11 +27,4 @@ public class ClassDescriptor implements Serializable {
         methodDescriptors.put(methodId, methodDescriptor);
     }
 
-    public Map.Entry<MethodIdentifier, MethodDescriptor> findMethodEntry(String alias) {
-        for (Map.Entry<MethodIdentifier, MethodDescriptor> entry : methodDescriptors.entrySet())
-            if (alias != null && alias.equals(entry.getValue().getAlias()))
-                return entry;
-        return null;
-    }
-
 }
