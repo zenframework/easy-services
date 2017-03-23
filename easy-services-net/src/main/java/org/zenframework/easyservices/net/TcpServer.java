@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.tcp;
+package org.zenframework.easyservices.net;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -7,38 +7,27 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.easyservices.ServiceInvoker;
-import org.zenframework.easyservices.ServiceSession;
-import org.zenframework.easyservices.SessionContextManager;
-import org.zenframework.easyservices.impl.ServiceInvokerImpl;
-import org.zenframework.easyservices.impl.SessionContextManagerImpl;
 import org.zenframework.easyservices.util.io.BlockInputStream;
 import org.zenframework.easyservices.util.io.BlockOutputStream;
 
-public class TcpServiceServer {
+public class TcpServer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(TcpServiceServer.class);
-
-    private final Map<String, ServiceSession> sessions = new HashMap<String, ServiceSession>();
-
-    private SessionContextManager sessionContextManager = new SessionContextManagerImpl();
-    private ServiceInvoker serviceInvoker = new ServiceInvokerImpl();
+    private static final Logger LOG = LoggerFactory.getLogger(TcpServer.class);
 
     private final AtomicBoolean active = new AtomicBoolean(false);
     private final ServerSocket serverSocket;
     private final Thread serverThread;
+    private TcpRequestHandler handler;
 
-    public TcpServiceServer(final int port) throws IOException {
-        serverSocket = new ServerSocket(port);
-        serverThread = new Thread(new Runnable() {
+    public TcpServer(final int port, TcpRequestHandler handler) throws IOException {
+        this.serverSocket = new ServerSocket(port);
+        this.handler = handler;
+        this.serverThread = new Thread(new Runnable() {
 
             @Override
             public void run() {
@@ -72,18 +61,6 @@ public class TcpServiceServer {
             Thread.sleep(100);
     }
 
-    private ServiceSession getSession(String sessionId) {
-        synchronized (sessions) {
-            ServiceSession session = sessions.get(sessionId);
-            if (session == null) {
-                session = new ServiceSession(sessionId, sessionContextManager.getSecureServiceRegistry(sessionId),
-                        sessionContextManager.getSessionContextName(sessionId));
-                sessions.put(sessionId, session);
-            }
-            return session;
-        }
-    }
-
     private class ClientThread extends Thread {
 
         private final Socket socket;
@@ -95,20 +72,11 @@ public class TcpServiceServer {
 
         @Override
         public void run() {
-            TcpRequestHeader header = new TcpRequestHeader();
             try {
                 InputStream socketIn = socket.getInputStream();
                 OutputStream socketOut = socket.getOutputStream();
-                while (true) {
-                    InputStream in = new BlockInputStream(socketIn);
-                    OutputStream out = new BlockOutputStream(socketOut);
-                    header.read(in);
-                    if (header.getSessionId() == null || header.getSessionId().isEmpty())
-                        header.setSessionId(UUID.randomUUID().toString());
-                    TcpServiceRequest request = new TcpServiceRequest(getSession(header.getSessionId()), header, in);
-                    TcpServiceResponse response = new TcpServiceResponse(header.getSessionId(), out);
-                    serviceInvoker.invoke(request, response);
-                }
+                while (true)
+                    handler.handleRequest(new BlockInputStream(socketIn), new BlockOutputStream(socketOut));
             } catch (IOException e) {
                 if (!(e instanceof EOFException))
                     LOG.error(e.getMessage(), e);
