@@ -1,5 +1,6 @@
 package org.zenframework.easyservices.net;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -42,7 +43,8 @@ public class NioTcpServer implements TcpServer {
                             while (connAttach.handler.handleRequest(clientAddr, readAttach.in, out))
                                 ;
                         } catch (IOException e) {
-                            LOG.error(e.getMessage(), e);
+                            if (!(e instanceof EOFException))
+                                LOG.error(e.getMessage(), e);
                             IOUtils.closeQuietly(client);
                         }
                     }
@@ -67,6 +69,7 @@ public class NioTcpServer implements TcpServer {
         @Override
         public void completed(Integer result, ReadAttachment attach) {
             if (result == -1) {
+                attach.in.finish();
                 IOUtils.closeQuietly(attach.client);
             } else {
                 if (result > 0) {
@@ -82,13 +85,15 @@ public class NioTcpServer implements TcpServer {
 
         @Override
         public void failed(Throwable e, ReadAttachment attach) {
-            LOG.error("Client R/W failed", e);
+            if (!(e instanceof AsynchronousCloseException))
+                LOG.error("Client R/W failed", e);
+            attach.in.finish();
             IOUtils.closeQuietly(attach.client);
         }
 
     };
 
-    private final AsynchronousChannelGroup group = AsynchronousChannelGroup.withThreadPool(Executors.newSingleThreadExecutor());
+    private final AsynchronousChannelGroup group = AsynchronousChannelGroup.withThreadPool(Executors.newCachedThreadPool());
     private final AsynchronousServerSocketChannel server;
     private TcpRequestHandler handler;
 

@@ -77,7 +77,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         }
 
         TimeChecker time = null;
-        if ((debug || methodDescriptor.getDebug()) && LOG.isDebugEnabled())
+        if ((debug || methodDescriptor.isDebug()) && LOG.isDebugEnabled())
             time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + '.' + getMethodName(method, methodDescriptor)
                     + getMethodParams(method, methodDescriptor), LOG);
 

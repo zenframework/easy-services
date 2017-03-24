@@ -25,7 +25,7 @@ public class DynamicTest extends AbstractServiceTest {
 
     @Parameterized.Parameters(name = "#{index} protocol/format: {0}, secure: {1}")
     public static Collection<Object[]> params() {
-        return CollectionUtil.combinations(arr("http/json", "http/bin"), arr(true, false));
+        return CollectionUtil.combinations(arr("http/json", "tcp/bin"), arr(true, false));
     }
 
     public DynamicTest(String protocolFormat, boolean securityEnabled) {

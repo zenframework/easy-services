@@ -201,8 +201,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
     protected Object invokeMethod(ServiceRequest request, InvocationContext context, Object service) throws Throwable {
         MethodDescriptor methodDescriptor = context.getMethodDescriptor();
-        TimeChecker time = (debug || methodDescriptor != null && methodDescriptor.getDebug()) && LOG.isDebugEnabled()
-                ? new TimeChecker(request + " INVOKE ", LOG) : null;
+        TimeChecker time = (debug || methodDescriptor.isDebug()) && LOG.isDebugEnabled() ? new TimeChecker(request + " INVOKE ", LOG) : null;
         try {
             Object result = context.getMethod().invoke(service, context.getParams());
             // If method must return reference, bind result to service register and set result to service locator
