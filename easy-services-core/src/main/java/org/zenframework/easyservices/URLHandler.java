@@ -8,6 +8,8 @@ public interface URLHandler {
 
     String getProtocol();
 
+    boolean isCacheInputSafe();
+
     void prepareConnection(URLConnection connection);
 
     String getSessionId(URLConnection connection) throws IOException;

@@ -22,6 +22,11 @@ public class HttpURLHandler implements URLHandler {
     }
 
     @Override
+    public boolean isCacheInputSafe() {
+        return true;
+    }
+
+    @Override
     public void prepareConnection(URLConnection connection) {}
 
     @Override

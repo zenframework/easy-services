@@ -23,6 +23,11 @@ public class TcpURLHandler implements URLHandler {
     }
 
     @Override
+    public boolean isCacheInputSafe() {
+        return false;
+    }
+
+    @Override
     public void prepareConnection(URLConnection connection) {
         TcpURLConnection<TcpRequestHeader, TcpResponseHeader> tcpConnection = (TcpURLConnection<TcpRequestHeader, TcpResponseHeader>) connection;
         try {

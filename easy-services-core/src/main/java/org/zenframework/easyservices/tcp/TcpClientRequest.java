@@ -29,8 +29,8 @@ public class TcpClientRequest implements ClientRequest {
         this.methodName = method.getName();
         this.parameterTypes = method.getParameterTypes();
         this.outParametersMode = outParametersMode;
-        out = new BlockOutputStream(socket.getOutputStream());
-        in = new BlockInputStream(socket.getInputStream());
+        out = socket.getOutputStream();
+        in = socket.getInputStream();
     }
 
     @Override
@@ -48,12 +48,12 @@ public class TcpClientRequest implements ClientRequest {
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        return out;
+        return clientFactory.isCacheInputSafe() ? out : new BlockOutputStream(out);
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return in;
+        return clientFactory.isCacheInputSafe() ? in : new BlockInputStream(in);
     }
 
     @Override

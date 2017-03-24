@@ -1,14 +1,12 @@
 package org.zenframework.easyservices.net;
 
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
-
-import org.zenframework.easyservices.util.io.BlockInputStream;
-import org.zenframework.easyservices.util.io.BlockOutputStream;
 
 public class TcpURLConnection<REQ extends Header, RESP extends Header> extends URLConnection {
 
@@ -30,18 +28,7 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
     @Override
     public InputStream getInputStream() throws IOException {
         if (in == null) {
-            in = new BlockInputStream(socket.getInputStream()) {
-
-                @Override
-                public void close() throws IOException {
-                    try {
-                        super.close();
-                    } finally {
-                        socket.close();
-                    }
-                }
-
-            };
+            in = socket.getInputStream();
             if (responseHeader != null)
                 responseHeader.read(in);
         }
@@ -51,7 +38,12 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
     @Override
     public OutputStream getOutputStream() throws IOException {
         if (out == null) {
-            out = new BlockOutputStream(socket.getOutputStream());
+            out = new FilterOutputStream(socket.getOutputStream()) {
+
+                @Override
+                public void close() throws IOException {}
+
+            };
             if (requestHeader != null)
                 requestHeader.write(out);
         }

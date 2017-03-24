@@ -10,11 +10,18 @@ public class TcpServiceRequest extends ServiceRequest {
 
     private final TcpRequestHeader header;
     private final InputStream in;
+    private final boolean cacheInputSafe;
 
-    public TcpServiceRequest(ServiceSession session, TcpRequestHeader header, InputStream in) throws IOException {
+    public TcpServiceRequest(ServiceSession session, TcpRequestHeader header, InputStream in, boolean cacheInputSafe) throws IOException {
         super(session);
         this.header = header;
         this.in = in;
+        this.cacheInputSafe = cacheInputSafe;
+    }
+
+    @Override
+    public boolean isCacheInputSafe() {
+        return cacheInputSafe;
     }
 
     @Override

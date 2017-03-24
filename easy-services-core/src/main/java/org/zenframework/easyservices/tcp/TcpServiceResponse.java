@@ -9,15 +9,17 @@ public class TcpServiceResponse extends ServiceResponse {
 
     private final String sessionId;
     private final OutputStream out;
+    private final boolean cacheInputSafe;
 
-    public TcpServiceResponse(String sessionId, OutputStream out) {
+    public TcpServiceResponse(String sessionId, OutputStream out, boolean cacheInputSafe) {
         this.sessionId = sessionId;
         this.out = out;
+        this.cacheInputSafe = cacheInputSafe;
     }
 
     @Override
-    public OutputStream getOutputStream() throws IOException {
-        return out;
+    public boolean isCacheInputSafe() {
+        return cacheInputSafe;
     }
 
     @Override
@@ -28,6 +30,11 @@ public class TcpServiceResponse extends ServiceResponse {
     @Override
     public void sendError(Throwable e) throws IOException {
         new TcpResponseHeader(sessionId, false).write(out);
+    }
+
+    @Override
+    protected OutputStream getInternalOutputStream() throws IOException {
+        return out;
     }
 
 }

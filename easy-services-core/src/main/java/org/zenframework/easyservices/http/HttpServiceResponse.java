@@ -18,8 +18,8 @@ public class HttpServiceResponse extends ServiceResponse {
     }
 
     @Override
-    public OutputStream getOutputStream() throws IOException {
-        return response.getOutputStream();
+    public boolean isCacheInputSafe() {
+        return true;
     }
 
     @Override
@@ -32,6 +32,11 @@ public class HttpServiceResponse extends ServiceResponse {
 
     private int getStatus(Throwable e) {
         return errorMapper != null ? errorMapper.getStatus(e) : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+    }
+
+    @Override
+    protected OutputStream getInternalOutputStream() throws IOException {
+        return response.getOutputStream();
     }
 
 }

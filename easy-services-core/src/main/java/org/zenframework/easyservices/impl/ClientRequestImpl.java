@@ -8,6 +8,8 @@ import java.net.URL;
 import java.net.URLConnection;
 
 import org.zenframework.easyservices.URLHandler;
+import org.zenframework.easyservices.util.io.BlockInputStream;
+import org.zenframework.easyservices.util.io.BlockOutputStream;
 import org.zenframework.easyservices.ClientRequest;
 import org.zenframework.easyservices.ServiceLocator;
 
@@ -20,7 +22,7 @@ public class ClientRequestImpl implements ClientRequest {
 
     public ClientRequestImpl(ClientFactoryImpl clientFactory, ServiceLocator serviceLocator, String methodName) throws IOException {
         this.clientFactory = clientFactory;
-        clientUrlHandler = clientFactory.getURLHandler();
+        clientUrlHandler = clientFactory.getUrlHandler();
         urlConnection = getRequestURL(serviceLocator, methodName, clientFactory.isOutParametersMode()).openConnection();
         if (clientUrlHandler != null)
             clientUrlHandler.prepareConnection(urlConnection);
@@ -36,7 +38,10 @@ public class ClientRequestImpl implements ClientRequest {
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        return urlConnection.getOutputStream();
+        OutputStream out = urlConnection.getOutputStream();
+        if (clientUrlHandler != null && !clientUrlHandler.isCacheInputSafe() && !clientFactory.isCacheInputSafe())
+            out = new BlockOutputStream(out);
+        return out;
     }
 
     @Override
@@ -51,7 +56,18 @@ public class ClientRequestImpl implements ClientRequest {
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return successful ? urlConnection.getInputStream() : clientUrlHandler.getErrorStream(urlConnection);
+        InputStream in = successful ? urlConnection.getInputStream() : clientUrlHandler.getErrorStream(urlConnection);
+        if (clientUrlHandler != null && !clientUrlHandler.isCacheInputSafe() && !clientFactory.isCacheInputSafe())
+            in = new BlockInputStream(in) {
+
+                @Override
+                public void close() throws IOException {
+                    super.close();
+                    this.in.close();
+                }
+
+            };
+        return in;
     }
 
     @Override

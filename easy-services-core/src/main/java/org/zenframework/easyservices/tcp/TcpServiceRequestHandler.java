@@ -8,19 +8,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.ServiceInvoker;
 import org.zenframework.easyservices.ServiceSession;
 import org.zenframework.easyservices.SessionContextManager;
 import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 import org.zenframework.easyservices.impl.SessionContextManagerImpl;
 import org.zenframework.easyservices.net.TcpRequestHandler;
-import org.zenframework.easyservices.util.io.BlockInputStream;
-import org.zenframework.easyservices.util.io.BlockOutputStream;
 
 public class TcpServiceRequestHandler implements TcpRequestHandler {
 
     private final Map<String, ServiceSession> sessions = new HashMap<String, ServiceSession>();
     private final TcpRequestHeader header = new TcpRequestHeader();
+
+    private boolean cacheInputSafe = Environment.isCacheInputSafe();
 
     private SessionContextManager sessionContextManager = new SessionContextManagerImpl();
     private ServiceInvoker serviceInvoker = new ServiceInvokerImpl();
@@ -37,17 +38,23 @@ public class TcpServiceRequestHandler implements TcpRequestHandler {
         }
     }
 
+    public boolean isCacheInputSafe() {
+        return cacheInputSafe;
+    }
+
+    public void setCacheInputSafe(boolean cacheInputSafe) {
+        this.cacheInputSafe = cacheInputSafe;
+    }
+
     @Override
     public boolean handleRequest(SocketAddress clientAddr, InputStream in, OutputStream out) throws IOException {
-        in = new BlockInputStream(in);
-        out = new BlockOutputStream(out);
         header.read(in);
         if (header.getSessionId() == null || header.getSessionId().isEmpty())
             header.setSessionId(UUID.randomUUID().toString());
-        TcpServiceRequest request = new TcpServiceRequest(getSession(header.getSessionId()), header, in);
-        TcpServiceResponse response = new TcpServiceResponse(header.getSessionId(), out);
+        TcpServiceRequest request = new TcpServiceRequest(getSession(header.getSessionId()), header, in, cacheInputSafe);
+        TcpServiceResponse response = new TcpServiceResponse(header.getSessionId(), out, cacheInputSafe);
         serviceInvoker.invoke(request, response);
-        return true;
+        return false;
     }
 
 }
