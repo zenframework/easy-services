@@ -3,6 +3,7 @@ package org.zenframework.easyservices.tcp;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.SocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -13,6 +14,8 @@ import org.zenframework.easyservices.SessionContextManager;
 import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 import org.zenframework.easyservices.impl.SessionContextManagerImpl;
 import org.zenframework.easyservices.net.TcpRequestHandler;
+import org.zenframework.easyservices.util.io.BlockInputStream;
+import org.zenframework.easyservices.util.io.BlockOutputStream;
 
 public class TcpServiceRequestHandler implements TcpRequestHandler {
 
@@ -35,13 +38,16 @@ public class TcpServiceRequestHandler implements TcpRequestHandler {
     }
 
     @Override
-    public void handleRequest(InputStream in, OutputStream out) throws IOException {
+    public boolean handleRequest(SocketAddress clientAddr, InputStream in, OutputStream out) throws IOException {
+        in = new BlockInputStream(in);
+        out = new BlockOutputStream(out);
         header.read(in);
         if (header.getSessionId() == null || header.getSessionId().isEmpty())
             header.setSessionId(UUID.randomUUID().toString());
         TcpServiceRequest request = new TcpServiceRequest(getSession(header.getSessionId()), header, in);
         TcpServiceResponse response = new TcpServiceResponse(header.getSessionId(), out);
         serviceInvoker.invoke(request, response);
+        return true;
     }
 
 }

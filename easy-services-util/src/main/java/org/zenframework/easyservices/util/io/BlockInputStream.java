@@ -1,6 +1,5 @@
 package org.zenframework.easyservices.util.io;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -16,38 +15,24 @@ public class BlockInputStream extends InputStream {
 
     @Override
     public int read() throws IOException {
-        if (blockSize < 0)
-            return -1;
-        if (pos >= blockSize) {
-            readBlock();
-            if (blockSize < 0)
-                return -1;
-        }
-        return buf[pos++] & 0xFF;
+        return prepareBlock() ? buf[pos++] & 0xFF : -1;
     }
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        if (blockSize < 0)
-            return -1;
         if ((off | len | (off + len) | (b.length - (off + len))) < 0)
             throw new IndexOutOfBoundsException();
         else if (len == 0)
             return 0;
-        if (pos >= blockSize) {
-            readBlock();
-            if (blockSize < 0)
-                return -1;
-        }
+        if (!prepareBlock())
+            return -1;
         int read = 0;
-        while (read < len && blockSize >= 0) {
+        do {
             int part = Math.min(blockSize - pos, len - read);
             System.arraycopy(buf, pos, b, off + read, part);
             pos += part;
             read += part;
-            if (pos >= blockSize)
-                readBlock();
-        }
+        } while (read < len && prepareBlock());
         return read;
     }
 
@@ -58,8 +43,8 @@ public class BlockInputStream extends InputStream {
 
     @Override
     public void close() throws IOException {
-        while (blockSize >= 0)
-            readBlock();
+        while (prepareBlock())
+            ;
     }
 
     protected final int readInt() throws IOException {
@@ -67,19 +52,24 @@ public class BlockInputStream extends InputStream {
         int ch2 = in.read();
         int ch3 = in.read();
         int ch4 = in.read();
-        if ((ch1 | ch2 | ch3 | ch4) < 0)
-            throw new EOFException();
         return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
     }
 
-    protected void readBlock() throws IOException {
+    protected boolean prepareBlock() throws IOException {
+        if (blockSize < 0)
+            return false;
+        if (buf != null && pos < blockSize)
+            return true;
         blockSize = readInt();
+        if (blockSize == 0)
+            throw new IllegalStateException("Unexpected zero block length");
         if (blockSize > 0) {
             if (buf == null || blockSize > buf.length)
                 buf = new byte[blockSize];
             in.read(buf, 0, blockSize);
             pos = 0;
         }
+        return blockSize > 0;
     }
 
 }

@@ -22,7 +22,7 @@ public class TcpClientRequest implements ClientRequest {
     private final InputStream in;
     private boolean success;
 
-    public TcpClientRequest(ClientFactoryImpl clientFactory, final Socket socket, String serviceName, Method method, boolean outParametersMode)
+    public TcpClientRequest(ClientFactoryImpl clientFactory, Socket socket, String serviceName, Method method, boolean outParametersMode)
             throws IOException {
         this.clientFactory = clientFactory;
         this.serviceName = serviceName;

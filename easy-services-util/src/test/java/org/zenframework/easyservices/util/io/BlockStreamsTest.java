@@ -18,10 +18,10 @@ import junit.framework.TestCase;
 
 public class BlockStreamsTest extends TestCase {
 
-    private static final int DATA_SIZE = 100000;
-    private static final int BLOCK_SIZE = 8192;
-    private static final int SMALL_BUF_SIZE = 222;
-    private static final int LARGE_BUF_SIZE = 15000;
+    private static final int DATA_SIZE = 15;
+    private static final int BLOCK_SIZE = 10;
+    private static final int SMALL_BUF_SIZE = 7;
+    private static final int LARGE_BUF_SIZE = 13;
 
     private static final Random RANDOM = new Random();
 

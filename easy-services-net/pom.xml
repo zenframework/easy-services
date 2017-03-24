@@ -16,6 +16,8 @@
     <properties>
         <bundle.namespace>org.zenframework.easyservices.net</bundle.namespace>
         <bundle.extpackages>sun.net.www.protocol.classpath,sun.net.www.protocol.tcp</bundle.extpackages>
+        <log4j.version>1.2.17</log4j.version>
+        <slf4j.version>1.7.21</slf4j.version>
     </properties>
 
     <dependencies>
@@ -23,6 +25,18 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>easy-services-util</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>${slf4j.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>${log4j.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

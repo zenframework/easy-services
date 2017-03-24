@@ -9,6 +9,7 @@ import org.zenframework.easyservices.ClientFactory;
 import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.http.HttpServiceRequestHandler;
 import org.zenframework.easyservices.impl.ClientFactoryImpl;
+import org.zenframework.easyservices.net.NioTcpServer;
 import org.zenframework.easyservices.net.TcpServer;
 import org.zenframework.easyservices.tcp.TcpServiceRequestHandler;
 import org.zenframework.easyservices.util.jndi.JNDIHelper;
@@ -42,7 +43,7 @@ public abstract class AbstractServiceTest extends TestCase {
             httpServer.start();
         } else if ("tcp".equals(protocol)) {
             clientFactory = new ClientFactoryImpl("tcp://localhost:" + TestContext.SERVER_PORT);
-            tcpServer = new TcpServer(TestContext.SERVER_PORT, new TcpServiceRequestHandler());
+            tcpServer = new NioTcpServer(TestContext.SERVER_PORT, new TcpServiceRequestHandler());
             tcpServer.start();
         }
     }

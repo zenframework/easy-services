@@ -1,13 +1,11 @@
 package org.zenframework.easyservices.tcp;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.net.Socket;
 import java.net.URI;
-import java.net.URISyntaxException;
 
+import org.zenframework.easyservices.ClientException;
 import org.zenframework.easyservices.ClientRequest;
 import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
@@ -18,8 +16,6 @@ public class TcpClientFactory extends ClientFactoryImpl {
 
     private final ThreadLocal<Socket> sockets = new ThreadLocal<Socket>();
 
-    private URI baseUri;
-
     public TcpClientFactory() {}
 
     public TcpClientFactory(String baseUrl) {
@@ -27,53 +23,37 @@ public class TcpClientFactory extends ClientFactoryImpl {
     }
 
     @Override
-    public void setBaseUrl(String baseUrl) {
-        super.setBaseUrl(baseUrl);
-        try {
-            baseUri = new URI(baseUrl);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    @Override
     protected ServiceMethodInterceptor getMethodInterceptor(ServiceLocator serviceLocator, boolean useDescriptors) {
-        return new ServiceMethodInterceptor(this, serviceLocator, useDescriptors) {
+        return new TcpServiceMethodInterceptor(serviceLocator, useDescriptors, getSocket(serviceLocator));
+    }
 
-            @Override
-            protected ClientRequest createRequest(Method method, MethodDescriptor methodDescriptor) throws IOException {
-                return new TcpClientRequest(clientFactory, getSocket(), serviceLocator.getServiceName(), method, outParametersMode);
+    private Socket getSocket(ServiceLocator serviceLocator) {
+        try {
+            URI uri = new URI(serviceLocator.getBaseUrl());
+            Socket socket = sockets.get();
+            if (socket == null || !socket.getInetAddress().getHostName().equals(uri.getHost()) || socket.getPort() != uri.getPort()) {
+                socket = new Socket(uri.getHost(), uri.getPort());
+                sockets.set(socket);
             }
-
-        };
-    }
-
-    private Socket getSocket() throws IOException {
-        Socket socket = sockets.get();
-        if (socket == null || !socket.getInetAddress().getHostName().equals(baseUri.getHost()) || socket.getPort() != baseUri.getPort()) {
-            socket = new SharedSocket(baseUri.getHost(), baseUri.getPort());
-            sockets.set(socket);
+            return socket;
+            //return new Socket(uri.getHost(), uri.getPort());
+        } catch (Exception e) {
+            throw new ClientException(e);
         }
-        return socket;
     }
 
-    private static class SharedSocket extends Socket {
+    private class TcpServiceMethodInterceptor extends ServiceMethodInterceptor {
 
-        private final InputStream in = super.getInputStream();
-        private final OutputStream out = super.getOutputStream();
+        private final Socket socket;
 
-        private SharedSocket(String host, int port) throws IOException {
-            super(host, port);
+        TcpServiceMethodInterceptor(ServiceLocator serviceLocator, boolean useDescriptors, Socket socket) {
+            super(TcpClientFactory.this, serviceLocator, useDescriptors);
+            this.socket = socket;
         }
 
         @Override
-        public InputStream getInputStream() throws IOException {
-            return in;
-        }
-
-        @Override
-        public OutputStream getOutputStream() throws IOException {
-            return out;
+        protected ClientRequest createRequest(Method method, MethodDescriptor methodDescriptor) throws IOException {
+            return new TcpClientRequest(clientFactory, socket, serviceLocator.getServiceName(), method, outParametersMode);
         }
 
     }

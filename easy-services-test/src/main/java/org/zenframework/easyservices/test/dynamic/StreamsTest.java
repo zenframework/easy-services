@@ -11,7 +11,6 @@ import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.Environment;
-import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.test.AbstractServiceTest;
 import org.zenframework.easyservices.util.CollectionUtil;
 import org.zenframework.easyservices.util.debug.TimeChecker;
@@ -20,7 +19,7 @@ import org.zenframework.easyservices.util.debug.TimeChecker;
 public class StreamsTest extends AbstractServiceTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(StreamsTest.class);
-    
+
     public static final int SIZE_K = 1024;
 
     @Parameterized.Parameters(name = "#{index} protocol/format: {0}, secure: {1}, autoAliasing: {2}, size: {3}K")
@@ -69,11 +68,11 @@ public class StreamsTest extends AbstractServiceTest {
         try {
             in.read();
             fail("read should fail");
-        } catch (ServiceException e) {}
+        } catch (Throwable e) {}
         try {
             out.write(0);
             fail("write should fail");
-        } catch (ServiceException e) {}
+        } catch (Throwable e) {}
         assertTrue(StreamsUtil.equals(sourceFile, targetFile));
     }
 
