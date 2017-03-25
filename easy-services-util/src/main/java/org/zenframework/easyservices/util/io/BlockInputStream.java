@@ -44,7 +44,7 @@ public class BlockInputStream extends InputStream {
     @Override
     public void close() throws IOException {
         while (prepareBlock())
-            ;
+            pos = blockSize;
     }
 
     protected final int readInt() throws IOException {

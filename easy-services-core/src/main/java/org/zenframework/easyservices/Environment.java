@@ -28,7 +28,7 @@ public class Environment {
     private static final Map<String, SerializerFactory> SERIALIZER_FACTORIES = initFactories();
     private static final Map<String, URLHandler> URL_HANDLERS = initURLHandlers();
 
-    private static final boolean DEFAULT_DEBUG = true;
+    private static final boolean DEFAULT_DEBUG = false;
     private static final boolean DEFAULT_AUTO_ALIASING = false;
     private static final boolean DEFAULT_DUPLICATE_METHOD_NAMES_SAFE = true;
     private static final boolean DEFAULT_OUT_PARAMETERS_MODE = false;
