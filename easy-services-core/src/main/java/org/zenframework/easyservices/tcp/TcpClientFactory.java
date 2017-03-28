@@ -36,7 +36,6 @@ public class TcpClientFactory extends ClientFactoryImpl {
                 sockets.set(socket);
             }
             return socket;
-            //return new Socket(uri.getHost(), uri.getPort());
         } catch (Exception e) {
             throw new ClientException(e);
         }
