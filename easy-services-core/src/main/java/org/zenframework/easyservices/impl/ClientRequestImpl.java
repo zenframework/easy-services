@@ -62,8 +62,11 @@ public class ClientRequestImpl implements ClientRequest {
 
                 @Override
                 public void close() throws IOException {
-                    super.close();
-                    this.in.close();
+                    try {
+                        super.close();
+                    } finally {
+                        this.in.close();
+                    }
                 }
 
             };

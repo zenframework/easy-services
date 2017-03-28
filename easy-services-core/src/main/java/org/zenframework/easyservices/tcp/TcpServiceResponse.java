@@ -1,9 +1,11 @@
 package org.zenframework.easyservices.tcp;
 
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
 import org.zenframework.easyservices.ServiceResponse;
+import org.zenframework.easyservices.util.io.BlockOutputStream;
 
 public class TcpServiceResponse extends ServiceResponse {
 
@@ -18,11 +20,6 @@ public class TcpServiceResponse extends ServiceResponse {
     }
 
     @Override
-    public boolean isCacheInputSafe() {
-        return cacheInputSafe;
-    }
-
-    @Override
     public void sendSuccess() throws IOException {
         new TcpResponseHeader(sessionId, true).write(out);
     }
@@ -34,7 +31,14 @@ public class TcpServiceResponse extends ServiceResponse {
 
     @Override
     protected OutputStream getInternalOutputStream() throws IOException {
-        return out;
+        return cacheInputSafe ? new FilterOutputStream(out) {
+
+            @Override
+            public void close() throws IOException {
+                flush();
+            }
+
+        } : new BlockOutputStream(out);
     }
 
 }

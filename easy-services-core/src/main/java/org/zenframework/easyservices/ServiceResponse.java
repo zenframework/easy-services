@@ -4,13 +4,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.zenframework.easyservices.util.io.BlockOutputStream;
-
 public abstract class ServiceResponse {
 
     private static final AtomicLong COUNTER = new AtomicLong();
 
     private final long id;
+    private OutputStream out;
 
     public ServiceResponse() {
         this.id = COUNTER.incrementAndGet();
@@ -21,10 +20,10 @@ public abstract class ServiceResponse {
     }
 
     public OutputStream getOutputStream() throws IOException {
-        return isCacheInputSafe() ? getInternalOutputStream() : new BlockOutputStream(getInternalOutputStream());
+        if (out == null)
+            out = getInternalOutputStream();
+        return out;
     }
-
-    abstract public boolean isCacheInputSafe();
 
     abstract public void sendSuccess() throws IOException;
 

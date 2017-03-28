@@ -13,7 +13,7 @@ public class SimpleTest extends AbstractServiceTest {
 
     @Parameterized.Parameters(name = "#{index} protocol/format: {0}")
     public static Collection<Object[]> params() {
-        return Arrays.<Object[]> asList(/*arr("http/json"), arr("http/bin"), arr("tcp/json"),*/ arr("tcp/bin"));
+        return Arrays.asList(arr("http/json"), arr("http/bin"), arr("tcp/json"), arr("tcp/bin"));
     }
 
     public SimpleTest(String protocolFormat) {
@@ -43,7 +43,7 @@ public class SimpleTest extends AbstractServiceTest {
         assertEquals(Integer.class, getClient(Echo.class, "echo").echo(Integer.class));
     }
 
-    //@Test
+    @Test
     public void testThrowCatchException() throws Exception {
         try {
             getClient(Echo.class, "echo").throwException(new SimpleException("exception"));
@@ -54,14 +54,14 @@ public class SimpleTest extends AbstractServiceTest {
         }
     }
 
-    //@Test
+    @Test
     public void testSingleCall() throws Exception {
         Echo echo = getClient(Echo.class, "echo");
         assertEquals(0, echo.nextInteger());
         assertEquals(1, echo.nextInteger());
     }
 
-    //@Test
+    @Test
     public void testVoid() throws Exception {
         Echo echo = getClient(Echo.class, "echo");
         echo.doNothing();

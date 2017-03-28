@@ -34,11 +34,6 @@ public class HttpServiceRequest extends ServiceRequest {
     }
 
     @Override
-    public boolean isCacheInputSafe() {
-        return true;
-    }
-
-    @Override
     public String getServiceName() {
         String path = request.getPathInfo();
         if (servicesPath.equals(request.getServletPath()))

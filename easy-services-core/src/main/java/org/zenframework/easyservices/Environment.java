@@ -125,7 +125,7 @@ public class Environment {
     }
 
     public static boolean isCacheInputSafe() {
-        return true;//!isDebug() && !isDuplicateMethodNamesSafe();
+        return !isDebug() && !isDuplicateMethodNamesSafe();
     }
 
     private static Map<String, SerializerFactory> initFactories() {

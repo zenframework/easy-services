@@ -10,7 +10,6 @@ import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.http.HttpServiceRequestHandler;
 import org.zenframework.easyservices.impl.ClientFactoryImpl;
 import org.zenframework.easyservices.net.NioTcpServer;
-import org.zenframework.easyservices.net.SimpleTcpServer;
 import org.zenframework.easyservices.net.TcpServer;
 import org.zenframework.easyservices.tcp.TcpServiceRequestHandler;
 import org.zenframework.easyservices.util.jndi.JNDIHelper;

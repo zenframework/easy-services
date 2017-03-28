@@ -7,8 +7,6 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.zenframework.easyservices.util.io.BlockInputStream;
-
 public abstract class ServiceRequest {
 
     private static final AtomicLong COUNTER = new AtomicLong(new Date().getTime());
@@ -16,6 +14,7 @@ public abstract class ServiceRequest {
     private final long id;
     private final ServiceSession session;
     private byte[] cachedData;
+    private InputStream in;
 
     public ServiceRequest(ServiceSession session) {
         this.id = COUNTER.incrementAndGet();
@@ -33,7 +32,7 @@ public abstract class ServiceRequest {
     public void cacheInput() throws IOException {
         if (cachedData != null)
             return;
-        InputStream in = getCacheInputSafe(internalGetInputStream());
+        InputStream in = internalGetInputStream();
         try {
             byte[] buf = new byte[8192];
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -46,7 +45,11 @@ public abstract class ServiceRequest {
     }
 
     public InputStream getInputStream() throws IOException {
-        return cachedData != null ? new ByteArrayInputStream(cachedData) : getCacheInputSafe(internalGetInputStream());
+        if (cachedData != null)
+            return new ByteArrayInputStream(cachedData);
+        if (in == null)
+            in = internalGetInputStream();
+        return in;
     }
 
     @Override
@@ -54,8 +57,6 @@ public abstract class ServiceRequest {
         return new StringBuilder().append('#').append(Long.toHexString(id).substring(2)).append(':').append(session.getId()).append('/')
                 .append(getServiceName()).append('.').append(getMethodName()).append("()").toString();
     }
-
-    abstract public boolean isCacheInputSafe();
 
     abstract public String getServiceName();
 
@@ -66,9 +67,5 @@ public abstract class ServiceRequest {
     abstract public boolean isOutParametersMode();
 
     abstract protected InputStream internalGetInputStream() throws IOException;
-
-    private InputStream getCacheInputSafe(InputStream in) {
-        return isCacheInputSafe() ? in : new BlockInputStream(in);
-    }
 
 }

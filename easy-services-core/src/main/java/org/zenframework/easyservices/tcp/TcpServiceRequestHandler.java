@@ -19,7 +19,6 @@ import org.zenframework.easyservices.net.TcpRequestHandler;
 public class TcpServiceRequestHandler implements TcpRequestHandler {
 
     private final Map<String, ServiceSession> sessions = new HashMap<String, ServiceSession>();
-    private final TcpRequestHeader header = new TcpRequestHeader();
 
     private boolean cacheInputSafe = Environment.isCacheInputSafe();
 
@@ -48,6 +47,7 @@ public class TcpServiceRequestHandler implements TcpRequestHandler {
 
     @Override
     public boolean handleRequest(SocketAddress clientAddr, InputStream in, OutputStream out) throws IOException {
+        TcpRequestHeader header = new TcpRequestHeader();
         header.read(in);
         if (header.getSessionId() == null || header.getSessionId().isEmpty())
             header.setSessionId(UUID.randomUUID().toString());

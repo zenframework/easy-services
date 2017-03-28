@@ -18,11 +18,6 @@ public class HttpServiceResponse extends ServiceResponse {
     }
 
     @Override
-    public boolean isCacheInputSafe() {
-        return true;
-    }
-
-    @Override
     public void sendSuccess() throws IOException {}
 
     @Override
@@ -30,13 +25,13 @@ public class HttpServiceResponse extends ServiceResponse {
         response.setStatus(getStatus(e));
     }
 
-    private int getStatus(Throwable e) {
-        return errorMapper != null ? errorMapper.getStatus(e) : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
-    }
-
     @Override
     protected OutputStream getInternalOutputStream() throws IOException {
         return response.getOutputStream();
+    }
+
+    private int getStatus(Throwable e) {
+        return errorMapper != null ? errorMapper.getStatus(e) : HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
     }
 
 }
