@@ -11,7 +11,9 @@ import java.nio.channels.AsynchronousCloseException;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
@@ -22,6 +24,15 @@ import org.zenframework.easyservices.util.io.QueueInputStream;
 public class NioTcpServer implements TcpServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(NioTcpServer.class);
+
+    private static final ThreadFactory SERVER_THREAD_FACTORY = new ThreadFactory() {
+
+        @Override
+        public Thread newThread(Runnable r) {
+            return new Thread(r, "NioTcpServer");
+        }
+
+    };
 
     private static CompletionHandler<AsynchronousSocketChannel, ConnectionAttachment> CONN_HANDLER = new CompletionHandler<AsynchronousSocketChannel, ConnectionAttachment>() {
 
@@ -35,10 +46,11 @@ public class NioTcpServer implements TcpServer {
             try {
                 final SocketAddress clientAddr = client.getRemoteAddress();
                 final OutputStream out = new ClientOutputStream(client);
-                new Thread("Client-" + clientAddr.toString()) {
+                connAttach.executor.execute(new Runnable() {
 
                     @Override
                     public void run() {
+                        Thread.currentThread().setName("Client-" + clientAddr.toString());
                         try {
                             while (connAttach.handler.handleRequest(clientAddr, readAttach.in, out))
                                 ;
@@ -49,7 +61,7 @@ public class NioTcpServer implements TcpServer {
                         }
                     }
 
-                }.start();
+                });
             } catch (IOException e) {
                 LOG.error("Start client thread failed", e);
             }
@@ -93,8 +105,9 @@ public class NioTcpServer implements TcpServer {
 
     };
 
-    private final AsynchronousChannelGroup group = AsynchronousChannelGroup.withThreadPool(Executors.newCachedThreadPool());
+    private final AsynchronousChannelGroup group = AsynchronousChannelGroup.withThreadPool(Executors.newSingleThreadExecutor(SERVER_THREAD_FACTORY));
     private final AsynchronousServerSocketChannel server;
+    private final ExecutorService clientExecutor = Executors.newCachedThreadPool();
     private TcpRequestHandler handler;
 
     public NioTcpServer(int port) throws IOException {
@@ -124,7 +137,7 @@ public class NioTcpServer implements TcpServer {
 
     @Override
     public void start() {
-        server.accept(new ConnectionAttachment(server, handler), CONN_HANDLER);
+        server.accept(new ConnectionAttachment(server, clientExecutor, handler), CONN_HANDLER);
     }
 
     @Override
@@ -134,15 +147,18 @@ public class NioTcpServer implements TcpServer {
             group.shutdownNow();
         } catch (IOException e) {}
         group.awaitTermination(5, TimeUnit.SECONDS);
+        clientExecutor.shutdown();
     }
 
     private static class ConnectionAttachment {
 
         final AsynchronousServerSocketChannel server;
+        final ExecutorService executor;
         final TcpRequestHandler handler;
 
-        public ConnectionAttachment(AsynchronousServerSocketChannel server, TcpRequestHandler handler) {
+        public ConnectionAttachment(AsynchronousServerSocketChannel server, ExecutorService executor, TcpRequestHandler handler) {
             this.server = server;
+            this.executor = executor;
             this.handler = handler;
         }
 
