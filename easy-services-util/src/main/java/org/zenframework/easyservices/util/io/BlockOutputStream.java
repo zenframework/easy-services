@@ -110,7 +110,6 @@ public class BlockOutputStream extends FilterOutputStream {
     @Override
     public synchronized void flush() throws IOException {
         flushBuffer();
-        out.flush();
     }
 
     @Override
@@ -127,6 +126,7 @@ public class BlockOutputStream extends FilterOutputStream {
             out.write(buf, 0, count);
             count = 0;
         }
+        out.flush();
     }
 
     protected final void writeInt(int v) throws IOException {
