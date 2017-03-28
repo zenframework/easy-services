@@ -103,6 +103,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         } catch (Throwable e) {
             responseObject.setResult(e);
             response.sendError(e);
+        } finally {
+            request.getInputStream().close();
         }
 
         OutputStream out = response.getOutputStream();
@@ -308,13 +310,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             serializer = serializerFactory.getTypeSafeSerializer();
         }
 
-        InputStream in = request.getInputStream();
-        try {
-            rawParams = serializer.deserializeParameters(in);
-            params = findAndReplaceRefs(rawParams);
-        } finally {
-            in.close();
-        }
+        rawParams = serializer.deserializeParameters(request.getInputStream());
+        params = findAndReplaceRefs(rawParams);
 
         if (method != null) {
             return new InvocationContext(method, methodDescriptor, serializer, rawParams, params);
@@ -349,13 +346,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         if (returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF)
             returnType = ServiceLocator.class;
         Serializer serializer = serializerFactory.getSerializer(paramTypes, returnType, methodDescriptor, request.isOutParametersMode());
-        InputStream in = request.getInputStream();
-        try {
-            Object[] rawParams = serializer.deserializeParameters(in);
-            return new InvocationContext(method, methodDescriptor, serializer, rawParams, findAndReplaceRefs(rawParams));
-        } finally {
-            in.close();
-        }
+        Object[] rawParams = serializer.deserializeParameters(request.getInputStream());
+        return new InvocationContext(method, methodDescriptor, serializer, rawParams, findAndReplaceRefs(rawParams));
     }
 
     private Object[] findAndReplaceRefs(Object[] params) throws ServiceException {

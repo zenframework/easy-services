@@ -90,7 +90,7 @@ public class ClientFactoryImpl implements ClientFactory {
         return baseUrl;
     }
 
-    public URLHandler getURLHandler() {
+    public URLHandler getUrlHandler() {
         if (urlHandler == null) {
             try {
                 urlHandler = Environment.getURLHandler(new URI(baseUrl).getScheme());
@@ -101,7 +101,7 @@ public class ClientFactoryImpl implements ClientFactory {
         return urlHandler;
     }
 
-    public void setURLHandler(URLHandler urlHandler) {
+    public void setUrlHandler(URLHandler urlHandler) {
         this.urlHandler = urlHandler;
     }
 

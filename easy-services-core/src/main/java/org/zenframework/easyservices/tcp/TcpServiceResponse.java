@@ -16,11 +16,6 @@ public class TcpServiceResponse extends ServiceResponse {
     }
 
     @Override
-    public OutputStream getOutputStream() throws IOException {
-        return out;
-    }
-
-    @Override
     public void sendSuccess() throws IOException {
         new TcpResponseHeader(sessionId, true).write(out);
     }
@@ -28,6 +23,11 @@ public class TcpServiceResponse extends ServiceResponse {
     @Override
     public void sendError(Throwable e) throws IOException {
         new TcpResponseHeader(sessionId, false).write(out);
+    }
+
+    @Override
+    protected OutputStream getInternalOutputStream() throws IOException {
+        return out;
     }
 
 }

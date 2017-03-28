@@ -20,7 +20,7 @@ public class ClientRequestImpl implements ClientRequest {
 
     public ClientRequestImpl(ClientFactoryImpl clientFactory, ServiceLocator serviceLocator, String methodName) throws IOException {
         this.clientFactory = clientFactory;
-        clientUrlHandler = clientFactory.getURLHandler();
+        clientUrlHandler = clientFactory.getUrlHandler();
         urlConnection = getRequestURL(serviceLocator, methodName, clientFactory.isOutParametersMode()).openConnection();
         if (clientUrlHandler != null)
             clientUrlHandler.prepareConnection(urlConnection);

@@ -97,8 +97,10 @@ public class SimpleTcpServer implements TcpServer {
                 OutputStream out = socket.getOutputStream();
                 while (active.get() && handler.handleRequest(clientAddr, in, out))
                     ;
+                in.read();
             } catch (IOException e) {
                 LOG.error(e.getMessage(), e);
+            } finally {
                 IOUtils.closeQuietly(socket);
             }
         }

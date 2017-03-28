@@ -14,6 +14,7 @@ public abstract class ServiceRequest {
     private final long id;
     private final ServiceSession session;
     private byte[] cachedData;
+    private InputStream in;
 
     public ServiceRequest(ServiceSession session) {
         this.id = COUNTER.incrementAndGet();
@@ -44,7 +45,11 @@ public abstract class ServiceRequest {
     }
 
     public InputStream getInputStream() throws IOException {
-        return cachedData != null ? new ByteArrayInputStream(cachedData) : internalGetInputStream();
+        if (cachedData != null)
+            return new ByteArrayInputStream(cachedData);
+        if (in == null)
+            in = internalGetInputStream();
+        return in;
     }
 
     @Override

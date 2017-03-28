@@ -9,6 +9,7 @@ public abstract class ServiceResponse {
     private static final AtomicLong COUNTER = new AtomicLong();
 
     private final long id;
+    private OutputStream out;
 
     public ServiceResponse() {
         id = COUNTER.incrementAndGet();
@@ -18,10 +19,16 @@ public abstract class ServiceResponse {
         return id;
     }
 
-    abstract public OutputStream getOutputStream() throws IOException;
+    public OutputStream getOutputStream() throws IOException {
+        if (out == null)
+            out = getInternalOutputStream();
+        return out;
+    }
 
     abstract public void sendSuccess() throws IOException;
 
     abstract public void sendError(Throwable e) throws IOException;
+
+    abstract protected OutputStream getInternalOutputStream() throws IOException;
 
 }

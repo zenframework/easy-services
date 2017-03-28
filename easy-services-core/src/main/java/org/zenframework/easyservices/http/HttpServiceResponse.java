@@ -18,16 +18,16 @@ public class HttpServiceResponse extends ServiceResponse {
     }
 
     @Override
-    public OutputStream getOutputStream() throws IOException {
-        return response.getOutputStream();
-    }
-
-    @Override
     public void sendSuccess() throws IOException {}
 
     @Override
     public void sendError(Throwable e) {
         response.setStatus(getStatus(e));
+    }
+
+    @Override
+    protected OutputStream getInternalOutputStream() throws IOException {
+        return response.getOutputStream();
     }
 
     private int getStatus(Throwable e) {
