@@ -61,12 +61,14 @@ public class BlockInputStream extends InputStream {
         if (buf != null && pos < blockSize)
             return true;
         blockSize = readInt();
-        if (blockSize == 0)
-            throw new IllegalStateException("Unexpected zero block length");
+        if (blockSize == 0 || blockSize > 100000)
+            throw new IllegalStateException("Unexpected block size " + blockSize);
         if (blockSize > 0) {
             if (buf == null || blockSize > buf.length)
                 buf = new byte[blockSize];
-            in.read(buf, 0, blockSize);
+            pos = 0;
+            for (int n = in.read(buf, pos, blockSize - pos); pos < blockSize; n = in.read(buf, pos, blockSize - pos))
+                pos += n;
             pos = 0;
         }
         return blockSize > 0;
