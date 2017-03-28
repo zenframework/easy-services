@@ -1,5 +1,6 @@
 package org.zenframework.easyservices.net;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -99,7 +100,8 @@ public class SimpleTcpServer implements TcpServer {
                     ;
                 in.read();
             } catch (IOException e) {
-                LOG.error(e.getMessage(), e);
+                if (!(e instanceof EOFException))
+                    LOG.error(e.getMessage(), e);
             } finally {
                 IOUtils.closeQuietly(socket);
             }

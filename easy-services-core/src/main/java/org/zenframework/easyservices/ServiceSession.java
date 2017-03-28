@@ -2,6 +2,7 @@ package org.zenframework.easyservices;
 
 import javax.naming.Context;
 import javax.naming.Name;
+import javax.naming.NameNotFoundException;
 import javax.naming.NamingException;
 
 import org.slf4j.Logger;
@@ -36,7 +37,7 @@ public class ServiceSession {
     public void invalidate() {
         try {
             getServiceRegistry().destroySubcontext(getSessionContextName());
-        } catch (NamingException e) {
+        } catch (NameNotFoundException e) {} catch (NamingException e) {
             LOG.error("Can't free session context " + getSessionContextName(), e);
         }
     }
