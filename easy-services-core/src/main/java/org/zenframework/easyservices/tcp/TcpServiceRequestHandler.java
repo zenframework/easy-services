@@ -54,7 +54,7 @@ public class TcpServiceRequestHandler implements TcpRequestHandler {
         TcpServiceRequest request = new TcpServiceRequest(getSession(header.getSessionId()), header, in, cacheInputSafe);
         TcpServiceResponse response = new TcpServiceResponse(header.getSessionId(), out, cacheInputSafe);
         serviceInvoker.invoke(request, response);
-        return false;
+        return true;
     }
 
 }
