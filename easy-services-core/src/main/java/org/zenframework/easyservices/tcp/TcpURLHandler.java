@@ -54,8 +54,19 @@ public class TcpURLHandler implements URLHandler<TcpURLConnection<TcpRequestHead
     }
 
     @Override
-    public InputStream getInputStream(TcpURLConnection<TcpRequestHeader, TcpResponseHeader> connection) throws IOException {
-        return new BlockInputStream(connection.getInputStream());
+    public InputStream getInputStream(final TcpURLConnection<TcpRequestHeader, TcpResponseHeader> connection) throws IOException {
+        return new BlockInputStream(connection.getInputStream()) {
+
+            @Override
+            public void close() throws IOException {
+                try {
+                    super.close();
+                } finally {
+                    connection.getSocket().close();
+                }
+            }
+
+        };
     }
 
     private static TcpRequestHeader getRequestHeader(URI uri) {

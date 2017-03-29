@@ -44,6 +44,10 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
         return out;
     }
 
+    public Socket getSocket() {
+        return socket;
+    }
+
     public REQ getRequestHeader() {
         return requestHeader;
     }
