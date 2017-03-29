@@ -4,10 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
-import java.net.Socket;
 
 import org.zenframework.easyservices.ClientRequest;
 import org.zenframework.easyservices.impl.ClientFactoryImpl;
+import org.zenframework.easyservices.net.TcpClient;
 import org.zenframework.easyservices.util.io.BlockInputStream;
 import org.zenframework.easyservices.util.io.BlockOutputStream;
 
@@ -22,15 +22,15 @@ public class TcpClientRequest implements ClientRequest {
     private final InputStream in;
     private boolean success;
 
-    public TcpClientRequest(ClientFactoryImpl clientFactory, Socket socket, String serviceName, Method method, boolean outParametersMode)
+    public TcpClientRequest(ClientFactoryImpl clientFactory, TcpClient client, String serviceName, Method method, boolean outParametersMode)
             throws IOException {
         this.clientFactory = clientFactory;
         this.serviceName = serviceName;
         this.methodName = method.getName();
         this.parameterTypes = method.getParameterTypes();
         this.outParametersMode = outParametersMode;
-        out = new BlockOutputStream(socket.getOutputStream());
-        in = new BlockInputStream(socket.getInputStream());
+        out = client.getOutputStream();
+        in = client.getInputStream();
     }
 
     @Override
@@ -48,12 +48,12 @@ public class TcpClientRequest implements ClientRequest {
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        return out;
+        return new BlockOutputStream(out);
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return in;
+        return new BlockInputStream(in);
     }
 
     @Override

@@ -2,7 +2,6 @@ package org.zenframework.easyservices.tcp;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.net.Socket;
 import java.net.URI;
 
 import org.zenframework.easyservices.ClientException;
@@ -11,10 +10,12 @@ import org.zenframework.easyservices.ServiceLocator;
 import org.zenframework.easyservices.descriptor.MethodDescriptor;
 import org.zenframework.easyservices.impl.ClientFactoryImpl;
 import org.zenframework.easyservices.impl.ServiceMethodInterceptor;
+import org.zenframework.easyservices.net.NioTcpClient;
+import org.zenframework.easyservices.net.TcpClient;
 
 public class TcpClientFactory extends ClientFactoryImpl {
 
-    private final ThreadLocal<Socket> sockets = new ThreadLocal<Socket>();
+    private final ThreadLocal<TcpClient> clients = new ThreadLocal<TcpClient>();
 
     public TcpClientFactory() {}
 
@@ -24,18 +25,18 @@ public class TcpClientFactory extends ClientFactoryImpl {
 
     @Override
     protected ServiceMethodInterceptor getMethodInterceptor(ServiceLocator serviceLocator, boolean useDescriptors) {
-        return new TcpServiceMethodInterceptor(serviceLocator, useDescriptors, getSocket(serviceLocator));
+        return new TcpServiceMethodInterceptor(serviceLocator, useDescriptors, getClient(serviceLocator));
     }
 
-    private Socket getSocket(ServiceLocator serviceLocator) {
+    private TcpClient getClient(ServiceLocator serviceLocator) {
         try {
             URI uri = new URI(serviceLocator.getBaseUrl());
-            Socket socket = sockets.get();
-            if (socket == null || !socket.getInetAddress().getHostName().equals(uri.getHost()) || socket.getPort() != uri.getPort()) {
-                socket = new Socket(uri.getHost(), uri.getPort());
-                sockets.set(socket);
+            TcpClient client = clients.get();
+            if (client == null || !client.getHost().equals(uri.getHost()) || client.getPort() != uri.getPort()) {
+                client = new NioTcpClient(uri.getHost(), uri.getPort());
+                clients.set(client);
             }
-            return socket;
+            return client;
         } catch (Exception e) {
             throw new ClientException(e);
         }
@@ -43,16 +44,16 @@ public class TcpClientFactory extends ClientFactoryImpl {
 
     private class TcpServiceMethodInterceptor extends ServiceMethodInterceptor {
 
-        private final Socket socket;
+        private final TcpClient client;
 
-        TcpServiceMethodInterceptor(ServiceLocator serviceLocator, boolean useDescriptors, Socket socket) {
+        TcpServiceMethodInterceptor(ServiceLocator serviceLocator, boolean useDescriptors, TcpClient client) {
             super(TcpClientFactory.this, serviceLocator, useDescriptors);
-            this.socket = socket;
+            this.client = client;
         }
 
         @Override
         protected ClientRequest createRequest(Method method, MethodDescriptor methodDescriptor) throws IOException {
-            return new TcpClientRequest(clientFactory, socket, serviceLocator.getServiceName(), method, outParametersMode);
+            return new TcpClientRequest(clientFactory, client, serviceLocator.getServiceName(), method, outParametersMode);
         }
 
     }

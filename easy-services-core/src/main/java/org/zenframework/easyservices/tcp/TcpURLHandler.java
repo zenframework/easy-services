@@ -62,7 +62,7 @@ public class TcpURLHandler implements URLHandler<TcpURLConnection<TcpRequestHead
                 try {
                     super.close();
                 } finally {
-                    connection.getSocket().close();
+                    connection.getClient().close();
                 }
             }
 

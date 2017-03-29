@@ -3,13 +3,12 @@ package org.zenframework.easyservices.net;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
 
 public class TcpURLConnection<REQ extends Header, RESP extends Header> extends URLConnection {
 
-    private Socket socket;
+    private TcpClient client;
     private REQ requestHeader;
     private RESP responseHeader;
     private InputStream in;
@@ -21,13 +20,13 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
 
     @Override
     public void connect() throws IOException {
-        socket = new Socket(url.getHost(), url.getPort());
+        client = new SimpleTcpClient(url.getHost(), url.getPort());
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
         if (in == null) {
-            in = socket.getInputStream();
+            in = client.getInputStream();
             if (responseHeader != null)
                 responseHeader.read(in);
         }
@@ -37,15 +36,15 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
     @Override
     public OutputStream getOutputStream() throws IOException {
         if (out == null) {
-            out = socket.getOutputStream();
+            out = client.getOutputStream();
             if (requestHeader != null)
                 requestHeader.write(out);
         }
         return out;
     }
 
-    public Socket getSocket() {
-        return socket;
+    public TcpClient getClient() {
+        return client;
     }
 
     public REQ getRequestHeader() {
