@@ -1,5 +1,7 @@
 package org.zenframework.easyservices.tcp;
 
+import java.io.FilterInputStream;
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -48,12 +50,22 @@ public class TcpClientRequest implements ClientRequest {
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        return clientFactory.isCacheInputSafe() ? out : new BlockOutputStream(out);
+        return clientFactory.isCacheInputSafe() ? new FilterOutputStream(out) {
+
+            @Override
+            public void close() throws IOException {}
+
+        } : new BlockOutputStream(out);
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return clientFactory.isCacheInputSafe() ? in : new BlockInputStream(in);
+        return clientFactory.isCacheInputSafe() ? new FilterInputStream(in) {
+
+            @Override
+            public void close() throws IOException {}
+
+        } : new BlockInputStream(in);
     }
 
     @Override

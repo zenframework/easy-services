@@ -2,13 +2,13 @@ package org.zenframework.easyservices.http;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.URLConnection;
 
 import org.zenframework.easyservices.URLHandler;
 import org.zenframework.easyservices.util.StringUtil;
 
-public class HttpURLHandler implements URLHandler {
+public class HttpURLHandler implements URLHandler<HttpURLConnection> {
 
     public static final String PROTOCOL = "http";
 
@@ -22,35 +22,31 @@ public class HttpURLHandler implements URLHandler {
     }
 
     @Override
-    public boolean isCacheInputSafe() {
-        return true;
+    public void prepareConnection(HttpURLConnection connection) {}
+
+    @Override
+    public String getSessionId(HttpURLConnection connection) {
+        return StringUtil.toMap(connection.getHeaderField(RESP_HEADER_COOKIE), "=", ";").get(SESSION_ID);
     }
 
     @Override
-    public void prepareConnection(URLConnection connection) {}
-
-    @Override
-    public String getSessionId(URLConnection connection) {
-        HttpURLConnection httpConnection = (HttpURLConnection) connection;
-        return StringUtil.toMap(httpConnection.getHeaderField(RESP_HEADER_COOKIE), "=", ";").get(SESSION_ID);
+    public void setSessionId(HttpURLConnection connection, String sessionId) {
+        connection.setRequestProperty(REQ_HEADER_COOKIE, SESSION_ID + '=' + sessionId);
     }
 
     @Override
-    public void setSessionId(URLConnection connection, String sessionId) {
-        HttpURLConnection httpConnection = (HttpURLConnection) connection;
-        httpConnection.setRequestProperty(REQ_HEADER_COOKIE, SESSION_ID + '=' + sessionId);
+    public boolean isSuccessful(HttpURLConnection connection) throws IOException {
+        return connection.getResponseCode() == HttpURLConnection.HTTP_OK;
     }
 
     @Override
-    public boolean isSuccessful(URLConnection connection) throws IOException {
-        HttpURLConnection httpConnection = (HttpURLConnection) connection;
-        return httpConnection.getResponseCode() == HttpURLConnection.HTTP_OK;
+    public OutputStream getOutputStream(HttpURLConnection connection, boolean cacheInputSafe) throws IOException {
+        return connection.getOutputStream();
     }
 
     @Override
-    public InputStream getErrorStream(URLConnection connection) throws IOException {
-        HttpURLConnection httpConnection = (HttpURLConnection) connection;
-        return httpConnection.getErrorStream();
+    public InputStream getInputStream(HttpURLConnection connection, boolean cacheInputSafe) throws IOException {
+        return connection.getResponseCode() == HttpURLConnection.HTTP_OK ? connection.getInputStream() : connection.getErrorStream();
     }
 
 }

@@ -8,11 +8,10 @@ import java.net.URL;
 import java.net.URLConnection;
 
 import org.zenframework.easyservices.URLHandler;
-import org.zenframework.easyservices.util.io.BlockInputStream;
-import org.zenframework.easyservices.util.io.BlockOutputStream;
 import org.zenframework.easyservices.ClientRequest;
 import org.zenframework.easyservices.ServiceLocator;
 
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class ClientRequestImpl implements ClientRequest {
 
     private final ClientFactoryImpl clientFactory;
@@ -38,10 +37,8 @@ public class ClientRequestImpl implements ClientRequest {
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        OutputStream out = urlConnection.getOutputStream();
-        if (clientUrlHandler != null && !clientUrlHandler.isCacheInputSafe() && !clientFactory.isCacheInputSafe())
-            out = new BlockOutputStream(out);
-        return out;
+        return clientUrlHandler != null ? clientUrlHandler.getOutputStream(urlConnection, !clientFactory.isCacheInputSafe())
+                : urlConnection.getOutputStream();
     }
 
     @Override
@@ -56,21 +53,8 @@ public class ClientRequestImpl implements ClientRequest {
 
     @Override
     public InputStream getInputStream() throws IOException {
-        InputStream in = successful ? urlConnection.getInputStream() : clientUrlHandler.getErrorStream(urlConnection);
-        if (clientUrlHandler != null && !clientUrlHandler.isCacheInputSafe() && !clientFactory.isCacheInputSafe())
-            in = new BlockInputStream(in) {
-
-                @Override
-                public void close() throws IOException {
-                    try {
-                        super.close();
-                    } finally {
-                        this.in.close();
-                    }
-                }
-
-            };
-        return in;
+        return clientUrlHandler != null ? clientUrlHandler.getInputStream(urlConnection, !clientFactory.isCacheInputSafe())
+                : urlConnection.getInputStream();
     }
 
     @Override
