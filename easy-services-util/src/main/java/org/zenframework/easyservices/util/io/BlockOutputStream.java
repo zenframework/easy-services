@@ -1,6 +1,5 @@
 package org.zenframework.easyservices.util.io;
 
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -10,9 +9,11 @@ import java.io.OutputStream;
  * 
  * @author Oleg S. Lekshin
  */
-public class BlockOutputStream extends FilterOutputStream {
+public class BlockOutputStream extends OutputStream {
 
     public static final int BLOCK_SIZE = 8192;
+
+    protected final OutputStream out;
 
     /**
      * The internal buffer where data is stored.
@@ -32,8 +33,9 @@ public class BlockOutputStream extends FilterOutputStream {
      * specified underlying output stream.
      *
      * @param   out   the underlying output stream.
+     * @throws IOException 
      */
-    public BlockOutputStream(OutputStream out) {
+    public BlockOutputStream(OutputStream out) throws IOException {
         this(out, BLOCK_SIZE);
     }
 
@@ -44,13 +46,15 @@ public class BlockOutputStream extends FilterOutputStream {
      *
      * @param   out    the underlying output stream.
      * @param   blockSize   the buffer size.
+     * @throws IOException 
      * @exception IllegalArgumentException if size &lt;= 0.
      */
-    public BlockOutputStream(OutputStream out, int blockSize) {
-        super(out);
+    public BlockOutputStream(OutputStream out, int blockSize) throws IOException {
+        this.out = out;
         if (blockSize <= 0)
             throw new IllegalArgumentException("Block size <= 0");
         buf = new byte[blockSize];
+        writeInt(blockSize);
     }
 
     /**

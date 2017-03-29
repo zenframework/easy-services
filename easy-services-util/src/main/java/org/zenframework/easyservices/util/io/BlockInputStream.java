@@ -6,11 +6,12 @@ import java.io.InputStream;
 public class BlockInputStream extends InputStream {
 
     protected final InputStream in;
-    protected byte buf[] = null;
+    protected final byte buf[];
     protected int blockSize = 0, pos = 0;
 
-    public BlockInputStream(InputStream in) {
+    public BlockInputStream(InputStream in) throws IOException {
         this.in = in;
+        this.buf = new byte[readInt()];
     }
 
     @Override
@@ -61,11 +62,9 @@ public class BlockInputStream extends InputStream {
         if (buf != null && pos < blockSize)
             return true;
         blockSize = readInt();
-        if (blockSize == 0 || blockSize > 100000)
+        if (blockSize == 0 || blockSize > buf.length)
             throw new IllegalStateException("Unexpected block size " + blockSize);
         if (blockSize > 0) {
-            if (buf == null || blockSize > buf.length)
-                buf = new byte[blockSize];
             pos = 0;
             for (int n = in.read(buf, pos, blockSize - pos); pos < blockSize; n = in.read(buf, pos, blockSize - pos))
                 pos += n;
