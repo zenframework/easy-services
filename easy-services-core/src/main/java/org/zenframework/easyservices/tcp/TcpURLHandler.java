@@ -2,9 +2,9 @@ package org.zenframework.easyservices.tcp;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLConnection;
 import java.util.List;
 import java.util.Map;
 
@@ -12,8 +12,7 @@ import org.zenframework.easyservices.URLHandler;
 import org.zenframework.easyservices.net.TcpURLConnection;
 import org.zenframework.easyservices.util.URIUtil;
 
-@SuppressWarnings("unchecked")
-public class TcpURLHandler implements URLHandler {
+public class TcpURLHandler implements URLHandler<TcpURLConnection<TcpRequestHeader, TcpResponseHeader>> {
 
     public static final String PROTOCOL = "tcp";
 
@@ -23,38 +22,37 @@ public class TcpURLHandler implements URLHandler {
     }
 
     @Override
-    public void prepareConnection(URLConnection connection) {
-        TcpURLConnection<TcpRequestHeader, TcpResponseHeader> tcpConnection = (TcpURLConnection<TcpRequestHeader, TcpResponseHeader>) connection;
+    public void prepareConnection(TcpURLConnection<TcpRequestHeader, TcpResponseHeader> connection) {
         try {
-            tcpConnection.setRequestHeader(getRequestHeader(connection.getURL().toURI()));
+            connection.setRequestHeader(getRequestHeader(connection.getURL().toURI()));
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
-        tcpConnection.setResponseHeader(new TcpResponseHeader());
+        connection.setResponseHeader(new TcpResponseHeader());
     }
 
     @Override
-    public String getSessionId(URLConnection connection) throws IOException {
-        TcpURLConnection<TcpRequestHeader, TcpResponseHeader> tcpConnection = (TcpURLConnection<TcpRequestHeader, TcpResponseHeader>) connection;
-        tcpConnection.getInputStream();
-        return tcpConnection.getResponseHeader().getSessionId();
+    public String getSessionId(TcpURLConnection<TcpRequestHeader, TcpResponseHeader> connection) throws IOException {
+        return connection.getResponseHeader().getSessionId();
     }
 
     @Override
-    public void setSessionId(URLConnection connection, String sessionId) throws IOException {
-        TcpURLConnection<TcpRequestHeader, TcpResponseHeader> tcpConnection = (TcpURLConnection<TcpRequestHeader, TcpResponseHeader>) connection;
-        tcpConnection.getRequestHeader().setSessionId(sessionId);
+    public void setSessionId(TcpURLConnection<TcpRequestHeader, TcpResponseHeader> connection, String sessionId) throws IOException {
+        connection.getRequestHeader().setSessionId(sessionId);
     }
 
     @Override
-    public boolean isSuccessful(URLConnection connection) throws IOException {
-        TcpURLConnection<TcpRequestHeader, TcpResponseHeader> tcpConnection = (TcpURLConnection<TcpRequestHeader, TcpResponseHeader>) connection;
-        tcpConnection.getInputStream();
-        return tcpConnection.getResponseHeader().isSuccess();
+    public boolean isSuccessful(TcpURLConnection<TcpRequestHeader, TcpResponseHeader> connection) throws IOException {
+        return connection.getResponseHeader().isSuccess();
     }
 
     @Override
-    public InputStream getErrorStream(URLConnection connection) throws IOException {
+    public OutputStream getOutputStream(TcpURLConnection<TcpRequestHeader, TcpResponseHeader> connection) throws IOException {
+        return connection.getOutputStream();
+    }
+
+    @Override
+    public InputStream getInputStream(TcpURLConnection<TcpRequestHeader, TcpResponseHeader> connection) throws IOException {
         return connection.getInputStream();
     }
 

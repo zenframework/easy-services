@@ -5,6 +5,7 @@ import java.io.InputStream;
 
 import org.zenframework.easyservices.ServiceRequest;
 import org.zenframework.easyservices.ServiceSession;
+import org.zenframework.easyservices.util.io.BlockInputStream;
 
 public class TcpServiceRequest extends ServiceRequest {
 
@@ -39,7 +40,7 @@ public class TcpServiceRequest extends ServiceRequest {
 
     @Override
     protected InputStream internalGetInputStream() throws IOException {
-        return in;
+        return new BlockInputStream(in);
     }
 
 }

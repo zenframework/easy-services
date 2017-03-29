@@ -11,6 +11,7 @@ import org.zenframework.easyservices.URLHandler;
 import org.zenframework.easyservices.ClientRequest;
 import org.zenframework.easyservices.ServiceLocator;
 
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class ClientRequestImpl implements ClientRequest {
 
     private final ClientFactoryImpl clientFactory;
@@ -51,7 +52,7 @@ public class ClientRequestImpl implements ClientRequest {
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return successful ? urlConnection.getInputStream() : clientUrlHandler.getErrorStream(urlConnection);
+        return clientUrlHandler != null ? clientUrlHandler.getInputStream(urlConnection) : urlConnection.getInputStream();
     }
 
     @Override

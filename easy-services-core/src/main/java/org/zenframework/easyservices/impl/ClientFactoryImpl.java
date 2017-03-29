@@ -28,7 +28,7 @@ public class ClientFactoryImpl implements ClientFactory {
     private ValueUpdater updater = ValueUpdaterImpl.INSTANCE;
     private boolean debug = Environment.isDebug();
     private String baseUrl;
-    private URLHandler urlHandler;
+    private URLHandler<?> urlHandler;
     private String sessionId;
 
     public ClientFactoryImpl() {}
@@ -90,7 +90,7 @@ public class ClientFactoryImpl implements ClientFactory {
         return baseUrl;
     }
 
-    public URLHandler getUrlHandler() {
+    public URLHandler<?> getUrlHandler() {
         if (urlHandler == null) {
             try {
                 urlHandler = Environment.getURLHandler(new URI(baseUrl).getScheme());
@@ -101,7 +101,7 @@ public class ClientFactoryImpl implements ClientFactory {
         return urlHandler;
     }
 
-    public void setUrlHandler(URLHandler urlHandler) {
+    public void setUrlHandler(URLHandler<?> urlHandler) {
         this.urlHandler = urlHandler;
     }
 

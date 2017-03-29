@@ -14,8 +14,6 @@ import org.zenframework.easyservices.SessionContextManager;
 import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 import org.zenframework.easyservices.impl.SessionContextManagerImpl;
 import org.zenframework.easyservices.net.TcpRequestHandler;
-import org.zenframework.easyservices.util.io.BlockInputStream;
-import org.zenframework.easyservices.util.io.BlockOutputStream;
 
 public class TcpServiceRequestHandler implements TcpRequestHandler {
 
@@ -39,8 +37,6 @@ public class TcpServiceRequestHandler implements TcpRequestHandler {
 
     @Override
     public boolean handleRequest(SocketAddress clientAddr, InputStream in, OutputStream out) throws IOException {
-        in = new BlockInputStream(in);
-        out = new BlockOutputStream(out);
         header.read(in);
         if (header.getSessionId() == null || header.getSessionId().isEmpty())
             header.setSessionId(UUID.randomUUID().toString());

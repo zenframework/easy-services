@@ -30,7 +30,10 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
     @Override
     public InputStream getInputStream() throws IOException {
         if (in == null) {
-            in = new BlockInputStream(socket.getInputStream()) {
+            in = socket.getInputStream();
+            if (responseHeader != null)
+                responseHeader.read(in);
+            in = new BlockInputStream(in) {
 
                 @Override
                 public void close() throws IOException {
@@ -42,8 +45,6 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
                 }
 
             };
-            if (responseHeader != null)
-                responseHeader.read(in);
         }
         return in;
     }
@@ -51,9 +52,10 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
     @Override
     public OutputStream getOutputStream() throws IOException {
         if (out == null) {
-            out = new BlockOutputStream(socket.getOutputStream());
+            out = socket.getOutputStream();
             if (requestHeader != null)
                 requestHeader.write(out);
+            out = new BlockOutputStream(out);
         }
         return out;
     }
@@ -66,7 +68,8 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
         this.requestHeader = requestHeader;
     }
 
-    public RESP getResponseHeader() {
+    public RESP getResponseHeader() throws IOException {
+        getInputStream();
         return responseHeader;
     }
 
