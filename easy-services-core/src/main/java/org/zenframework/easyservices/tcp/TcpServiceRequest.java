@@ -1,12 +1,12 @@
 package org.zenframework.easyservices.tcp;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.zenframework.easyservices.ServiceRequest;
 import org.zenframework.easyservices.ServiceSession;
 import org.zenframework.easyservices.util.io.BlockInputStream;
+import org.zenframework.easyservices.util.io.FilterInputStream;
 
 public class TcpServiceRequest extends ServiceRequest {
 

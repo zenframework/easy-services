@@ -1,11 +1,11 @@
 package org.zenframework.easyservices.tcp;
 
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
 import org.zenframework.easyservices.ServiceResponse;
 import org.zenframework.easyservices.util.io.BlockOutputStream;
+import org.zenframework.easyservices.util.io.FilterOutputStream;
 
 public class TcpServiceResponse extends ServiceResponse {
 

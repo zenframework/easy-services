@@ -1,7 +1,5 @@
 package org.zenframework.easyservices.tcp;
 
-import java.io.FilterInputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,6 +10,8 @@ import org.zenframework.easyservices.ClientRequest;
 import org.zenframework.easyservices.impl.ClientFactoryImpl;
 import org.zenframework.easyservices.util.io.BlockInputStream;
 import org.zenframework.easyservices.util.io.BlockOutputStream;
+import org.zenframework.easyservices.util.io.FilterInputStream;
+import org.zenframework.easyservices.util.io.FilterOutputStream;
 
 public class TcpClientRequest implements ClientRequest {
 
