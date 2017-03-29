@@ -11,6 +11,8 @@ import java.util.Map;
 import org.zenframework.easyservices.URLHandler;
 import org.zenframework.easyservices.net.TcpURLConnection;
 import org.zenframework.easyservices.util.URIUtil;
+import org.zenframework.easyservices.util.io.BlockInputStream;
+import org.zenframework.easyservices.util.io.BlockOutputStream;
 
 public class TcpURLHandler implements URLHandler<TcpURLConnection<TcpRequestHeader, TcpResponseHeader>> {
 
@@ -48,12 +50,12 @@ public class TcpURLHandler implements URLHandler<TcpURLConnection<TcpRequestHead
 
     @Override
     public OutputStream getOutputStream(TcpURLConnection<TcpRequestHeader, TcpResponseHeader> connection) throws IOException {
-        return connection.getOutputStream();
+        return new BlockOutputStream(connection.getOutputStream());
     }
 
     @Override
     public InputStream getInputStream(TcpURLConnection<TcpRequestHeader, TcpResponseHeader> connection) throws IOException {
-        return connection.getInputStream();
+        return new BlockInputStream(connection.getInputStream());
     }
 
     private static TcpRequestHeader getRequestHeader(URI uri) {

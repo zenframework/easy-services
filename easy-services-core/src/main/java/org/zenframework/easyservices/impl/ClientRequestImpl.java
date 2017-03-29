@@ -37,7 +37,7 @@ public class ClientRequestImpl implements ClientRequest {
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        return urlConnection.getOutputStream();
+        return clientUrlHandler != null ? clientUrlHandler.getOutputStream(urlConnection) : urlConnection.getOutputStream();
     }
 
     @Override

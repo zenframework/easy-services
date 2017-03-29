@@ -7,9 +7,6 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLConnection;
 
-import org.zenframework.easyservices.util.io.BlockInputStream;
-import org.zenframework.easyservices.util.io.BlockOutputStream;
-
 public class TcpURLConnection<REQ extends Header, RESP extends Header> extends URLConnection {
 
     private Socket socket;
@@ -33,18 +30,6 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
             in = socket.getInputStream();
             if (responseHeader != null)
                 responseHeader.read(in);
-            in = new BlockInputStream(in) {
-
-                @Override
-                public void close() throws IOException {
-                    try {
-                        super.close();
-                    } finally {
-                        socket.close();
-                    }
-                }
-
-            };
         }
         return in;
     }
@@ -55,7 +40,6 @@ public class TcpURLConnection<REQ extends Header, RESP extends Header> extends U
             out = socket.getOutputStream();
             if (requestHeader != null)
                 requestHeader.write(out);
-            out = new BlockOutputStream(out);
         }
         return out;
     }
