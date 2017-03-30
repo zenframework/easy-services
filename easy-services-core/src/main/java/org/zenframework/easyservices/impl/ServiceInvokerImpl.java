@@ -85,13 +85,18 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
         try {
             Object service = lookupService(request);
+            stageFinished(request, "lookupService");
             if (request.getMethodName() == null) {
                 responseObject.setResult(getServiceInfo(request, service));
+                stageFinished(request, "receiveRequest");
+                stageFinished(request, "invokeMethod");
             } else {
                 context = getInvocationContext(request, service.getClass());
+                stageFinished(request, "receiveRequest");
                 for (ServiceRequestFilter filter : requestFilters)
                     filter.filterContext(request, context);
                 responseObject.setResult(invokeMethod(request, context, service));
+                stageFinished(request, "invokeMethod");
                 if (request.isOutParametersMode())
                     responseObject.setParameters(getOutParameters(context));
                 else if (hasOutParameters(context))
@@ -115,6 +120,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
                         : serializerFactory.getSerializer(null, Map.class, null, request.isOutParametersMode());
                 serializer.serialize(request.isOutParametersMode() ? responseObject : responseObject.getResult(), out);
             }
+            stageFinished(request, "sendResponse");
         } finally {
             out.close();
         }
@@ -369,6 +375,11 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             }
         }
         return param;
+    }
+
+    private void stageFinished(ServiceRequest request, String name) {
+        if (debug)
+            request.getTimeStat().stageFinished(name);
     }
 
     private static boolean hasOutParameters(InvocationContext context) {

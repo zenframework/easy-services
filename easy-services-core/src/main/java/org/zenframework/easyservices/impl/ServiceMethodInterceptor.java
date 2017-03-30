@@ -22,6 +22,7 @@ import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.update.ValueUpdater;
 import org.zenframework.easyservices.util.debug.TimeChecker;
+import org.zenframework.easyservices.util.debug.TimeStat;
 
 import net.sf.cglib.proxy.Callback;
 import net.sf.cglib.proxy.Factory;
@@ -53,6 +54,10 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
     @Override
     public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
 
+        TimeStat timeStat = null;
+        if (debug)
+            timeStat = TimeStat.getTimeStat(ServiceMethodInterceptor.class, "intercept");
+
         // Check service locator is absolute
         if (serviceLocator.isRelative())
             throw new ClientException("Service locator '" + serviceLocator + "' must be absolute");
@@ -76,6 +81,9 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
             }
         }
 
+        if (timeStat != null)
+            timeStat.stageFinished("initRequest");
+
         TimeChecker time = null;
         if ((debug || methodDescriptor.isDebug()) && LOG.isDebugEnabled())
             time = new TimeChecker("CALL " + serviceLocator.getServiceUrl() + '.' + getMethodName(method, methodDescriptor)
@@ -91,6 +99,9 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
             out.close();
         }
 
+        if (timeStat != null)
+            timeStat.stageFinished("sendRequest");
+
         // Receive response
         request.readResponseHeader();
         InputStream in = request.getInputStream();
@@ -100,6 +111,8 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         try {
             if (returnType != void.class || !success || outParametersMode)
                 result = serializer.deserializeResult(in, success);
+            if (timeStat != null)
+                timeStat.stageFinished("receiveResponse");
             if (result instanceof ResponseObject) {
                 ResponseObject responseObject = (ResponseObject) result;
                 outParams = responseObject.getParameters();
@@ -111,10 +124,15 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
                 if (locator.isRelative())
                     locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
                 result = clientFactory.getClient(method.getReturnType(), locator.getServiceName());
+                if (timeStat != null)
+                    timeStat.stageFinished("replaceRef");
             }
             // Update OUT parameters
-            if (outParams != null)
+            if (outParams != null) {
                 updateParameters(args, outParams, paramDescriptors);
+                if (timeStat != null)
+                    timeStat.stageFinished("updateParameters");
+            }
             if (time != null)
                 time.printDifference(result);
             if (success)
