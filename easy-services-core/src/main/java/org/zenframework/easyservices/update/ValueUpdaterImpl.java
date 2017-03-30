@@ -15,9 +15,7 @@ public class ValueUpdaterImpl implements ValueUpdater {
     @Override
     public void update(Object oldValue, Object newValue) {
         if (oldValue.getClass().isArray() && newValue.getClass().isArray()) {
-            int length = Array.getLength(oldValue);
-            for (int i = 0; i < length; i++)
-                Array.set(oldValue, i, Array.get(newValue, i));
+            System.arraycopy(newValue, 0, oldValue, 0, Array.getLength(newValue));
         } else {
             UpdateAdapter adapter = findAdapter(oldValue.getClass());
             adapter.update(oldValue, newValue, this);
