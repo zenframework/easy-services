@@ -75,7 +75,7 @@ public class TcpURLHandler implements URLHandler<TcpURLConnection<TcpRequestHead
         List<String> methodParam = params.get("method");
         List<String> outParamsParam = params.get("outParameters");
         return new TcpRequestHeader(null, serviceName, methodParam != null && !methodParam.isEmpty() ? methodParam.get(0) : null, null,
-                outParamsParam != null && !outParamsParam.isEmpty() && Boolean.parseBoolean(outParamsParam.get(0)));
+                outParamsParam != null && !outParamsParam.isEmpty() && Boolean.parseBoolean(outParamsParam.get(0)), false);
     }
 
 }

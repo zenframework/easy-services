@@ -35,7 +35,7 @@ public class TcpClientRequest implements ClientRequest {
 
     @Override
     public void writeRequestHeader() throws IOException {
-        new TcpRequestHeader(clientFactory.getSessionId(), serviceName, methodName, parameterTypes, outParametersMode).write(out);
+        new TcpRequestHeader(clientFactory.getSessionId(), serviceName, methodName, parameterTypes, outParametersMode, true).write(out);
     }
 
     @Override

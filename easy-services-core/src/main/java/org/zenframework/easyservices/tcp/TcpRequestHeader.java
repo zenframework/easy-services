@@ -16,15 +16,18 @@ public class TcpRequestHeader implements Header {
     private String methodName;
     private Class<?>[] parameterTypes;
     private boolean outParametersMode;
+    private boolean keepConnection;
 
     public TcpRequestHeader() {}
 
-    public TcpRequestHeader(String sessionId, String serviceName, String methodName, Class<?>[] parameterTypes, boolean outParametersMode) {
+    public TcpRequestHeader(String sessionId, String serviceName, String methodName, Class<?>[] parameterTypes, boolean outParametersMode,
+            boolean keepConnection) {
         this.sessionId = sessionId;
         this.serviceName = serviceName;
         this.methodName = methodName;
         this.parameterTypes = parameterTypes;
         this.outParametersMode = outParametersMode;
+        this.keepConnection = keepConnection;
     }
 
     public String getSessionId() {
@@ -67,6 +70,14 @@ public class TcpRequestHeader implements Header {
         this.outParametersMode = outParametersMode;
     }
 
+    public boolean isKeepConnection() {
+        return keepConnection;
+    }
+
+    public void setKeepConnection(boolean keepConnection) {
+        this.keepConnection = keepConnection;
+    }
+
     @Override
     public void read(InputStream in) throws IOException {
         DataInputStream data = new DataInputStream(in);
@@ -84,6 +95,7 @@ public class TcpRequestHeader implements Header {
             }
         }
         outParametersMode = data.readBoolean();
+        keepConnection = data.readBoolean();
     }
 
     @Override
@@ -100,6 +112,7 @@ public class TcpRequestHeader implements Header {
                 data.writeUTF(parameterType.getName());
         }
         data.writeBoolean(outParametersMode);
+        data.writeBoolean(keepConnection);
         data.flush();
     }
 

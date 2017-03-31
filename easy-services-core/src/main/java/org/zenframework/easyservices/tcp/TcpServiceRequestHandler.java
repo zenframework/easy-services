@@ -43,7 +43,7 @@ public class TcpServiceRequestHandler implements TcpRequestHandler {
         TcpServiceRequest request = new TcpServiceRequest(getSession(header.getSessionId()), header, in);
         TcpServiceResponse response = new TcpServiceResponse(header.getSessionId(), out);
         serviceInvoker.invoke(request, response);
-        return true;
+        return header.isKeepConnection();
     }
 
 }
