@@ -16,6 +16,15 @@ public class Statistics {
         count++;
     }
 
+    public synchronized void mergeWith(Statistics s) {
+        if (s.getMin() < min)
+            min = s.getMin();
+        if (s.getMax() > max)
+            max = s.getMax();
+        avg = (avg * count + s.getAvg() * s.getCount()) / (count + s.getCount());
+        count += s.getCount();
+    }
+
     public int getCount() {
         return count;
     }

@@ -24,7 +24,7 @@ public class StreamsTest extends AbstractServiceTest {
 
     @Parameterized.Parameters(name = "#{index} protocol/format: {0}, secure: {1}, autoAliasing: {2}, size: {3}K")
     public static Collection<Object[]> params() {
-        return CollectionUtil.combinations(arr("http/json", "tcp/bin"), arr(false, true), arr(true, false), arr(SIZE_K));
+        return CollectionUtil.combinations(arr("http/json", "tcp/bin", "tcpx/bin"), arr(false, true), arr(true, false), arr(SIZE_K));
     }
 
     private final int size;

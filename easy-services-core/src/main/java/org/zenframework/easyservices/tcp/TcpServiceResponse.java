@@ -3,32 +3,23 @@ package org.zenframework.easyservices.tcp;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.zenframework.easyservices.ServiceResponse;
-import org.zenframework.easyservices.util.io.BlockOutputStream;
+import org.zenframework.easyservices.net.DefaultHeader;
 
-public class TcpServiceResponse extends ServiceResponse {
-
-    private final String sessionId;
-    private final OutputStream out;
+public class TcpServiceResponse extends AbstractTcpServiceResponse<DefaultHeader> {
 
     public TcpServiceResponse(String sessionId, OutputStream out) {
-        this.sessionId = sessionId;
-        this.out = out;
+        super(new DefaultHeader(), out);
+        header.setField(TcpURLHandler.HEADER_SESSION_ID, sessionId);
     }
 
     @Override
     public void sendSuccess() throws IOException {
-        new TcpResponseHeader(sessionId, true).write(out);
+        header.setField(TcpURLHandler.HEADER_SUCCESSFUL, Boolean.TRUE);
     }
 
     @Override
     public void sendError(Throwable e) throws IOException {
-        new TcpResponseHeader(sessionId, false).write(out);
-    }
-
-    @Override
-    protected OutputStream getInternalOutputStream() throws IOException {
-        return new BlockOutputStream(out);
+        header.setField(TcpURLHandler.HEADER_SUCCESSFUL, Boolean.FALSE);
     }
 
 }

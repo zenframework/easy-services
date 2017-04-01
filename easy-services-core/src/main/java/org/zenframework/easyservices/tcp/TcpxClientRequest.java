@@ -11,7 +11,7 @@ import org.zenframework.easyservices.net.TcpClient;
 import org.zenframework.easyservices.util.io.BlockInputStream;
 import org.zenframework.easyservices.util.io.BlockOutputStream;
 
-public class TcpClientRequest implements ClientRequest {
+public class TcpxClientRequest implements ClientRequest {
 
     private final ClientFactoryImpl clientFactory;
     private final String serviceName;
@@ -22,7 +22,7 @@ public class TcpClientRequest implements ClientRequest {
     private final InputStream in;
     private boolean success;
 
-    public TcpClientRequest(ClientFactoryImpl clientFactory, TcpClient client, String serviceName, Method method, boolean outParametersMode)
+    public TcpxClientRequest(ClientFactoryImpl clientFactory, TcpClient client, String serviceName, Method method, boolean outParametersMode)
             throws IOException {
         this.clientFactory = clientFactory;
         this.serviceName = serviceName;
@@ -35,12 +35,12 @@ public class TcpClientRequest implements ClientRequest {
 
     @Override
     public void writeRequestHeader() throws IOException {
-        new TcpRequestHeader(clientFactory.getSessionId(), serviceName, methodName, parameterTypes, outParametersMode, true).write(out);
+        new TcpxRequestHeader(clientFactory.getSessionId(), serviceName, methodName, parameterTypes, outParametersMode, true).write(out);
     }
 
     @Override
     public void readResponseHeader() throws IOException {
-        TcpResponseHeader header = new TcpResponseHeader();
+        TcpxResponseHeader header = new TcpxResponseHeader();
         header.read(in);
         clientFactory.setSessionId(header.getSessionId());
         success = header.isSuccess();

@@ -1,67 +1,71 @@
 package org.zenframework.easyservices.net;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
-public class TcpURLConnection<REQ extends Header, RESP extends Header> extends URLConnection {
+import org.zenframework.easyservices.util.URIUtil;
 
-    private TcpClient client;
-    private REQ requestHeader;
-    private RESP responseHeader;
-    private InputStream in;
-    private OutputStream out;
+public class TcpURLConnection extends AbstractTcpURLConnection<DefaultHeader, DefaultHeader> {
+
+    private final DefaultHeader responseHeader = new DefaultHeader();
 
     public TcpURLConnection(URL url) {
         super(url);
     }
 
     @Override
-    public void connect() throws IOException {
-        client = new SimpleTcpClient(url.getHost(), url.getPort());
+    public String getHeaderField(String name) {
+        List<String> values = responseHeader.getFields().get(name);
+        return values == null || values.isEmpty() ? null : values.get(values.size() - 1);
     }
 
     @Override
-    public InputStream getInputStream() throws IOException {
-        if (in == null) {
-            in = client.getInputStream();
-            if (responseHeader != null)
-                responseHeader.read(in);
-        }
-        return in;
+    public Map<String, List<String>> getHeaderFields() {
+        return responseHeader.getFields();
     }
 
     @Override
-    public OutputStream getOutputStream() throws IOException {
-        if (out == null) {
-            out = client.getOutputStream();
-            if (requestHeader != null)
-                requestHeader.write(out);
+    public String getHeaderFieldKey(int n) {
+        if (n >= responseHeader.getFields().size())
+            throw new IndexOutOfBoundsException("" + n + " > " + (responseHeader.getFields().size() - 1));
+        Iterator<String> keys = responseHeader.getFields().keySet().iterator();
+        for (int i = 0; i < n - 1; i++)
+            keys.next();
+        return keys.next();
+    }
+
+    @Override
+    public String getHeaderField(int n) {
+        if (n >= responseHeader.getFields().size())
+            throw new IndexOutOfBoundsException("" + n + " > " + (responseHeader.getFields().size() - 1));
+        Iterator<List<String>> it = responseHeader.getFields().values().iterator();
+        for (int i = 0; i < n - 1; i++)
+            it.next();
+        List<String> values = it.next();
+        return values == null || values.isEmpty() ? null : values.get(values.size() - 1);
+    }
+
+    @Override
+    public DefaultHeader getRequestHeader() {
+        try {
+            String path = getURL().getPath();
+            if (path != null)
+                setRequestProperty(DefaultHeader.PATH, path);
+            for (Map.Entry<String, List<String>> field : URIUtil.getParameters(getURL().toURI(), "UTF-8").entrySet())
+                for (String value : field.getValue())
+                    addRequestProperty(field.getKey(), value);
+            return new DefaultHeader(getRequestProperties());
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
         }
-        return out;
     }
 
-    public TcpClient getClient() {
-        return client;
-    }
-
-    public REQ getRequestHeader() {
-        return requestHeader;
-    }
-
-    public void setRequestHeader(REQ requestHeader) {
-        this.requestHeader = requestHeader;
-    }
-
-    public RESP getResponseHeader() throws IOException {
-        getInputStream();
+    @Override
+    public DefaultHeader getResponseHeader() {
         return responseHeader;
-    }
-
-    public void setResponseHeader(RESP responseHeader) {
-        this.responseHeader = responseHeader;
     }
 
 }

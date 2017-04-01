@@ -8,16 +8,15 @@ import java.io.OutputStream;
 
 import org.zenframework.easyservices.net.Header;
 
-public class TcpResponseHeader implements Header {
+public class TcpxResponseHeader implements Header {
 
     private String sessionId;
     private boolean success;
 
-    public TcpResponseHeader() {}
+    public TcpxResponseHeader() {}
 
-    public TcpResponseHeader(String sessionId, boolean success) {
+    public TcpxResponseHeader(String sessionId) {
         this.sessionId = sessionId;
-        this.success = success;
     }
 
     public String getSessionId() {

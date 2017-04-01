@@ -18,15 +18,17 @@ public class ClientRequestImpl implements ClientRequest {
     private final URLConnection urlConnection;
     private final URLHandler clientUrlHandler;
     private boolean successful;
+    private InputStream in;
+    private OutputStream out;
 
     public ClientRequestImpl(ClientFactoryImpl clientFactory, ServiceLocator serviceLocator, String methodName) throws IOException {
         this.clientFactory = clientFactory;
         clientUrlHandler = clientFactory.getUrlHandler();
         urlConnection = getRequestURL(serviceLocator, methodName, clientFactory.isOutParametersMode()).openConnection();
-        if (clientUrlHandler != null)
-            clientUrlHandler.prepareConnection(urlConnection);
         urlConnection.setDoOutput(true);
         urlConnection.setDoInput(true);
+        if (clientUrlHandler != null)
+            clientUrlHandler.prepareConnection(urlConnection);
     }
 
     @Override
@@ -37,11 +39,14 @@ public class ClientRequestImpl implements ClientRequest {
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        return clientUrlHandler != null ? clientUrlHandler.getOutputStream(urlConnection) : urlConnection.getOutputStream();
+        if (out == null)
+            out = clientUrlHandler != null ? clientUrlHandler.getOutputStream(urlConnection) : urlConnection.getOutputStream();
+        return out;
     }
 
     @Override
     public void readResponseHeader() throws IOException {
+        getInputStream();
         if (clientUrlHandler != null) {
             String sessionId = clientUrlHandler.getSessionId(urlConnection);
             if (sessionId != null)
@@ -52,7 +57,9 @@ public class ClientRequestImpl implements ClientRequest {
 
     @Override
     public InputStream getInputStream() throws IOException {
-        return clientUrlHandler != null ? clientUrlHandler.getInputStream(urlConnection) : urlConnection.getInputStream();
+        if (in == null)
+            in = clientUrlHandler != null ? clientUrlHandler.getInputStream(urlConnection) : urlConnection.getInputStream();
+        return in;
     }
 
     @Override

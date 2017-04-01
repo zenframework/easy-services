@@ -16,6 +16,7 @@ import org.zenframework.easyservices.impl.ServiceMethodInterceptor;
 import org.zenframework.easyservices.net.NioTcpServer;
 import org.zenframework.easyservices.net.TcpServer;
 import org.zenframework.easyservices.tcp.TcpServiceRequestHandler;
+import org.zenframework.easyservices.tcp.TcpxServiceRequestHandler;
 import org.zenframework.easyservices.util.debug.TimeStat;
 import org.zenframework.easyservices.util.jndi.JNDIHelper;
 
@@ -54,6 +55,10 @@ public abstract class AbstractServiceTest extends TestCase {
         } else if ("tcp".equals(protocol)) {
             clientFactory = new ClientFactoryImpl("tcp://localhost:" + TestContext.SERVER_PORT);
             tcpServer = new NioTcpServer(TestContext.SERVER_PORT, new TcpServiceRequestHandler());
+            tcpServer.start();
+        } else if ("tcpx".equals(protocol)) {
+            clientFactory = new ClientFactoryImpl("tcpx://localhost:" + TestContext.SERVER_PORT);
+            tcpServer = new NioTcpServer(TestContext.SERVER_PORT, new TcpxServiceRequestHandler());
             tcpServer.start();
         }
     }

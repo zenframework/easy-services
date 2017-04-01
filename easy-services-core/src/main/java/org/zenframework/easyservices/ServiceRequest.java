@@ -4,14 +4,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.zenframework.easyservices.util.debug.TimeStat;
 
 public abstract class ServiceRequest {
 
-    private static final AtomicLong COUNTER = new AtomicLong(new Date().getTime());
+    private static final AtomicLong COUNTER = new AtomicLong(System.currentTimeMillis() / 1000);
 
     private final long id;
     private final TimeStat timeStat;

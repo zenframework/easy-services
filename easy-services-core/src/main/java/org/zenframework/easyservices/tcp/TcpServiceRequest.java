@@ -3,44 +3,37 @@ package org.zenframework.easyservices.tcp;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.zenframework.easyservices.ServiceRequest;
 import org.zenframework.easyservices.ServiceSession;
-import org.zenframework.easyservices.util.io.BlockInputStream;
+import org.zenframework.easyservices.net.DefaultHeader;
 
-public class TcpServiceRequest extends ServiceRequest {
+public class TcpServiceRequest extends AbstractTcpServiceRequest {
 
-    private final TcpRequestHeader header;
-    private final InputStream in;
+    private final DefaultHeader header;
 
-    public TcpServiceRequest(ServiceSession session, TcpRequestHeader header, InputStream in) throws IOException {
-        super(session);
+    public TcpServiceRequest(ServiceSession session, InputStream in, DefaultHeader header) throws IOException {
+        super(session, in);
         this.header = header;
-        this.in = in;
     }
 
     @Override
     public String getServiceName() {
-        return header.getServiceName();
+        return header.getString(DefaultHeader.PATH).substring(1);
     }
 
     @Override
     public String getMethodName() {
-        return header.getMethodName();
+        return header.getString("method");
     }
 
     @Override
     public Class<?>[] getParameterTypes() {
-        return header.getParameterTypes();
+        return null;
     }
 
     @Override
     public boolean isOutParametersMode() {
-        return header.isOutParametersMode();
-    }
-
-    @Override
-    protected InputStream internalGetInputStream() throws IOException {
-        return new BlockInputStream(in);
+        Boolean outParameters = header.getBoolean("outParameters");
+        return outParameters != null && outParameters;
     }
 
 }

@@ -1,2 +1,3 @@
 org.zenframework.easyservices.http.HttpURLHandler
 org.zenframework.easyservices.tcp.TcpURLHandler
+org.zenframework.easyservices.tcp.TcpxURLHandler

@@ -9,7 +9,7 @@ import java.io.OutputStream;
 import org.apache.commons.lang.ClassUtils;
 import org.zenframework.easyservices.net.Header;
 
-public class TcpRequestHeader implements Header {
+public class TcpxRequestHeader implements Header {
 
     private String sessionId;
     private String serviceName;
@@ -18,9 +18,9 @@ public class TcpRequestHeader implements Header {
     private boolean outParametersMode;
     private boolean keepConnection;
 
-    public TcpRequestHeader() {}
+    public TcpxRequestHeader() {}
 
-    public TcpRequestHeader(String sessionId, String serviceName, String methodName, Class<?>[] parameterTypes, boolean outParametersMode,
+    public TcpxRequestHeader(String sessionId, String serviceName, String methodName, Class<?>[] parameterTypes, boolean outParametersMode,
             boolean keepConnection) {
         this.sessionId = sessionId;
         this.serviceName = serviceName;

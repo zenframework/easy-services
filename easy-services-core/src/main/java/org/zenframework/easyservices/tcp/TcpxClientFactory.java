@@ -13,13 +13,13 @@ import org.zenframework.easyservices.impl.ServiceMethodInterceptor;
 import org.zenframework.easyservices.net.NioTcpClient;
 import org.zenframework.easyservices.net.TcpClient;
 
-public class TcpClientFactory extends ClientFactoryImpl {
+public class TcpxClientFactory extends ClientFactoryImpl {
 
     private final ThreadLocal<TcpClient> clients = new ThreadLocal<TcpClient>();
 
-    public TcpClientFactory() {}
+    public TcpxClientFactory() {}
 
-    public TcpClientFactory(String baseUrl) {
+    public TcpxClientFactory(String baseUrl) {
         super(baseUrl);
     }
 
@@ -47,13 +47,13 @@ public class TcpClientFactory extends ClientFactoryImpl {
         private final TcpClient client;
 
         TcpServiceMethodInterceptor(ServiceLocator serviceLocator, boolean useDescriptors, TcpClient client) {
-            super(TcpClientFactory.this, serviceLocator, useDescriptors);
+            super(TcpxClientFactory.this, serviceLocator, useDescriptors);
             this.client = client;
         }
 
         @Override
         protected ClientRequest createRequest(Method method, MethodDescriptor methodDescriptor) throws IOException {
-            return new TcpClientRequest(clientFactory, client, serviceLocator.getServiceName(), method, outParametersMode);
+            return new TcpxClientRequest(clientFactory, client, serviceLocator.getServiceName(), method, outParametersMode);
         }
 
     }

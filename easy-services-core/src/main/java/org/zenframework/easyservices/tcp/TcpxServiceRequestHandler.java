@@ -13,13 +13,12 @@ import org.zenframework.easyservices.ServiceSession;
 import org.zenframework.easyservices.SessionContextManager;
 import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 import org.zenframework.easyservices.impl.SessionContextManagerImpl;
-import org.zenframework.easyservices.net.DefaultHeader;
 import org.zenframework.easyservices.net.TcpRequestHandler;
 
-public class TcpServiceRequestHandler implements TcpRequestHandler {
+public class TcpxServiceRequestHandler implements TcpRequestHandler {
 
     private final Map<String, ServiceSession> sessions = new HashMap<String, ServiceSession>();
-    private final DefaultHeader header = new DefaultHeader();
+    private final TcpxRequestHeader header = new TcpxRequestHeader();
 
     private SessionContextManager sessionContextManager = new SessionContextManagerImpl();
     private ServiceInvoker serviceInvoker = new ServiceInvokerImpl();
@@ -39,15 +38,12 @@ public class TcpServiceRequestHandler implements TcpRequestHandler {
     @Override
     public boolean handleRequest(SocketAddress clientAddr, InputStream in, OutputStream out) throws IOException {
         header.read(in);
-        String sessionId = header.getString(TcpURLHandler.HEADER_SESSION_ID);
-        if (sessionId == null || sessionId.isEmpty()) {
-            sessionId = UUID.randomUUID().toString();
-            header.setField(TcpURLHandler.HEADER_SESSION_ID, sessionId);
-        }
-        TcpServiceRequest request = new TcpServiceRequest(getSession(sessionId), in, header);
-        TcpServiceResponse response = new TcpServiceResponse(sessionId, out);
+        if (header.getSessionId() == null || header.getSessionId().isEmpty())
+            header.setSessionId(UUID.randomUUID().toString());
+        TcpxServiceRequest request = new TcpxServiceRequest(getSession(header.getSessionId()), in, header);
+        TcpxServiceResponse response = new TcpxServiceResponse(header.getSessionId(), out);
         serviceInvoker.invoke(request, response);
-        return false;
+        return header.isKeepConnection();
     }
 
 }
