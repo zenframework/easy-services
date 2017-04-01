@@ -9,6 +9,7 @@ import org.apache.commons.lang.StringUtils;
 public class TimeStat {
 
     private static final Map<String, Map<String, Statistics>> STATISTICS = new HashMap<String, Map<String, Statistics>>();
+    private static final ThreadLocal<TimeStat> TIME_STATS = new ThreadLocal<TimeStat>();
 
     private final String name;
     private final Map<String, Statistics> stages;
@@ -61,6 +62,26 @@ public class TimeStat {
             }
         }
         return str.toString();
+    }
+
+    public static void setThreadTimeStat(Class<?> cls, String methodName) {
+        setThreadTimeStat(getName(cls, methodName));
+    }
+
+    public static void setThreadTimeStat(String name) {
+        TimeStat timeStat = TIME_STATS.get();
+        if (timeStat == null) {
+            timeStat = new TimeStat(name, getStages(name));
+            TIME_STATS.set(timeStat);
+        }
+    }
+
+    public static TimeStat getThreadTimeStat() {
+        return TIME_STATS.get();
+    }
+
+    public static void removeThreadTimeStat() {
+        TIME_STATS.remove();
     }
 
     public static TimeStat getTimeStat(Class<?> cls, String methodName) {
