@@ -73,25 +73,25 @@
                 <extensions>true</extensions>
                 <configuration>
                     <instructions>
-                            <!-- Bundle name. Default = artifact Id -->
-                            <!-- <Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName> -->
-                            <!-- Bundle version. Default = artifact version -->
-                            <!-- <Bundle-Version>${project.version}</Bundle-Version> -->
-                            <!-- Packages being exported. '!' means 'not' -->
+                        <!-- Bundle name. Default = artifact Id -->
+                        <!-- <Bundle-SymbolicName>${bundle.symbolicName}</Bundle-SymbolicName> -->
+                        <!-- Bundle version. Default = artifact version -->
+                        <!-- <Bundle-Version>${project.version}</Bundle-Version> -->
+                        <!-- Packages being exported. '!' means 'not' -->
                         <Export-Package>!${bundle.namespace}.internal.*,${bundle.namespace}.*;version="${project.version}",${bundle.extpackages}</Export-Package>
-                            <!-- Do not import own private packages -->
+                        <!-- Do not import own private packages -->
                         <Private-Package>${bundle.namespace}.internal.*</Private-Package>
-                            <!-- Bundle activator class -->
-                            <!-- <Bundle-Activator>${bundle.namespace}.internal.Activator</Bundle-Activator> -->
-                            <!-- Embed bundle dependencies -->
-                            <!-- <Embed-Dependency>*;scope=compile|runtime;type=!bundle;inline=false</Embed-Dependency> -->
-                            <!-- Place embedded dependencies into specified folder inside the bundle -->
-                            <!-- <Embed-Directory>lib</Embed-Directory> -->
-                            <!-- Group embedded dependencies by groups' Ids -->
-                            <!-- <Embed-StripGroup>true</Embed-StripGroup> -->
-                            <!-- Embed transitive dependencies -->
-                            <!-- <Embed-Transitive>true</Embed-Transitive> -->
-                            <!-- <Bundle-RequiredExecutionEnvironment>${bundle.required.execution.environment}</Bundle-RequiredExecutionEnvironment> -->
+                        <!-- Bundle activator class -->
+                        <!-- <Bundle-Activator>${bundle.namespace}.internal.Activator</Bundle-Activator> -->
+                        <!-- Embed bundle dependencies -->
+                        <!-- <Embed-Dependency>*;scope=compile|runtime;type=!bundle;inline=false</Embed-Dependency> -->
+                        <!-- Place embedded dependencies into specified folder inside the bundle -->
+                        <!-- <Embed-Directory>lib</Embed-Directory> -->
+                        <!-- Group embedded dependencies by groups' Ids -->
+                        <!-- <Embed-StripGroup>true</Embed-StripGroup> -->
+                        <!-- Embed transitive dependencies -->
+                        <!-- <Embed-Transitive>true</Embed-Transitive> -->
+                        <!-- <Bundle-RequiredExecutionEnvironment>${bundle.required.execution.environment}</Bundle-RequiredExecutionEnvironment> -->
                         <Import-Package>${bundle.import.package}</Import-Package>
                     </instructions>
                 </configuration>
