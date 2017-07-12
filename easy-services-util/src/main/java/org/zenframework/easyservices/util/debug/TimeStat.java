@@ -13,26 +13,23 @@ public class TimeStat {
 
     private final String name;
     private final Map<String, Statistics> stages;
-    private long time = System.nanoTime();
+    private long time;
+    private String stage;
 
     private TimeStat(String name, Map<String, Statistics> stages) {
         this.name = name;
         this.stages = stages;
     }
 
-    public void stageFinished(String stage) {
-        Statistics stageStat;
-        synchronized (stages) {
-            stageStat = stages.get(stage);
-            if (stageStat == null) {
-                stageStat = new Statistics();
-                stages.put(stage, stageStat);
-            }
-        }
-        long finished = System.nanoTime();
-        double diff = ((double) (finished - time)) / 1000000;
-        stageStat.addValue(diff);
-        time = finished;
+    public void stage(String stage) {
+        this.time = commit();
+        this.stage = stage;
+    }
+
+    public void finish() {
+        commit();
+        time = 0;
+        stage = null;
     }
 
     @Override
@@ -60,8 +57,27 @@ public class TimeStat {
                 Statistics stat = entry.getValue();
                 str.append("\n\t").append(String.format(rowFormat, name, stat.getCount(), stat.getMin(), stat.getMax(), stat.getAvg()));
             }
+        } else {
+            str.append(" <none>");
         }
         return str.toString();
+    }
+
+    private long commit() {
+        long now = System.nanoTime();
+        if (this.stage != null) {
+            Statistics stageStat;
+            synchronized (stages) {
+                stageStat = stages.get(stage);
+                if (stageStat == null) {
+                    stageStat = new Statistics();
+                    stages.put(stage, stageStat);
+                }
+            }
+            double diff = ((double) (now - time)) / 1000000;
+            stageStat.addValue(diff);
+        }
+        return now;
     }
 
     public static void setThreadTimeStat(Class<?> cls, String methodName) {

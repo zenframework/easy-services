@@ -43,6 +43,7 @@ import org.zenframework.easyservices.serialize.Serializer;
 import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.util.cls.ClassInfo;
 import org.zenframework.easyservices.util.debug.TimeChecker;
+import org.zenframework.easyservices.util.debug.TimeStat;
 import org.zenframework.easyservices.util.jndi.JNDIHelper;
 
 public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
@@ -69,6 +70,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         ResponseObject responseObject = new ResponseObject();
         InvocationContext context = null;
 
+        TimeStat timeStat = TimeStat.getThreadTimeStat();
+
         if (debug && LOG.isDebugEnabled()) {
             String requestStr;
             if (serializerFactory.isTextBased()) {
@@ -84,19 +87,22 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             filter.filterRequest(request);
 
         try {
+            if (timeStat != null)
+                timeStat.stage("lookupService");
             Object service = lookupService(request);
-            stageFinished(request, "lookupService");
+            if (timeStat != null)
+                timeStat.stage("receiveRequest");
             if (request.getMethodName() == null) {
+                if (timeStat != null)
+                    timeStat.stage("invokeMethod");
                 responseObject.setResult(getServiceInfo(request, service));
-                stageFinished(request, "receiveRequest");
-                stageFinished(request, "invokeMethod");
             } else {
                 context = getInvocationContext(request, service.getClass());
-                stageFinished(request, "receiveRequest");
+                if (timeStat != null)
+                    timeStat.stage("invokeMethod");
                 for (ServiceRequestFilter filter : requestFilters)
                     filter.filterContext(request, context);
                 responseObject.setResult(invokeMethod(request, context, service));
-                stageFinished(request, "invokeMethod");
                 if (request.isOutParametersMode())
                     responseObject.setParameters(getOutParameters(context));
                 else if (hasOutParameters(context))
@@ -112,6 +118,8 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             request.getInputStream().close();
         }
 
+        if (timeStat != null)
+            timeStat.stage("sendResponse");
         OutputStream out = response.getOutputStream();
         try {
             if (context == null || context.getMethod().getReturnType() != void.class || responseObject.getResult() != null
@@ -120,9 +128,10 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
                         : serializerFactory.getSerializer(null, Map.class, null, request.isOutParametersMode());
                 serializer.serialize(request.isOutParametersMode() ? responseObject : responseObject.getResult(), out);
             }
-            stageFinished(request, "sendResponse");
         } finally {
             out.close();
+            if (timeStat != null)
+                timeStat.finish();
         }
 
     }
@@ -375,11 +384,6 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
             }
         }
         return param;
-    }
-
-    private void stageFinished(ServiceRequest request, String name) {
-        if (debug)
-            request.getTimeStat().stageFinished(name);
     }
 
     private static boolean hasOutParameters(InvocationContext context) {

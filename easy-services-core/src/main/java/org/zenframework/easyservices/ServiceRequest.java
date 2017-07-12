@@ -6,30 +6,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.zenframework.easyservices.util.debug.TimeStat;
-
 public abstract class ServiceRequest {
 
     private static final AtomicLong COUNTER = new AtomicLong(System.currentTimeMillis() / 1000);
 
     private final long id;
-    private final TimeStat timeStat;
     private final ServiceSession session;
     private byte[] cachedData;
     private InputStream in;
 
     public ServiceRequest(ServiceSession session) {
         this.id = COUNTER.incrementAndGet();
-        this.timeStat = TimeStat.getTimeStat(ServiceInvoker.class, "invoke");
         this.session = session;
     }
 
     public long getId() {
         return id;
-    }
-
-    public TimeStat getTimeStat() {
-        return timeStat;
     }
 
     public ServiceSession getSession() {

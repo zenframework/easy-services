@@ -54,13 +54,14 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
     @Override
     public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
 
-        TimeStat timeStat = null;
-        if (debug)
-            timeStat = TimeStat.getTimeStat(ServiceMethodInterceptor.class, "intercept");
+        TimeStat timeStat = TimeStat.getThreadTimeStat();
 
         // Check service locator is absolute
         if (serviceLocator.isRelative())
             throw new ClientException("Service locator '" + serviceLocator + "' must be absolute");
+
+        if (timeStat != null)
+            timeStat.stage("initRequest");
 
         Class<?>[] paramTypes = method.getParameterTypes();
         Class<?> returnType = method.getReturnType();
@@ -82,7 +83,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         }
 
         if (timeStat != null)
-            timeStat.stageFinished("initRequest");
+            timeStat.stage("sendRequest");
 
         TimeChecker time = null;
         if ((debug || methodDescriptor.isDebug()) && LOG.isDebugEnabled())
@@ -100,7 +101,7 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         }
 
         if (timeStat != null)
-            timeStat.stageFinished("sendRequest");
+            timeStat.stage("receiveResponse");
 
         // Receive response
         request.readResponseHeader();
@@ -111,27 +112,25 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         try {
             if (returnType != void.class || !success || outParametersMode)
                 result = serializer.deserializeResult(in, success);
-            if (timeStat != null)
-                timeStat.stageFinished("receiveResponse");
             if (result instanceof ResponseObject) {
                 ResponseObject responseObject = (ResponseObject) result;
                 outParams = responseObject.getParameters();
                 result = responseObject.getResult();
             }
             if (success && returnDescriptor != null && returnDescriptor.getTransfer() == ValueTransfer.REF) {
+                if (timeStat != null)
+                    timeStat.stage("replaceRef");
                 // If result is reference, replace with proxy object
                 ServiceLocator locator = (ServiceLocator) result;
                 if (locator.isRelative())
                     locator = ServiceLocator.qualified(serviceLocator.getBaseUrl(), locator.getServiceName());
                 result = clientFactory.getClient(method.getReturnType(), locator.getServiceName());
-                if (timeStat != null)
-                    timeStat.stageFinished("replaceRef");
             }
             // Update OUT parameters
             if (outParams != null) {
-                updateParameters(args, outParams, paramDescriptors);
                 if (timeStat != null)
-                    timeStat.stageFinished("updateParameters");
+                    timeStat.stage("updateParameters");
+                updateParameters(args, outParams, paramDescriptors);
             }
             if (time != null)
                 time.printDifference(result);
@@ -141,6 +140,8 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
                 throw (Throwable) result;
         } finally {
             in.close();
+            if (timeStat != null)
+                timeStat.finish();
         }
 
     }
