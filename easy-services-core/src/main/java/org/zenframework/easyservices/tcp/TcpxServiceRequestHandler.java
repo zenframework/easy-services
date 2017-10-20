@@ -15,34 +15,35 @@ import org.zenframework.easyservices.impl.ServiceInvokerImpl;
 import org.zenframework.easyservices.impl.SessionContextManagerImpl;
 import org.zenframework.easyservices.net.TcpRequestHandler;
 
-public class TcpxServiceRequestHandler implements TcpRequestHandler {
+public class TcpxServiceRequestHandler extends AbstractTcpServiceRequestHandler<TcpxRequestHeader, TcpxServiceRequest, TcpxServiceResponse> {
 
-    private final Map<String, ServiceSession> sessions = new HashMap<String, ServiceSession>();
-    private final TcpxRequestHeader header = new TcpxRequestHeader();
-
-    private SessionContextManager sessionContextManager = new SessionContextManagerImpl();
-    private ServiceInvoker serviceInvoker = new ServiceInvokerImpl();
-
-    private ServiceSession getSession(String sessionId) {
-        synchronized (sessions) {
-            ServiceSession session = sessions.get(sessionId);
-            if (session == null) {
-                session = new ServiceSession(sessionId, sessionContextManager.getSecureServiceRegistry(sessionId),
-                        sessionContextManager.getSessionContextName(sessionId));
-                sessions.put(sessionId, session);
-            }
-            return session;
-        }
+    @Override
+    protected TcpxRequestHeader newHeader() {
+        return new TcpxRequestHeader();
     }
 
     @Override
-    public boolean handleRequest(SocketAddress clientAddr, InputStream in, OutputStream out) throws IOException {
-        header.read(in);
-        if (header.getSessionId() == null || header.getSessionId().isEmpty())
-            header.setSessionId(UUID.randomUUID().toString());
-        TcpxServiceRequest request = new TcpxServiceRequest(getSession(header.getSessionId()), in, header);
-        TcpxServiceResponse response = new TcpxServiceResponse(header.getSessionId(), out);
-        serviceInvoker.invoke(request, response);
+    protected String getSessionId(TcpxRequestHeader header) {
+        return header.getSessionId();
+    }
+
+    @Override
+    protected void setSessionId(TcpxRequestHeader header, String sessionId) {
+        header.setSessionId(sessionId);
+    }
+
+    @Override
+    protected TcpxServiceRequest newServiceRequest(ServiceSession session, InputStream in, TcpxRequestHeader header) throws IOException {
+        return new TcpxServiceRequest(session, in, header);
+    }
+
+    @Override
+    protected TcpxServiceResponse newServiceResponse(String sessionId, OutputStream out) {
+        return new TcpxServiceResponse(sessionId, out);
+    }
+
+    @Override
+    protected boolean isKeepConnection(TcpxRequestHeader header) {
         return header.isKeepConnection();
     }
 
