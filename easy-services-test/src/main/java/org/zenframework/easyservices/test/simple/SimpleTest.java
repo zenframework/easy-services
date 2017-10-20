@@ -13,7 +13,7 @@ public class SimpleTest extends AbstractServiceTest {
 
     @Parameterized.Parameters(name = "#{index} protocol/format: {0}")
     public static Collection<Object[]> params() {
-        return Arrays.asList(/*arr("http/json"), arr("http/bin"), arr("tcp/json"), arr("tcp/bin"),*/ arr("tcpx/json"), arr("tcpx/bin"));
+        return Arrays.asList(arr("http/json"), arr("http/bin"), arr("tcp/json"), arr("tcp/bin"), arr("tcpx/json"), arr("tcpx/bin"));
     }
 
     public SimpleTest(String protocolFormat) {
