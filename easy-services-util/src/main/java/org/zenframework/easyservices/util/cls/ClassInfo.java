@@ -278,7 +278,6 @@ public class ClassInfo implements Comparable<ClassInfo>, Cloneable {
 
     /**
      * Checks if method is getter or setter
-     * @param cls
      * @param method
      * @return FieldInfo
      */
