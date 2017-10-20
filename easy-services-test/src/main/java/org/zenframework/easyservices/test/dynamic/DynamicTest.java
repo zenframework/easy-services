@@ -16,7 +16,7 @@ import org.zenframework.easyservices.test.simple.Addition;
 import org.zenframework.easyservices.test.simple.Function;
 import org.zenframework.easyservices.test.simple.Substraction;
 import org.zenframework.easyservices.util.CollectionUtil;
-import org.zenframework.easyservices.util.jndi.JNDIHelper;
+import org.zenframework.easyservices.util.JNDIUtil;
 
 @RunWith(Parameterized.class)
 public class DynamicTest extends AbstractServiceTest {
@@ -87,7 +87,7 @@ public class DynamicTest extends AbstractServiceTest {
     }
 
     private void logContext(String title) throws NamingException {
-        LOG.info(JNDIHelper.printContext(new StringBuilder().append(title), getServiceRegistry(), "", 1).toString());
+        LOG.info(JNDIUtil.printContext(new StringBuilder().append(title), getServiceRegistry(), "", 1).toString());
     }
 
 }

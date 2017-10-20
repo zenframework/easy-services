@@ -7,7 +7,7 @@ import org.zenframework.easyservices.test.TestContext;
 import org.zenframework.easyservices.test.descriptor.CollectionUtilImpl;
 import org.zenframework.easyservices.test.simple.Addition;
 import org.zenframework.easyservices.test.simple.EchoImpl;
-import org.zenframework.easyservices.util.jndi.JNDIHelper;
+import org.zenframework.easyservices.util.JNDIUtil;
 
 @JSTests(value = { "classpath://export/generic/api/ProxyFactoryTest.js" })
 public class ProxyFactoryTest extends JSTestSuite {
@@ -18,9 +18,9 @@ public class ProxyFactoryTest extends JSTestSuite {
     protected void setUp() {
         super.setUp();
         try {
-            JNDIHelper.getDefaultContext().bind("add", new Addition());
-            JNDIHelper.getDefaultContext().bind("util", new CollectionUtilImpl());
-            JNDIHelper.getDefaultContext().bind("echo", new EchoImpl());
+            JNDIUtil.getDefaultContext().bind("add", new Addition());
+            JNDIUtil.getDefaultContext().bind("util", new CollectionUtilImpl());
+            JNDIUtil.getDefaultContext().bind("echo", new EchoImpl());
             server.start();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -31,9 +31,9 @@ public class ProxyFactoryTest extends JSTestSuite {
     protected void tearDown() {
         super.tearDown();
         try {
-            JNDIHelper.getDefaultContext().unbind("add");
-            JNDIHelper.getDefaultContext().unbind("util");
-            JNDIHelper.getDefaultContext().unbind("echo");
+            JNDIUtil.getDefaultContext().unbind("add");
+            JNDIUtil.getDefaultContext().unbind("util");
+            JNDIUtil.getDefaultContext().unbind("echo");
             server.stop();
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -18,8 +18,8 @@ import org.zenframework.easyservices.net.TcpServer;
 import org.zenframework.easyservices.tcp.TcpServiceRequestHandler;
 import org.zenframework.easyservices.tcp.TcpxClientFactory;
 import org.zenframework.easyservices.tcp.TcpxServiceRequestHandler;
+import org.zenframework.easyservices.util.JNDIUtil;
 import org.zenframework.easyservices.util.debug.TimeStat;
-import org.zenframework.easyservices.util.jndi.JNDIHelper;
 
 import junit.framework.TestCase;
 
@@ -27,7 +27,7 @@ public abstract class AbstractServiceTest extends TestCase {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractServiceTest.class);
 
-    private final Context serviceRegistry = JNDIHelper.getDefaultContext();
+    private final Context serviceRegistry = JNDIUtil.getDefaultContext();
 
     private final String protocol;
 

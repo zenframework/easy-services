@@ -44,7 +44,7 @@ import org.zenframework.easyservices.serialize.SerializerFactory;
 import org.zenframework.easyservices.util.cls.ClassInfo;
 import org.zenframework.easyservices.util.debug.TimeChecker;
 import org.zenframework.easyservices.util.debug.TimeStat;
-import org.zenframework.easyservices.util.jndi.JNDIHelper;
+import org.zenframework.easyservices.util.JNDIUtil;
 
 public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
@@ -58,7 +58,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
     private final List<ServiceRequestFilter> requestFilters = new ArrayList<ServiceRequestFilter>();
 
-    private Context serviceRegistry = JNDIHelper.getDefaultContext();
+    private Context serviceRegistry = JNDIUtil.getDefaultContext();
     private DescriptorFactory descriptorFactory = new DefaultDescriptorFactory();
     private SerializerFactory serializerFactory = Environment.getSerializerFactory();
     private boolean duplicateMethodNamesSafe = Environment.isDuplicateMethodNamesSafe();
@@ -140,7 +140,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
     public void init(Config config) {
         Config serviceRegistryConfig = config.getSubConfig(PARAM_SERVICE_REGISTRY);
         if (!serviceRegistryConfig.isEmpty())
-            serviceRegistry = JNDIHelper.getInitialContext(new Hashtable<String, Object>(serviceRegistryConfig.toMap()));
+            serviceRegistry = JNDIUtil.getInitialContext(new Hashtable<String, Object>(serviceRegistryConfig.toMap()));
         requestFilters.addAll(config.<ServiceRequestFilter> getInstances(PARAM_REQUEST_FILTER_PREF));
         descriptorFactory = config.getInstance(PARAM_DESCRIPTOR_FACTORY, descriptorFactory);
         serializerFactory = config.getInstance(PARAM_SERIALIZER_FACTORY, serializerFactory);

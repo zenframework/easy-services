@@ -8,22 +8,22 @@ import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.ServiceException;
 import org.zenframework.easyservices.SessionContextManager;
 import org.zenframework.easyservices.jndi.SecureContext;
-import org.zenframework.easyservices.util.jndi.JNDIHelper;
+import org.zenframework.easyservices.util.JNDIUtil;
 
 public class SessionContextManagerImpl implements SessionContextManager {
 
     public static final String SESSION_DOMAIN = "session";
     //public static final String DYNAMIC_DOMAIN = "dynamic";
 
-    private Context serviceRegistry = JNDIHelper.getDefaultContext();
+    private Context serviceRegistry = JNDIUtil.getDefaultContext();
     private boolean securityEnabled = Environment.isSecurityEnabled();
 
     @Override
     public Context getSecureServiceRegistry(String sessionId) {
         Context sessionServiceRegistry = serviceRegistry;
         try {
-            //Name sessionDomain = JNDIHelper.compose(serviceRegistry, SESSION_DOMAIN, sessionId);
-            //Name sharedDomain = JNDIHelper.compose(serviceRegistry, DYNAMIC_DOMAIN);
+            //Name sessionDomain = JNDIUtil.compose(serviceRegistry, SESSION_DOMAIN, sessionId);
+            //Name sharedDomain = JNDIUtil.compose(serviceRegistry, DYNAMIC_DOMAIN);
             // shared objects context
             //sessionServiceRegistry = new SharedContext(serviceRegistry, sessionDomain, sharedDomain);
             // secure context
@@ -39,7 +39,7 @@ public class SessionContextManagerImpl implements SessionContextManager {
     @Override
     public Name getSessionContextName(String sessionId) {
         try {
-            return JNDIHelper.compose(serviceRegistry, SESSION_DOMAIN, sessionId);
+            return JNDIUtil.compose(serviceRegistry, SESSION_DOMAIN, sessionId);
         } catch (NamingException e) {
             throw new ServiceException("Can't compose session " + sessionId + " context name ", e);
         }
@@ -62,7 +62,7 @@ public class SessionContextManagerImpl implements SessionContextManager {
     }
 
     protected SecureContext.Rule getRule(int access, String... nameComponents) throws NamingException {
-        return new SecureContext.Rule(JNDIHelper.compose(serviceRegistry, nameComponents), access);
+        return new SecureContext.Rule(JNDIUtil.compose(serviceRegistry, nameComponents), access);
     }
 
 }

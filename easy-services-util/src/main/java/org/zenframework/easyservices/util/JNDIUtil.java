@@ -1,4 +1,4 @@
-package org.zenframework.easyservices.util.jndi;
+package org.zenframework.easyservices.util;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -21,11 +21,10 @@ import javax.naming.spi.NamingManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.zenframework.easyservices.util.StringUtil;
 
-public class JNDIHelper {
+public class JNDIUtil {
 
-    private static final Logger LOG = LoggerFactory.getLogger(JNDIHelper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JNDIUtil.class);
 
     private static final Set<InitialContextFactory> FACTORIES = new HashSet<InitialContextFactory>();
     private static final Context DEFAULT_CONTEXT;
@@ -52,7 +51,7 @@ public class JNDIHelper {
         }
     }
 
-    private JNDIHelper() {}
+    private JNDIUtil() {}
 
     public static Context getDefaultContext() {
         return DEFAULT_CONTEXT;
