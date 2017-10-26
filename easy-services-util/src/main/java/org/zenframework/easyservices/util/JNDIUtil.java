@@ -21,6 +21,7 @@ import javax.naming.spi.NamingManager;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.zenframework.easyservices.util.jndi.LoggingContext;
 
 public class JNDIUtil {
 
@@ -57,6 +58,10 @@ public class JNDIUtil {
         return DEFAULT_CONTEXT;
     }
 
+    public static Context getDefaultContext(boolean enableLogging) {
+        return enableLogging ? new LoggingContext(DEFAULT_CONTEXT) : DEFAULT_CONTEXT;
+    }
+
     public static Set<InitialContextFactory> getInitialContextFactories() {
         return Collections.unmodifiableSet(FACTORIES);
     }
@@ -69,6 +74,10 @@ public class JNDIUtil {
             LOG.error("Can't initialize initial context " + env, e);
             return null;
         }
+    }
+
+    public static Context getInitialContext(Hashtable<?, ?> env, boolean enableLogging) {
+        return enableLogging ? new LoggingContext(getInitialContext(env)) : getInitialContext(env);
     }
 
     public static Context bindAll(Map<String, Object> bindings) throws NamingException {
