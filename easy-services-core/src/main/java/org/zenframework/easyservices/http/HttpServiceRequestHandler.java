@@ -25,7 +25,7 @@ public class HttpServiceRequestHandler implements Configurable {
     private static final String PARAM_SERVICES_PATH = "servicesPath";
     private static final String PARAM_SERVICE_INVOKER = "serviceInvoker";
 
-    private static final String DEFAULT_SERVICES_PATH = "/services/";
+    private static final String DEFAULT_SERVICES_PATH = "/services";
 
     private static final String ATTR_SERVICE_SESSION = "easyservices.session";
 

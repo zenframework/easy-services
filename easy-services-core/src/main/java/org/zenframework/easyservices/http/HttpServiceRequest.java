@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.zenframework.easyservices.ServiceRequest;
 import org.zenframework.easyservices.ServiceSession;
+import org.zenframework.easyservices.util.StringUtil;
 import org.zenframework.easyservices.util.URIUtil;
 
 public class HttpServiceRequest extends ServiceRequest {
@@ -36,11 +37,12 @@ public class HttpServiceRequest extends ServiceRequest {
     @Override
     public String getServiceName() {
         String path = request.getPathInfo();
-        if (servicesPath.equals(request.getServletPath()))
+        if (StringUtil.isNullOrEmpty(servicesPath) || servicesPath.equals(request.getServletPath()))
             return path;
-        if (!path.startsWith(servicesPath))
+        // TODO Paths concat & split
+        if (!path.startsWith(servicesPath) && path.length() > servicesPath.length() && path.charAt(servicesPath.length()) == '/')
             throw new IllegalStateException("Incorrect services path " + path);
-        return path.substring(servicesPath.length());
+        return path.substring(servicesPath.length() + 1);
     }
 
     @Override
