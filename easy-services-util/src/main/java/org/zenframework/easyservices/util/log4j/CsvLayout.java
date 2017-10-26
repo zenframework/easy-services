@@ -14,7 +14,6 @@ public class CsvLayout extends Layout {
 
     private List<String> loggers = new ArrayList<>(100);
 
-    private int maxLoggers = 100;
     private char delimeter = ';';
     private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
@@ -55,10 +54,6 @@ public class CsvLayout extends Layout {
     @Override
     public boolean ignoresThrowable() {
         return false;
-    }
-
-    public void setMaxLoggers(int maxLoggers) {
-        this.maxLoggers = maxLoggers;
     }
 
     public void setDelimeter(char columnDelimeter) {
