@@ -26,6 +26,7 @@ public class ClientFactoryImpl implements ClientFactory {
     private SerializerFactory serializerFactory = Environment.getSerializerFactory();
     private boolean outParametersMode = Environment.isOutParametersMode();
     private ValueUpdater updater = ValueUpdaterImpl.INSTANCE;
+    private boolean invokeBaseObjectMethods = Environment.isInvokeBaseObjectMethods();
     private boolean debug = Environment.isDebug();
     private String baseUrl;
     private URLHandler<?> urlHandler;
@@ -56,6 +57,14 @@ public class ClientFactoryImpl implements ClientFactory {
 
     public SerializerFactory getSerializerFactory() {
         return serializerFactory;
+    }
+
+    public boolean isInvokeBaseObjectMethods() {
+        return invokeBaseObjectMethods;
+    }
+
+    public void setInvokeBaseObjectMethods(boolean invokeBaseObjectMethods) {
+        this.invokeBaseObjectMethods = invokeBaseObjectMethods;
     }
 
     public void setDebug(boolean debug) {

@@ -22,6 +22,7 @@ public class Environment {
     public static final String PROP_DUPLICATE_METHOD_NAMES_SAFE = "duplicateMethodNamesSafe";
     public static final String PROP_OUT_PARAMETERS_MODE = "outParametersMode";
     public static final String PROP_SECURITY_ENABLED = "securityEnabled";
+    public static final String PROP_INVOKE_BASE_OBJECT_METHODS = "invokeBaseObjectMethods";
     public static final String PROP_SERIALIZATION_FORMAT = "serializationFormat";
 
     private static final Config CONFIG = new MapConfig(System.getProperties()).getSubConfig(PROPERTIES_PREFIX);
@@ -33,6 +34,7 @@ public class Environment {
     private static final boolean DEFAULT_DUPLICATE_METHOD_NAMES_SAFE = true;
     private static final boolean DEFAULT_OUT_PARAMETERS_MODE = false;
     private static final boolean DEFAULT_SECURITY_ENABLED = false;
+    private static final boolean DEFAULT_INVOKE_BASE_OBJECT_METHODS = false;
 
     private static final String PREFERRED_SERIALIZATION_FORMAT = "json";
 
@@ -45,6 +47,7 @@ public class Environment {
         str.append("\n\t- duplicateMethodNamesSafe: ").append(isDuplicateMethodNamesSafe());
         str.append("\n\t- outParametersMode:        ").append(isOutParametersMode());
         str.append("\n\t- securityEnabled:          ").append(isSecurityEnabled());
+        str.append("\n\t- invokeBaseObjectMethods:  ").append(isInvokeBaseObjectMethods());
         str.append("\n\t- serializationFormat:      ").append(getSerializationFormat());
         LOG.info(str.toString());
     }
@@ -89,6 +92,14 @@ public class Environment {
 
     public static void setSecurityEnabled(boolean securityEnabled) {
         CONFIG.setParam(PROP_SECURITY_ENABLED, securityEnabled);
+    }
+
+    public static boolean isInvokeBaseObjectMethods() {
+        return CONFIG.getParam(PROP_INVOKE_BASE_OBJECT_METHODS, DEFAULT_INVOKE_BASE_OBJECT_METHODS);
+    }
+
+    public static void setInvokeBaseObjectMethods(boolean invokeBaseObjectMethods) {
+        CONFIG.setParam(PROP_INVOKE_BASE_OBJECT_METHODS, invokeBaseObjectMethods);
     }
 
     public static String getSerializationFormat() {

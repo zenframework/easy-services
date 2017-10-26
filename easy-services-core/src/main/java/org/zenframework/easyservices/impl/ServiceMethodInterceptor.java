@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.Transformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.ClientException;
@@ -33,12 +37,23 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceMethodInterceptor.class);
 
+    private static final List<MethodIdentifier> OBJECT_METHODS = (List<MethodIdentifier>) CollectionUtils
+            .collect(Arrays.asList(Object.class.getMethods()), new Transformer<Method, MethodIdentifier>() {
+
+                @Override
+                public MethodIdentifier transform(Method method) {
+                    return new MethodIdentifier(method);
+                }
+
+            });
+
     protected final ClientFactoryImpl clientFactory;
     protected final ServiceLocator serviceLocator;
     protected final DescriptorFactory descriptorFactory;
     protected final SerializerFactory serializerFactory;
     protected final boolean outParametersMode;
     protected final ValueUpdater updater;
+    protected final boolean invokeBaseObjectMethods;
     protected final boolean debug;
 
     public ServiceMethodInterceptor(ClientFactoryImpl clientFactory, ServiceLocator serviceLocator, boolean useDescriptors) {
@@ -48,11 +63,17 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
         this.serializerFactory = clientFactory.getSerializerFactory();
         this.outParametersMode = clientFactory.isOutParametersMode();
         this.updater = clientFactory.getUpdater();
+        this.invokeBaseObjectMethods = clientFactory.isInvokeBaseObjectMethods();
         this.debug = clientFactory.isDebug();
     }
 
     @Override
     public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
+
+        MethodIdentifier methodId = new MethodIdentifier(method);
+
+        if (!invokeBaseObjectMethods && OBJECT_METHODS.contains(methodId))
+            return method.invoke(this, args);
 
         TimeStat timeStat = TimeStat.getThreadTimeStat();
 
@@ -65,7 +86,6 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
 
         Class<?>[] paramTypes = method.getParameterTypes();
         Class<?> returnType = method.getReturnType();
-        MethodIdentifier methodId = new MethodIdentifier(method);
         ClassDescriptor classDescriptor = descriptorFactory != null ? descriptorFactory.getClassDescriptor(method.getDeclaringClass()) : null;
         MethodDescriptor methodDescriptor = classDescriptor != null ? classDescriptor.getMethodDescriptor(methodId)
                 : new MethodDescriptor(args.length);
@@ -137,6 +157,8 @@ public class ServiceMethodInterceptor implements MethodInterceptor {
             if (success)
                 return result;
             else
+                // TODO Do something with remote stack trace
+                //throw new RuntimeException("Remote invocation exception", (Throwable) result);
                 throw (Throwable) result;
         } finally {
             in.close();
