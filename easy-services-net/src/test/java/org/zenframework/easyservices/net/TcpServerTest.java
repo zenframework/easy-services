@@ -7,6 +7,10 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
@@ -24,6 +28,7 @@ public class TcpServerTest extends TestCase {
 
     private static final int DATA_SIZE = 150000;
     private static final int PORT = 9000;
+    private static final int THREADS = 10;
 
     @Parameterized.Parameters(name = "#{index} blocking: {0}")
     public static Collection<Object[]> params() {
@@ -78,25 +83,50 @@ public class TcpServerTest extends TestCase {
 
         });
         server.start();
-        Socket socket = new Socket("localhost", 9000);
-        String data = "hello";
-        InputStream in = new BlockInputStream(socket.getInputStream());
-        OutputStream out = new BlockOutputStream(socket.getOutputStream());
-        try {
-            System.out.println("Client: write data");
-            out.write(data.getBytes());
-            System.out.println("Client: closing out");
-            out.close();
-            System.out.println("Client: out closed. Start reading ...");
-            String str = read(in);
-            System.out.println("Client: read '" + str + "'. Closing in ...");
-            in.close();
-            System.out.println("Client: in closed");
-            assertTrue(str.equals(data));
-        } finally {
-            IOUtils.closeQuietly(socket);
+        
+        Thread[] workers = new Thread[THREADS];
+        final List<Throwable> errors = Collections.synchronizedList(new LinkedList<Throwable>());
+
+        for (int i = 0; i < workers.length; i++) {
+            workers[i] = new Thread(new Runnable() {
+        
+                @Override
+                public void run() {
+                    Socket socket = null;
+                    try {
+                        socket = new Socket("localhost", 9000);
+                        String data = "hello-" + UUID.randomUUID();
+                        InputStream in = new BlockInputStream(socket.getInputStream());
+                        OutputStream out = new BlockOutputStream(socket.getOutputStream());
+                        System.out.println("Client: write data");
+                        out.write(data.getBytes());
+                        System.out.println("Client: closing out");
+                        out.close();
+                        System.out.println("Client: out closed. Start reading ...");
+                        String str = read(in);
+                        System.out.println("Client: read '" + str + "'. Closing in ...");
+                        in.close();
+                        System.out.println("Client: in closed");
+                        assertTrue(str.equals(data));
+                    } catch (Throwable e) {
+                        e.printStackTrace();
+                        errors.add(e);
+                    } finally {
+                        IOUtils.closeQuietly(socket);
+                    }
+                }
+                
+            }, "TcpServerTestWorker-" + i);
+            workers[i].start();
         }
+        
+        for (int i = 0; i < workers.length; i++)
+            workers[i].join();
+
         server.stop();
+        
+        if (errors.size() > 0)
+            fail("Some error has happened");
     }
 
     private static String read(InputStream in) throws IOException {
