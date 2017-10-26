@@ -12,7 +12,9 @@ public abstract class CachingDescriptorFactory implements DescriptorFactory {
     public ClassDescriptor getClassDescriptor(Class<?> cls) {
         ClassDescriptor classDescriptor = classes.get(cls);
         if (classDescriptor == null) {
-            classDescriptor = extractClassDescriptor(cls);
+            synchronized (this) {
+                classDescriptor = extractClassDescriptor(cls);
+            }
             classes.put(cls, classDescriptor);
         }
         return classDescriptor;
