@@ -15,7 +15,7 @@ public class SessionContextManagerImpl implements SessionContextManager {
     public static final String SESSION_DOMAIN = "session";
     //public static final String DYNAMIC_DOMAIN = "dynamic";
 
-    private Context serviceRegistry = JNDIUtil.getDefaultContext();
+    private Context serviceRegistry = JNDIUtil.getDefaultContext(Environment.isDebug());
     private boolean securityEnabled = Environment.isSecurityEnabled();
 
     @Override

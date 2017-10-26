@@ -58,7 +58,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
     private final List<ServiceRequestFilter> requestFilters = new ArrayList<ServiceRequestFilter>();
 
-    private Context serviceRegistry = JNDIUtil.getDefaultContext();
+    private Context serviceRegistry = JNDIUtil.getDefaultContext(Environment.isDebug());
     private DescriptorFactory descriptorFactory = new DefaultDescriptorFactory();
     private SerializerFactory serializerFactory = Environment.getSerializerFactory();
     private boolean duplicateMethodNamesSafe = Environment.isDuplicateMethodNamesSafe();
@@ -112,6 +112,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
         } catch (IOException e) {
             throw e;
         } catch (Throwable e) {
+            // TODO Handle different exceptions in different ways
             responseObject.setResult(e);
             response.sendError(e);
         } finally {
