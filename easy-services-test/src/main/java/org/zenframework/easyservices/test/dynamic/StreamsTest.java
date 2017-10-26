@@ -86,11 +86,11 @@ public class StreamsTest extends AbstractServiceTest {
                         try {
                             in.read();
                             fail("read should fail");
-                        } catch (Throwable e) {}
+                        } catch (Exception e) {}
                         try {
                             out.write(0);
                             fail("write should fail");
-                        } catch (Throwable e) {}
+                        } catch (Exception e) {}
                     } catch (Throwable e) {
                         LOG.error("in-out copy failed", e);
                         failed.set(true);
