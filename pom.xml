@@ -41,6 +41,7 @@
         <junit.version>[4.0,)</junit.version>
         <slf4j.version>[1.7,)</slf4j.version>
         <servlet.api.version>[3.0,3.1]</servlet.api.version>
+        <log4j.version>[1.2,)</log4j.version>
         <gpg.keyname>481E9FCE</gpg.keyname>
     </properties>
 
