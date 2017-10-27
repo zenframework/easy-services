@@ -29,7 +29,7 @@ public class NioTcpServer implements TcpServer {
 
         @Override
         public Thread newThread(Runnable r) {
-            return new Thread(r, "NioTcpServer");
+            return new Thread(r, "Client-<unused>");
         }
 
     };
@@ -58,6 +58,8 @@ public class NioTcpServer implements TcpServer {
                             if (!(e instanceof EOFException))
                                 LOG.error(e.getMessage(), e);
                             IOUtils.closeQuietly(client);
+                        } finally {
+                            Thread.currentThread().setName("Client-<unused>");
                         }
                     }
 
