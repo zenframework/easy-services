@@ -19,7 +19,7 @@ public abstract class AbstractTcpURLConnection<REQ extends Header, RESP extends 
     @Override
     public void connect() throws IOException {
         if (!connected) {
-            client = new SimpleTcpClient(url.getHost(), url.getPort());
+            client = initClient(url);
             connected = true;
         }
     }
@@ -55,5 +55,7 @@ public abstract class AbstractTcpURLConnection<REQ extends Header, RESP extends 
     abstract public REQ getRequestHeader();
 
     abstract public RESP getResponseHeader();
+
+    abstract protected TcpClient initClient(URL url) throws IOException;
 
 }
