@@ -1,10 +1,10 @@
 package org.zenframework.easyservices.test.dynamic;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.test.AbstractServiceTest;
+import org.zenframework.easyservices.test.TestUtil;
 import org.zenframework.easyservices.util.CollectionUtil;
 import org.zenframework.easyservices.util.debug.TimeChecker;
 
@@ -69,43 +70,29 @@ public class StreamsTest extends AbstractServiceTest {
 
     @Test
     public void testEasyServicesStreams() throws Exception {
-        final AtomicBoolean failed = new AtomicBoolean(false);
-        Thread[] workers = new Thread[threads];
-        for (int i = 0; i < threads; i++) {
-            final StreamFactory streams = getClient(StreamFactory.class, "streams-" + i);
-            workers[i] = new Thread(new Runnable() {
+        TestUtil.runMultiThreads(new TestUtil.Runnable() {
 
-                @Override
-                public void run() {
-                    try {
-                        InputStream in = streams.getInputStream();
-                        OutputStream out = streams.getOutputStream();
-                        TimeChecker time = new TimeChecker("TEST EASY-SERVICES STREAMS (" + Thread.currentThread().getName() + ")", LOG);
-                        StreamsUtil.copy(in, out);
-                        time.printDifference();
-                        try {
-                            in.read();
-                            fail("read should fail");
-                        } catch (Exception e) {}
-                        try {
-                            out.write(0);
-                            fail("write should fail");
-                        } catch (Exception e) {}
-                    } catch (Throwable e) {
-                        LOG.error("in-out copy failed", e);
-                        failed.set(true);
-                    }
-                }
+            @Override
+            public void run(int n) throws IOException {
+                StreamFactory streams = getClient(StreamFactory.class, "streams-" + n);
+                InputStream in = streams.getInputStream();
+                OutputStream out = streams.getOutputStream();
+                TimeChecker time = new TimeChecker("TEST EASY-SERVICES STREAMS (" + Thread.currentThread().getName() + ")", LOG);
+                StreamsUtil.copy(in, out);
+                time.printDifference();
+                try {
+                    in.read();
+                    fail("read should fail");
+                } catch (Exception e) {}
+                try {
+                    out.write(0);
+                    fail("write should fail");
+                } catch (Exception e) {}
+            }
 
-            }, "StreamsTestWorker-" + i);
-            workers[i].start();
-        }
-        for (int i = 0; i < threads; i++) {
-            workers[i].join();
+        }, threads);
+        for (int i = 0; i < threads; i++)
             assertTrue(StreamsUtil.equals(sourceFiles[i], targetFiles[i]));
-        }
-        if (failed.get())
-            fail("Some error has happened");
     }
 
 }
