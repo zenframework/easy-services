@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.naming.Context;
 import javax.naming.Name;
@@ -260,7 +261,7 @@ public class ServiceInvokerImpl implements ServiceInvoker, Configurable {
 
     protected String bindDynamicService(ServiceRequest request, Object service) throws NamingException {
         Context serviceRegistry = request.getSession().getServiceRegistry();
-        Name name = request.getSession().getSessionContextName().add(service.getClass().getName() + '@' + System.identityHashCode(service));
+        Name name = request.getSession().getSessionContextName().add(service.getClass().getName() + '@' + UUID.randomUUID());
         try {
             serviceRegistry.lookupLink(name);
         } catch (NamingException e) {
