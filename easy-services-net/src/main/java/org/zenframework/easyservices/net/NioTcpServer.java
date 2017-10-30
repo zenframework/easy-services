@@ -29,7 +29,7 @@ public class NioTcpServer implements TcpServer {
 
         @Override
         public Thread newThread(Runnable r) {
-            return new Thread(r, "Client-<unused>");
+            return new Thread(r, "NioTcpServer");
         }
 
     };
