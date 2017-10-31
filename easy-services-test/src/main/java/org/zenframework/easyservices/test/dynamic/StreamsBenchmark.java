@@ -11,7 +11,8 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 import org.junit.Test;
-import org.zenframework.easyservices.test.TestUtil;
+import org.zenframework.easyservices.util.ThreadUtil;
+import org.zenframework.easyservices.util.thread.Task;
 
 import junit.framework.TestCase;
 
@@ -49,7 +50,7 @@ public class StreamsBenchmark extends TestCase {
 
     @Test
     public void testLocalStreams() throws Exception {
-        TestUtil.runMultiThreads(new TestUtil.Runnable() {
+        ThreadUtil.runMultiThreadTask(new Task() {
 
             @Override
             public void run(int n) throws IOException {
@@ -59,14 +60,14 @@ public class StreamsBenchmark extends TestCase {
                 assertTrue(StreamsUtil.equals(sourceFiles[n], targetFiles[n]));
             }
 
-        }, StreamsTest.THREADS);
+        }, StreamsTest.THREADS, "TestWorker");
         for (int i = 0; i < StreamsTest.THREADS; i++)
             assertTrue(StreamsUtil.equals(sourceFiles[i], targetFiles[i]));
     }
 
     @Test
     public void testRmiStreams() throws Exception {
-        TestUtil.runMultiThreads(new TestUtil.Runnable() {
+        ThreadUtil.runMultiThreadTask(new Task() {
 
             @Override
             public void run(int n) throws IOException, NotBoundException {
@@ -76,7 +77,7 @@ public class StreamsBenchmark extends TestCase {
                 StreamsUtil.copy(in, out);
             }
 
-        }, StreamsTest.THREADS);
+        }, StreamsTest.THREADS, "TestWorker");
         for (int i = 0; i < StreamsTest.THREADS; i++)
             assertTrue(StreamsUtil.equals(sourceFiles[i], targetFiles[i]));
     }

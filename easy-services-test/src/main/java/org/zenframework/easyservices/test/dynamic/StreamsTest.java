@@ -13,9 +13,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zenframework.easyservices.Environment;
 import org.zenframework.easyservices.test.AbstractServiceTest;
-import org.zenframework.easyservices.test.TestUtil;
 import org.zenframework.easyservices.util.CollectionUtil;
+import org.zenframework.easyservices.util.ThreadUtil;
 import org.zenframework.easyservices.util.debug.TimeChecker;
+import org.zenframework.easyservices.util.thread.Task;
 
 @RunWith(Parameterized.class)
 public class StreamsTest extends AbstractServiceTest {
@@ -70,7 +71,7 @@ public class StreamsTest extends AbstractServiceTest {
 
     @Test
     public void testEasyServicesStreams() throws Exception {
-        TestUtil.runMultiThreads(new TestUtil.Runnable() {
+        ThreadUtil.runMultiThreadTask(new Task() {
 
             @Override
             public void run(int n) throws IOException {
@@ -90,7 +91,7 @@ public class StreamsTest extends AbstractServiceTest {
                 } catch (Exception e) {}
             }
 
-        }, threads);
+        }, threads, "TestWorker");
         for (int i = 0; i < threads; i++)
             assertTrue(StreamsUtil.equals(sourceFiles[i], targetFiles[i]));
     }
