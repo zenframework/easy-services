@@ -34,25 +34,25 @@ public class NioTcpServer implements TcpServer {
 
     };
 
-    private static CompletionHandler<AsynchronousSocketChannel, ConnectionAttachment> CONN_HANDLER = new CompletionHandler<AsynchronousSocketChannel, ConnectionAttachment>() {
+    private static CompletionHandler<AsynchronousSocketChannel, NioTcpServer> CONN_HANDLER = new CompletionHandler<AsynchronousSocketChannel, NioTcpServer>() {
 
         @Override
-        public void completed(final AsynchronousSocketChannel client, final ConnectionAttachment connAttach) {
-            if (!connAttach.server.isOpen())
+        public void completed(final AsynchronousSocketChannel client, final NioTcpServer server) {
+            if (!server.server.isOpen())
                 return;
-            connAttach.server.accept(connAttach, this);
+            server.server.accept(server, this);
             final ReadAttachment readAttach = new ReadAttachment(client, new QueueInputStream(), ByteBuffer.allocate(8192));
             client.read(readAttach.buf, readAttach, READ_HANDLER);
             try {
                 final SocketAddress clientAddr = client.getRemoteAddress();
                 final OutputStream out = new ClientOutputStream(client);
-                connAttach.executor.execute(new Runnable() {
+                server.clientExecutor.execute(new Runnable() {
 
                     @Override
                     public void run() {
                         Thread.currentThread().setName("Client-" + clientAddr.toString());
                         try {
-                            while (connAttach.handler.handleRequest(clientAddr, readAttach.in, out))
+                            while (server.handler.handleRequest(clientAddr, readAttach.in, out))
                                 ;
                         } catch (IOException e) {
                             if (!(e instanceof EOFException))
@@ -70,10 +70,10 @@ public class NioTcpServer implements TcpServer {
         }
 
         @Override
-        public void failed(Throwable e, ConnectionAttachment attach) {
+        public void failed(Throwable e, NioTcpServer server) {
             if (!(e instanceof AsynchronousCloseException))
                 LOG.error("Accept connection failed", e);
-            IOUtils.closeQuietly(attach.server);
+            IOUtils.closeQuietly(server.server);
         }
 
     };
@@ -139,7 +139,7 @@ public class NioTcpServer implements TcpServer {
 
     @Override
     public void start() {
-        server.accept(new ConnectionAttachment(server, clientExecutor, handler), CONN_HANDLER);
+        server.accept(this, CONN_HANDLER);
     }
 
     @Override
@@ -150,20 +150,6 @@ public class NioTcpServer implements TcpServer {
         } catch (IOException e) {}
         group.awaitTermination(5, TimeUnit.SECONDS);
         clientExecutor.shutdown();
-    }
-
-    private static class ConnectionAttachment {
-
-        final AsynchronousServerSocketChannel server;
-        final ExecutorService executor;
-        final TcpRequestHandler handler;
-
-        public ConnectionAttachment(AsynchronousServerSocketChannel server, ExecutorService executor, TcpRequestHandler handler) {
-            this.server = server;
-            this.executor = executor;
-            this.handler = handler;
-        }
-
     }
 
     private static class ReadAttachment {
