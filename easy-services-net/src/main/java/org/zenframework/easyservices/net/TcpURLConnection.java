@@ -1,6 +1,5 @@
 package org.zenframework.easyservices.net;
 
-import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Iterator;
@@ -67,11 +66,6 @@ public class TcpURLConnection extends AbstractTcpURLConnection<DefaultHeader, De
     @Override
     public DefaultHeader getResponseHeader() {
         return responseHeader;
-    }
-
-    @Override
-    protected TcpClient initClient(URL url) throws IOException {
-        return new SimpleTcpClient(url.getHost(), url.getPort());
     }
 
 }

@@ -8,6 +8,8 @@ import java.net.URLConnection;
 
 public abstract class AbstractTcpURLConnection<REQ extends Header, RESP extends Header> extends URLConnection {
 
+    private final TcpClientFactory tcpClientFactory = Environment.getTcpClientFactory();
+
     private TcpClient client;
     private InputStream in;
     private OutputStream out;
@@ -19,16 +21,16 @@ public abstract class AbstractTcpURLConnection<REQ extends Header, RESP extends 
     @Override
     public void connect() throws IOException {
         if (!connected) {
-            client = initClient(url);
+            client = tcpClientFactory.getTcpClient(url.getHost(), url.getPort());
             connected = true;
         }
     }
 
     @Override
     public InputStream getInputStream() throws IOException {
-        Header responseHeader = getResponseHeader();
-        connect();
         if (in == null) {
+            Header responseHeader = getResponseHeader();
+            connect();
             in = client.getInputStream();
             if (responseHeader != null)
                 responseHeader.read(in);
@@ -38,9 +40,9 @@ public abstract class AbstractTcpURLConnection<REQ extends Header, RESP extends 
 
     @Override
     public OutputStream getOutputStream() throws IOException {
-        Header requestHeader = getRequestHeader();
-        connect();
         if (out == null) {
+            Header requestHeader = getRequestHeader();
+            connect();
             out = client.getOutputStream();
             if (requestHeader != null)
                 requestHeader.write(out);
@@ -55,7 +57,5 @@ public abstract class AbstractTcpURLConnection<REQ extends Header, RESP extends 
     abstract public REQ getRequestHeader();
 
     abstract public RESP getResponseHeader();
-
-    abstract protected TcpClient initClient(URL url) throws IOException;
 
 }
