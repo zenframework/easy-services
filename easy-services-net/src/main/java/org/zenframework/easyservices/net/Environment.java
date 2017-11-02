@@ -29,6 +29,7 @@ public class Environment {
 
     public static void setTcpClientDefaultPooled(boolean tcpClientDefaultPooled) {
         Environment.tcpClientDefaultPooled = tcpClientDefaultPooled;
+        tcpClientFactory = null;
     }
 
     public static boolean isTcpClientDefaultBlocking() {
@@ -37,6 +38,7 @@ public class Environment {
 
     public static void setTcpClientDefaultBlocking(boolean tcpClientDefaultBlocking) {
         Environment.tcpClientDefaultBlocking = tcpClientDefaultBlocking;
+        tcpClientFactory = null;
     }
 
     public static TcpClientFactory getTcpClientFactory() {
