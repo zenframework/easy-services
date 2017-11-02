@@ -10,7 +10,6 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Arrays;
-import java.util.Random;
 
 import org.apache.commons.io.IOUtils;
 
@@ -18,12 +17,10 @@ import junit.framework.TestCase;
 
 public class BlockStreamsTest extends TestCase {
 
-    private static final int DATA_SIZE = 15;
-    private static final int BLOCK_SIZE = 10;
+    private static final int DATA_SIZE = 15000;
+    private static final int BLOCK_SIZE = 10000;
     private static final int SMALL_BUF_SIZE = 7;
-    private static final int LARGE_BUF_SIZE = 13;
-
-    private static final Random RANDOM = new Random();
+    private static final int LARGE_BUF_SIZE = 13000;
 
     private final byte[] source = new byte[DATA_SIZE];
     private byte[] data;
@@ -34,7 +31,7 @@ public class BlockStreamsTest extends TestCase {
         ByteArrayOutputStream bytes = new ByteArrayOutputStream(DATA_SIZE * 2);
         OutputStream out = new BlockOutputStream(bytes, BLOCK_SIZE);
         for (int i = 0; i < DATA_SIZE; i++) {
-            source[i] = (byte) RANDOM.nextInt(255);
+            source[i] = (byte) (i % 255);
             out.write(source[i]);
         }
         out.close();
