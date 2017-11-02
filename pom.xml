@@ -38,6 +38,7 @@
         <bundle.import.package>*</bundle.import.package>
         <bundle.extpackages></bundle.extpackages>
         <commons.collections.version>4.1</commons.collections.version>
+        <commons.pool.version>2.4.2</commons.pool.version>
         <junit.version>[4.0,)</junit.version>
         <slf4j.version>[1.7,)</slf4j.version>
         <servlet.api.version>[3.0,3.1]</servlet.api.version>

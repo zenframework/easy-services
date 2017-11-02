@@ -15,7 +15,6 @@
 
     <properties>
         <bundle.namespace>org.zenframework.easyservices.js</bundle.namespace>
-        <commons.pool.version>2.4.2</commons.pool.version>
         <!-- Test dependencies -->
         <jetty.version>9.2.20.v20161216</jetty.version>
         <spring.version>4.2.4.RELEASE</spring.version>
